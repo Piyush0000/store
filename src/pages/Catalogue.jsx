@@ -44,10 +44,12 @@ export default function Catalogue() {
     }
   };
 
+  const categoryLabel = categories.find((c) => c.id === selectedCategory)?.label || 'All Products';
+
   return (
     <div className="catalogue">
       <div className="catalogue__header">
-        <h1>{categories.find((c) => c.id === selectedCategory)?.label || 'All Products'}</h1>
+        <h1>{categoryLabel.toUpperCase()}</h1>
         <span className="catalogue__count">{sortedProducts.length} items</span>
       </div>
 

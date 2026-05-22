@@ -1,6 +1,6 @@
 .catalogue {
   min-height: 100vh;
-  padding: 40px 20px;
+  padding: 40px 24px;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -11,13 +11,19 @@
 }
 
 .catalogue__header h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 36px;
-  margin-bottom: 5px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  margin-bottom: 8px;
 }
 
 .catalogue__count {
-  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #888;
 }
 
 .catalogue__layout {
@@ -30,26 +36,43 @@
   flex-shrink: 0;
 }
 
+.catalogue__filter-group {
+  position: sticky;
+  top: 120px;
+}
+
 .catalogue__filter-group h3 {
-  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.1em;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
 }
 
 .catalogue__filter-option {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 0;
+  padding: 10px 0;
   cursor: pointer;
-  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.catalogue__filter-option:hover {
+  color: #c9a84c;
 }
 
 .catalogue__filter-option input {
-  accent-color: var(--gold);
+  accent-color: #c9a84c;
+  width: 16px;
+  height: 16px;
 }
 
 .catalogue__main {
@@ -59,30 +82,52 @@
 .catalogue__toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 20px;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
 }
 
 .catalogue__toolbar select {
-  padding: 8px 16px;
-  border: 1px solid var(--border);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 14px;
+  padding: 10px 36px 10px 14px;
+  border: 1px solid #e0e0e0;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #1a1a1a;
   cursor: pointer;
+  appearance: none;
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+
+.catalogue__toolbar select:hover {
+  border-color: #c9a84c;
+}
+
+.catalogue__toolbar select:focus {
+  outline: none;
+  border-color: #c9a84c;
 }
 
 .catalogue__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
+  gap: 24px;
 }
 
 .catalogue__empty {
   text-align: center;
-  padding: 60px 20px;
-  color: var(--text-muted);
+  padding: 80px 20px;
+  color: #888;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
 }
 
+.catalogue__empty p {
+  margin: 0;
+}
+
+/* Responsive */
 @media (max-width: 1024px) {
   .catalogue__layout {
     flex-direction: column;
@@ -90,26 +135,50 @@
 
   .catalogue__sidebar {
     width: 100%;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 20px;
-    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 24px;
+    margin-bottom: 24px;
   }
 
   .catalogue__filter-group {
+    position: static;
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 16px;
   }
 
   .catalogue__filter-group h3 {
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+  }
+
+  .catalogue__filter-option {
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
   }
 }
 
 @media (max-width: 768px) {
+  .catalogue {
+    padding: 24px 16px;
+  }
+
+  .catalogue__header {
+    margin-bottom: 24px;
+  }
+
   .catalogue__grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+    gap: 16px;
+  }
+
+  .catalogue__toolbar {
+    justify-content: space-between;
+  }
+
+  .catalogue__toolbar select {
+    padding: 8px 32px 8px 12px;
+    font-size: 12px;
   }
 }

@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Heart, ShoppingBag, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { products } from '../data/products';
+import { useCart } from '../context/CartContext';
 import './Product.css';
 
 export default function Product() {
   const { id } = useParams();
   const product = products.find((p) => p.id === parseInt(id));
+  const { addToCart } = useCart();
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState({
@@ -36,12 +38,13 @@ export default function Product() {
   };
 
   const handleAddToCart = () => {
+    addToCart(product, quantity, selectedVariants);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
+    addToCart(product, quantity, selectedVariants);
     setTimeout(() => {
       window.location.href = '/cart';
     }, 500);
@@ -60,8 +63,8 @@ export default function Product() {
       <Star
         key={i}
         size={14}
-        fill={i < Math.floor(rating) ? '#C9A84C' : 'none'}
-        stroke="#C9A84C"
+        fill={i < Math.floor(rating) ? '#c9a84c' : 'none'}
+        stroke="#c9a84c"
         strokeWidth={1.5}
       />
     ));
@@ -100,18 +103,19 @@ export default function Product() {
 
         {/* Product Info */}
         <div className="product-page__info">
+          <span className="product-page__brand">Swarajya Imperial</span>
           <h1 className="product-page__title">{product.name}</h1>
 
           <div className="product-page__rating">
             {renderStars(product.rating)}
-            <span className="product-page__rating-count">({product.reviewCount} reviews)</span>
+            <span className="product-page__rating-count">{product.rating} | {product.reviewCount} reviews</span>
           </div>
 
           <div className="product-page__pricing">
-            <span className="product-page__price">₹{product.price.toLocaleString()}</span>
+            <span className="product-page__price">₹{product.price.toLocaleString('en-IN')}</span>
             {product.originalPrice && (
               <>
-                <span className="product-page__original-price">₹{product.originalPrice.toLocaleString()}</span>
+                <span className="product-page__original-price">₹{product.originalPrice.toLocaleString('en-IN')}</span>
                 <span className="product-page__discount">{discount}% OFF</span>
               </>
             )}
@@ -177,7 +181,7 @@ export default function Product() {
           <div className="product-page__quantity">
             <label>Quantity:</label>
             <div className="product-page__quantity-controls">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
               <span>{quantity}</span>
               <button onClick={() => setQuantity(quantity + 1)}>+</button>
             </div>
@@ -186,7 +190,7 @@ export default function Product() {
           {/* Actions */}
           <div className="product-page__actions">
             <button className="product-page__add-cart" onClick={handleAddToCart}>
-              <ShoppingBag size={18} />
+              <ShoppingBag size={16} />
               {addedToCart ? 'Added!' : 'Add to Cart'}
             </button>
             <button className="product-page__buy-now" onClick={handleBuyNow}>
@@ -195,7 +199,7 @@ export default function Product() {
           </div>
 
           <button className="product-page__wishlist">
-            <Heart size={18} />
+            <Heart size={16} />
             Add to Wishlist
           </button>
 
@@ -203,7 +207,7 @@ export default function Product() {
           <div className="product-page__benefits">
             <div className="product-page__benefit">
               <Truck size={16} />
-              <span>Free Shipping on orders ₹499+</span>
+              <span>Free Delivery on orders ₹499+</span>
             </div>
             <div className="product-page__benefit">
               <Shield size={16} />
@@ -211,7 +215,7 @@ export default function Product() {
             </div>
             <div className="product-page__benefit">
               <RotateCcw size={16} />
-              <span>Easy Returns</span>
+              <span>7-Day Easy Returns</span>
             </div>
           </div>
 

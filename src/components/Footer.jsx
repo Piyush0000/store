@@ -1,149 +1,117 @@
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import './Footer.css';
 
-const InstagramIcon = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 18} height={props.size || 18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-  </svg>
-);
+const quickLinks = [
+  { label: 'About Us', path: '/about' },
+  { label: 'Privacy Policy', path: '/privacy-policy' },
+  { label: 'Return Policy', path: '/refund-policy' },
+  { label: 'Shipping Policy', path: '/shipping-policy' },
+  { label: 'Terms and condition', path: '/terms-of-service' },
+];
 
-const collections = [
-  { label: 'BEST SELLER', path: '/catalogue?category=best-seller' },
-  { label: 'JEWELLERY SETS', path: '/catalogue?category=jewellery-sets' },
-  { label: 'NECKLACE', path: '/catalogue?category=necklace' },
-  { label: 'IN THE SPOTLIGHT', path: '/catalogue?category=spotlight' },
-  { label: 'EARRINGS', path: '/catalogue?category=earrings' },
+const paymentIcons = [
+  { name: 'PhonePe', src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/PhonePe_Logo.png/120px-PhonePe_Logo.png' },
+  { name: 'Google Pay', src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Google_Pay_Logo.svg/120px-Google_Pay_Logo.svg.png' },
+  { name: 'Paytm', src: 'https://upload.wikimedia.org/wikipedia/commons/4/42/Paytm_logo.png' },
+  { name: 'UPI', src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/UPI-Logo-vector.svg/120px-UPI-Logo-vector.svg.png' },
+  { name: 'RuPay', src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/RuPay.svg/120px-RuPay.svg.png' },
+  { name: 'Mastercard', src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/120px-Mastercard-logo.svg.png' },
+  { name: 'Visa', src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/120px-Visa_Inc._logo.svg.png' },
 ];
 
 export default function Footer() {
-  const handleSubscribe = (e) => {
-    e.preventDefault();
-    const email = document.getElementById('newsletter-email').value;
-    if (email) {
-      alert('Thank you for subscribing!');
-      document.getElementById('newsletter-email').value = '';
-    }
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
   return (
-    <footer className="footer" id="site-footer">
-      {/* Top: Newsletter */}
-      <div className="footer__newsletter">
-        <div className="container footer__newsletter-inner">
-          <div className="footer__newsletter-text">
-            <h3>Stay Royal, Stay Updated</h3>
-            <p>Subscribe for exclusive offers and new arrivals</p>
-          </div>
-          <form className="footer__newsletter-form" onSubmit={handleSubscribe}>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="footer__newsletter-input"
-              id="newsletter-email"
-              required
+    <footer className="footer">
+      {/* Row 1: Two Column Layout */}
+      <div className="footer__row1">
+        {/* Left Column - Brand */}
+        <div className="footer__brand">
+          <div className="footer__logo-wrap">
+            <img
+              src="https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg"
+              alt="Swarajya Imperial"
+              className="footer__logo"
             />
-            <button type="submit" className="footer__newsletter-btn" id="newsletter-subscribe">
-              Subscribe
-            </button>
-          </form>
+          </div>
+          <h3 className="footer__brand-name">Swarajya Imperial</h3>
+          <p className="footer__brand-desc">
+            At Swarajya Imperial, We Believe Jewellery Is More than Just an Accessory — It's an Expression of Identity, Emotion, and Timeless Beauty. Founded on A Passion for Craftsmanship.
+          </p>
+          <div className="footer__social">
+            <a
+              href="https://www.facebook.com/profile.php?id=61579162477335"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer__social-link"
+              aria-label="Facebook"
+            >
+              <img
+                src="https://cdn.zeplin.io/625010cc1f439d65f2e6923a/assets/0fe8623a-92b1-4c60-b8e6-4908a033002f-3x.png"
+                alt="Facebook"
+              />
+            </a>
+            <a
+              href="https://www.instagram.com/swarajyaimperial/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer__social-link"
+              aria-label="Instagram"
+            >
+              <img
+                src="https://cdn.zeplin.io/625010cc1f439d65f2e6923a/assets/adcd9537-a389-4b15-a623-12d504c27047-3x.png"
+                alt="Instagram"
+              />
+            </a>
+          </div>
+        </div>
+
+        {/* Right Column - Contact */}
+        <div className="footer__contact">
+          <h4 className="footer__contact-heading">Contact Us</h4>
+          <ul className="footer__contact-list">
+            <li>Call: +91 - 9930569627</li>
+            <li>WhatsApp: +91 - 9930569627</li>
+            <li>Customer Support Time: 24/7</li>
+            <li>Email: <a href="mailto:mauryaglobal08@gmail.com">mauryaglobal08@gmail.com</a></li>
+            <li>Address: jayprakash nagar kharodi marve road malad west mumbai, Maharashtra, Mumbai Suburban, 400095</li>
+          </ul>
         </div>
       </div>
 
-      {/* Main Footer */}
-      <div className="footer__main">
-        <div className="container footer__grid">
-          {/* Brand Column */}
-          <div className="footer__col footer__col--brand">
-            <Link to="/" className="footer__logo">
-              <span className="footer__logo-text">SWARAJYA</span>
-              <span className="footer__logo-sub">IMPERIAL</span>
+      <div className="footer__divider" />
+
+      {/* Row 2: Quick Links */}
+      <div className="footer__row2">
+        <div className="footer__quick-links">
+          {quickLinks.map((link) => (
+            <Link key={link.path} to={link.path} className="footer__quick-link">
+              {link.label}
             </Link>
-            <p className="footer__brand-desc">
-              At Swarajya Imperial, We Believe Jewellery Is More than Just an Accessory — It's an Expression of Identity, Emotion, and Timeless Beauty. Founded on A Passion for Craftsmanship.
-            </p>
-            <div className="footer__social">
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="Instagram" id="footer-instagram">
-                <InstagramIcon size={18} />
-              </a>
-            </div>
-            <div className="footer__payment">
-              <span className="footer__payment-label">We Accept</span>
-              <div className="footer__payment-icons">
-                <span className="footer__payment-icon">VISA</span>
-                <span className="footer__payment-icon">MC</span>
-                <span className="footer__payment-icon">UPI</span>
-                <span className="footer__payment-icon">PAYTM</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Column */}
-          <div className="footer__col">
-            <h4 className="footer__col-title">Contact Us</h4>
-            <div className="footer__contact-items">
-              <a href="tel:+919930569627" className="footer__contact-item" id="footer-phone">
-                <Phone size={14} />
-                <span>Call: +91 - 9930569627</span>
-              </a>
-              <a href="https://wa.me/919930569627" target="_blank" rel="noopener noreferrer" className="footer__contact-item" id="footer-whatsapp">
-                <Phone size={14} />
-                <span>WhatsApp: +91 - 9930569627</span>
-              </a>
-              <a href="mailto:mauryaglobal08@gmail.com" className="footer__contact-item" id="footer-email">
-                <Mail size={14} />
-                <span>mauryaglobal08@gmail.com</span>
-              </a>
-              <div className="footer__contact-item" id="footer-address">
-                <MapPin size={14} />
-                <span>Jayprakash Nagar, Kharodi Marve Road, Malad West, Mumbai, 400095</span>
-              </div>
-              <div className="footer__contact-item" id="footer-hours">
-                <Clock size={14} />
-                <span>Customer Support: 24/7</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Policies Column */}
-          <div className="footer__col">
-            <h4 className="footer__col-title">Policies</h4>
-            <div className="footer__links">
-              <Link to="/about" className="footer__link" id="footer-about">About Us</Link>
-              <Link to="/privacy-policy" className="footer__link" id="footer-privacy">Privacy Policy</Link>
-              <Link to="/refund-policy" className="footer__link" id="footer-refund">Refund Policy</Link>
-              <Link to="/shipping-policy" className="footer__link" id="footer-shipping">Shipping Policy</Link>
-              <Link to="/terms-of-service" className="footer__link" id="footer-terms">Terms of Service</Link>
-            </div>
-          </div>
-
-          {/* Collections Column */}
-          <div className="footer__col">
-            <h4 className="footer__col-title">Collections</h4>
-            <div className="footer__links">
-              {collections.map((c) => (
-                <Link key={c.path} to={c.path} className="footer__link">
-                  {c.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="footer__bottom">
-        <div className="container footer__bottom-inner">
-          <p>© {new Date().getFullYear()} Swarajya Imperial. All rights reserved.</p>
-          <div className="footer__bottom-links">
-            <Link to="/privacy-policy">Privacy</Link>
-            <span>|</span>
-            <Link to="/terms-of-service">Terms</Link>
-            <span>|</span>
-            <Link to="/refund-policy">Refund</Link>
-          </div>
+      <div className="footer__divider" />
+
+      {/* Row 4: Payment Icons + Go to Top */}
+      <div className="footer__row4">
+        <div className="footer__payment-icons">
+          {paymentIcons.map((icon) => (
+            <img
+              key={icon.name}
+              src={icon.src}
+              alt={icon.name}
+              className="footer__payment-icon"
+            />
+          ))}
         </div>
+        <button className="footer__go-top" onClick={scrollToTop}>
+          ↑ GO TO TOP
+        </button>
       </div>
     </footer>
   );

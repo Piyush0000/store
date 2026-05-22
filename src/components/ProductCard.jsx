@@ -1,15 +1,23 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Star } from 'lucide-react';
+import { Heart, Star } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 import './ProductCard.css';
 
 export default function ProductCard({ product }) {
   const [liked, setLiked] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const { addToCart } = useCart();
 
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product);
+  };
 
   return (
     <div className="product-card" id={`product-card-${product.id}`}>
@@ -25,12 +33,6 @@ export default function ProductCard({ product }) {
         {discount > 0 && (
           <span className="product-card__badge">{discount}% OFF</span>
         )}
-        <div className="product-card__overlay">
-          <button className="product-card__quick-btn" aria-label="Quick add to cart">
-            <ShoppingBag size={16} />
-            <span>Quick Add</span>
-          </button>
-        </div>
       </Link>
 
       <button
@@ -38,7 +40,7 @@ export default function ProductCard({ product }) {
         onClick={() => setLiked(!liked)}
         aria-label="Add to wishlist"
       >
-        <Heart size={16} fill={liked ? '#C0392B' : 'none'} stroke={liked ? '#C0392B' : 'currentColor'} />
+        <Heart size={16} fill={liked ? '#c9a84c' : 'none'} stroke={liked ? '#c9a84c' : 'currentColor'} />
       </button>
 
       <div className="product-card__info">
@@ -52,8 +54,8 @@ export default function ProductCard({ product }) {
               <Star
                 key={i}
                 size={11}
-                fill={i < Math.floor(product.rating) ? '#C9A84C' : 'none'}
-                stroke="#C9A84C"
+                fill={i < Math.floor(product.rating) ? '#c9a84c' : 'none'}
+                stroke="#c9a84c"
                 strokeWidth={1.5}
               />
             ))}
@@ -62,11 +64,15 @@ export default function ProductCard({ product }) {
         )}
 
         <div className="product-card__prices">
-          <span className="product-card__price">₹{product.price.toLocaleString()}</span>
+          <span className="product-card__price">₹{product.price.toLocaleString('en-IN')}</span>
           {product.originalPrice && (
-            <span className="product-card__original-price">₹{product.originalPrice.toLocaleString()}</span>
+            <span className="product-card__original-price">₹{product.originalPrice.toLocaleString('en-IN')}</span>
           )}
         </div>
+
+        <button className="product-card__add-btn" onClick={handleAddToCart}>
+          ADD TO CART
+        </button>
       </div>
     </div>
   );

@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Star, Heart, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { heroSlides, collections } from '../data/products';
 import './Home.css';
 
+const brandCategories = [
+  { name: 'JEWELLERY SETS', path: '/JEWELLERY-SETS/collection/9KBdf2xY', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' },
+  { name: 'NECKLACE', path: '/NECKLACE/collection/e2jUNDe1', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80' },
+  { name: 'EARRINGS', path: '/EARRINGS/collection/uzxgRjeA', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&q=80' },
+];
+
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [heroImages, setHeroImages] = useState(heroSlides);
-  const [collectionImages, setCollectionImages] = useState(collections);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [heroImages] = useState(heroSlides);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroImages.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroImages.length) % heroImages.length);
@@ -18,43 +22,8 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
-  const handleHeroUpload = (e, index) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setHeroImages((prev) => {
-        const updated = [...prev];
-        updated[index] = { ...updated[index], image: url };
-        return updated;
-      });
-    }
-  };
-
-  const handleHeroDelete = (index) => {
-    setHeroImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleCollectionUpload = (e, id) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setCollectionImages((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, image: url } : c))
-      );
-    }
-  };
-
-  const handleCollectionDelete = (id) => {
-    setCollectionImages((prev) => prev.filter((c) => c.id !== id));
-  };
-
   return (
     <div className="home">
-      {/* Admin Toggle */}
-      <button className="admin-toggle" onClick={() => setIsAdmin(!isAdmin)}>
-        {isAdmin ? 'Exit Admin' : 'Admin Mode'}
-      </button>
-
       {/* Hero Carousel */}
       <section className="hero-carousel">
         <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
@@ -64,21 +33,10 @@ export default function Home() {
               <div className="hero-carousel__content">
                 <h1>{slide.title}</h1>
                 <p>{slide.subtitle}</p>
-                <Link to={slide.link} className="hero-carousel__cta">
+                <Link to="/JEWELLERY-SETS/collection/9KBdf2xY" className="hero-carousel__cta">
                   {slide.cta}
                 </Link>
               </div>
-              {isAdmin && (
-                <div className="hero-carousel__admin">
-                  <label className="hero-carousel__upload">
-                    Upload Image
-                    <input type="file" accept="image/*" onChange={(e) => handleHeroUpload(e, index)} />
-                  </label>
-                  <button className="hero-carousel__delete" onClick={() => handleHeroDelete(index)}>
-                    Delete
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -99,65 +57,66 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Shop by Category - Circles */}
-      <section className="category-circles">
-        <h2 className="section-title">Shop by Category</h2>
-        <div className="category-circles__grid">
-          {collectionImages.map((collection) => (
-            <div key={collection.id} className="category-circle">
-              <Link to={`/catalogue?category=${collection.id}`}>
-                <div className="category-circle__image">
-                  <img src={collection.image} alt={collection.name} />
-                </div>
-                <span className="category-circle__title">{collection.name}</span>
-              </Link>
-              {isAdmin && (
-                <div className="category-circle__admin">
-                  <label className="category-circle__upload">
-                    Upload
-                    <input type="file" accept="image/*" onChange={(e) => handleCollectionUpload(e, collection.id)} />
-                  </label>
-                  <button onClick={() => handleCollectionDelete(collection.id)}>Delete</button>
-                </div>
-              )}
-            </div>
+      {/* Brand Category Section */}
+      <section className="brand-category">
+        <h2 className="section-title">BRAND CATEGORY</h2>
+        <div className="brand-category__grid">
+          {brandCategories.map((cat) => (
+            <Link key={cat.name} to={cat.path} className="brand-category__item">
+              <div className="brand-category__image">
+                <img src={cat.image} alt={cat.name} />
+              </div>
+              <span className="brand-category__name">{cat.name}</span>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* Featured Banner */}
-      <section className="featured-banner">
-        <div className="featured-banner__content">
-          <h2>Bridal Collection</h2>
-          <p>Timeless elegance for your special day</p>
-          <Link to="/catalogue?category=jewellery-sets" className="featured-banner__cta">
-            Shop Now
-          </Link>
-        </div>
-      </section>
-
-      {/* Best Sellers */}
-      <section className="best-sellers">
-        <h2 className="section-title">Best Sellers</h2>
-        <div className="best-sellers__grid">
-          {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="best-sellers__item">
-              <img
-                src={`https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80`}
-                alt={`Best Seller ${item}`}
-              />
-            </div>
+      {/* Shop By Category Section */}
+      <section className="shop-category">
+        <h2 className="section-title">SHOP BY CATEGORY</h2>
+        <div className="shop-category__grid">
+          {brandCategories.map((cat) => (
+            <Link key={cat.name} to={cat.path} className="shop-category__card">
+              <img src={cat.image} alt={cat.name} className="shop-category__image" />
+              <div className="shop-category__overlay">
+                <span className="shop-category__name">{cat.name}</span>
+              </div>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* About Section */}
-      <section className="about-section">
-        <h2>About Swarajya Imperial</h2>
-        <p>
-          At Swarajya Imperial, we believe jewellery is more than just an accessory — it's an expression
-          of identity, emotion, and timeless beauty. Founded on a passion for craftsmanship.
-        </p>
+      {/* Brand Video Section */}
+      <section className="brand-video">
+        <div className="brand-video__wrapper">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="brand-video__player"
+          >
+            <source
+              src="https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:q-50/686907a872a04e21d2c32db3/cat_vid/1755514917928_FM3UBAP14Z_2025-08-18_1.mp4"
+              type="video/mp4"
+            />
+          </video>
+          <div className="brand-video__overlay" />
+        </div>
+      </section>
+
+      {/* Featured Collection */}
+      <section className="featured-collection">
+        <h2 className="section-title">BEST SELLER</h2>
+        <div className="featured-collection__grid">
+          {collections.slice(0, 4).map((col) => (
+            <Link key={col.id} to={`/catalogue?category=${col.id}`} className="featured-collection__item">
+              <img src={col.image} alt={col.name} />
+              <span>{col.name}</span>
+            </Link>
+          ))}
+        </div>
       </section>
     </div>
   );
