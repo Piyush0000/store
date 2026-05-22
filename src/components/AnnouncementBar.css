@@ -1,0 +1,72 @@
+.announcement-bar {
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+  color: #FFFFFF;
+  height: 36px;
+  overflow: hidden;
+  position: relative;
+}
+
+.announcement-bar::before,
+.announcement-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.announcement-bar::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--gold) 0%, transparent 100%);
+}
+
+.announcement-bar::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--gold) 0%, transparent 100%);
+}
+
+.announcement-marquee {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.announcement-track {
+  display: flex;
+  animation: marquee 40s linear infinite;
+  white-space: nowrap;
+}
+
+.announcement-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 40px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.announcement-diamond {
+  font-size: 8px;
+  opacity: 0.7;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-25%);
+  }
+}
+
+@media (max-width: 768px) {
+  .announcement-item {
+    font-size: 10px;
+    padding: 0 24px;
+  }
+}
