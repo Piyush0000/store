@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X, Heart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { useStore } from '../context/StoreContext';
+import { useCustomization } from '../context/StoreContext';
 import './Header.css';
 
 export default function Header() {
@@ -12,10 +12,11 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const { cartCount, setIsCartOpen } = useCart();
-  const { storeData } = useStore();
+  const c = useCustomization();
 
-  const navLinks = storeData?.store?.navLinks?.length > 0
-    ? storeData.store.navLinks
+  // API: customization.navLinks — each has .label and .href (not .path)
+  const navLinks = c?.navLinks?.length > 0
+    ? c.navLinks.map(link => ({ label: link.label, path: link.href }))
     : [
         { label: 'HOME', path: '/' },
         { label: 'JEWELLERY SETS', path: '/catalogue?category=jewellery-sets' },
@@ -24,7 +25,13 @@ export default function Header() {
         { label: 'BEST SELLER', path: '/catalogue?category=best-seller' },
       ];
 
-  const logoUrl = storeData?.store?.logo || storeData?.customization?.logo || 'https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg';
+  // API: customization.headerConfig.logoUrl, fallback to customization.logo
+  const logoUrl = c?.headerConfig?.logoUrl
+    || c?.logo
+    || 'https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg';
+
+  // API: customization.headerConfig.storeName
+  const storeName = c?.headerConfig?.storeName || 'SWARAJYA IMPERIAL';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -33,9 +40,12 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+  const timer = setTimeout(() => {
     setMobileMenuOpen(false);
     setSearchOpen(false);
-  }, [location]);
+  }, 0);
+  return () => clearTimeout(timer);
+}, [location]);
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
@@ -45,7 +55,6 @@ export default function Header() {
   return (
     <>
       <header className={`header ${scrolled ? 'header--scrolled' : ''}`}>
-        {/* Row 2: Main Header with Search, Logo, Actions */}
         <div className="header__main">
           <div className="header__left">
             <div className={`header__search ${searchOpen ? 'header__search--open' : ''}`}>
@@ -82,7 +91,7 @@ export default function Header() {
           <Link to="/" className="header__logo">
             <img
               src={logoUrl}
-              alt="Swarajya Imperial"
+              alt={storeName}
               className="header__logo-img"
             />
           </Link>
@@ -105,7 +114,6 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Row 3: Navigation Links */}
         <nav className="header__nav">
           <div className="header__nav-inner">
             {navLinks.map((link) => (
@@ -126,7 +134,7 @@ export default function Header() {
         <div className="header__mobile-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div className="header__mobile-menu" onClick={(e) => e.stopPropagation()}>
             <div className="header__mobile-header">
-              <span className="header__mobile-logo">SWARAJYA IMPERIAL</span>
+              <span className="header__mobile-logo">{storeName}</span>
               <button onClick={() => setMobileMenuOpen(false)} aria-label="Close">
                 <X size={24} />
               </button>

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useCustomization } from '../context/StoreContext';
 import './Footer.css';
 
 const quickLinks = [
@@ -19,72 +20,55 @@ const paymentIcons = [
   { name: 'Visa', src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/120px-Visa_Inc._logo.svg.png' },
 ];
 
+const FALLBACK_LOGO = 'https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg';
+
 export default function Footer() {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const c = useCustomization();
+
+  const storeName = c?.headerConfig?.storeName || 'Swarajya Imperial';
+  const logoUrl = c?.logo || c?.headerConfig?.logoUrl || FALLBACK_LOGO;
+  const brandDesc = c?.aboutSection?.content || `At Swarajya Imperial, We Believe Jewellery Is More than Just an Accessory. Founded on A Passion for Craftsmanship.`;
+  const phone = c?.contactInfo?.phone || '+91 - 9930569627';
+  const email = c?.contactInfo?.email || 'mauryaglobal08@gmail.com';
+  const address = c?.contactInfo?.address || 'jayprakash nagar kharodi marve road malad west mumbai, Maharashtra, 400095';
+  const facebookUrl = c?.socialLinks?.facebook || 'https://www.facebook.com/profile.php?id=61579162477335';
+  const instagramUrl = c?.socialLinks?.instagram || 'https://www.instagram.com/swarajyaimperial/';
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
     <footer className="footer">
-      {/* Row 1: Two Column Layout */}
       <div className="footer__row1">
-        {/* Left Column - Brand */}
         <div className="footer__brand">
           <div className="footer__logo-wrap">
-            <img
-              src="https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg"
-              alt="Swarajya Imperial"
-              className="footer__logo"
-            />
+            <img src={logoUrl} alt={storeName} className="footer__logo" />
           </div>
-          <h3 className="footer__brand-name">Swarajya Imperial</h3>
-          <p className="footer__brand-desc">
-            At Swarajya Imperial, We Believe Jewellery Is More than Just an Accessory — It's an Expression of Identity, Emotion, and Timeless Beauty. Founded on A Passion for Craftsmanship.
-          </p>
+          <h3 className="footer__brand-name">{storeName}</h3>
+          <p className="footer__brand-desc">{brandDesc}</p>
           <div className="footer__social">
-            <a
-              href="https://www.facebook.com/profile.php?id=61579162477335"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer__social-link"
-              aria-label="Facebook"
-            >
-              <img
-                src="https://cdn.zeplin.io/625010cc1f439d65f2e6923a/assets/0fe8623a-92b1-4c60-b8e6-4908a033002f-3x.png"
-                alt="Facebook"
-              />
+            <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="Facebook">
+              <img src="https://cdn.zeplin.io/625010cc1f439d65f2e6923a/assets/0fe8623a-92b1-4c60-b8e6-4908a033002f-3x.png" alt="Facebook" />
             </a>
-            <a
-              href="https://www.instagram.com/swarajyaimperial/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer__social-link"
-              aria-label="Instagram"
-            >
-              <img
-                src="https://cdn.zeplin.io/625010cc1f439d65f2e6923a/assets/adcd9537-a389-4b15-a623-12d504c27047-3x.png"
-                alt="Instagram"
-              />
+            <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="Instagram">
+              <img src="https://cdn.zeplin.io/625010cc1f439d65f2e6923a/assets/adcd9537-a389-4b15-a623-12d504c27047-3x.png" alt="Instagram" />
             </a>
           </div>
         </div>
 
-        {/* Right Column - Contact */}
         <div className="footer__contact">
           <h4 className="footer__contact-heading">Contact Us</h4>
           <ul className="footer__contact-list">
-            <li>Call: +91 - 9930569627</li>
-            <li>WhatsApp: +91 - 9930569627</li>
+            <li>Call: {phone}</li>
+            <li>WhatsApp: {phone}</li>
             <li>Customer Support Time: 24/7</li>
-            <li>Email: <a href="mailto:mauryaglobal08@gmail.com">mauryaglobal08@gmail.com</a></li>
-            <li>Address: jayprakash nagar kharodi marve road malad west mumbai, Maharashtra, Mumbai Suburban, 400095</li>
+            <li>Email: <a href={`mailto:${email}`}>{email}</a></li>
+            <li>Address: {address}</li>
           </ul>
         </div>
       </div>
 
       <div className="footer__divider" />
 
-      {/* Row 2: Quick Links */}
       <div className="footer__row2">
         <div className="footer__quick-links">
           {quickLinks.map((link) => (
@@ -97,16 +81,10 @@ export default function Footer() {
 
       <div className="footer__divider" />
 
-      {/* Row 4: Payment Icons + Go to Top */}
       <div className="footer__row4">
         <div className="footer__payment-icons">
           {paymentIcons.map((icon) => (
-            <img
-              key={icon.name}
-              src={icon.src}
-              alt={icon.name}
-              className="footer__payment-icon"
-            />
+            <img key={icon.name} src={icon.src} alt={icon.name} className="footer__payment-icon" />
           ))}
         </div>
         <button className="footer__go-top" onClick={scrollToTop}>

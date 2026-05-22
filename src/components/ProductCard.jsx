@@ -9,8 +9,17 @@ export default function ProductCard({ product }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const { addToCart } = useCart();
 
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  // API: product.images[] not product.image
+  const image = product.images?.[0] || '';
+
+  // API: product.compareAtPrice not product.originalPrice
+  const originalPrice = product.compareAtPrice || product.originalPrice || null;
+
+  // API: product.averageRating not product.rating
+  const rating = product.averageRating || product.rating || 0;
+
+  const discount = originalPrice
+    ? Math.round(((originalPrice - product.price) / originalPrice) * 100)
     : 0;
 
   const handleAddToCart = (e) => {
@@ -24,7 +33,7 @@ export default function ProductCard({ product }) {
       <Link to={`/product/${product.id}`} className="product-card__image-wrap">
         {!imgLoaded && <div className="product-card__skeleton" />}
         <img
-          src={product.image}
+          src={image}
           alt={product.name}
           className={`product-card__image ${imgLoaded ? 'loaded' : ''}`}
           onLoad={() => setImgLoaded(true)}
@@ -48,13 +57,13 @@ export default function ProductCard({ product }) {
           {product.name}
         </Link>
 
-        {product.rating && (
+        {rating > 0 && (
           <div className="product-card__rating">
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
                 size={11}
-                fill={i < Math.floor(product.rating) ? '#c9a84c' : 'none'}
+                fill={i < Math.floor(rating) ? '#c9a84c' : 'none'}
                 stroke="#c9a84c"
                 strokeWidth={1.5}
               />
@@ -65,8 +74,8 @@ export default function ProductCard({ product }) {
 
         <div className="product-card__prices">
           <span className="product-card__price">₹{product.price.toLocaleString('en-IN')}</span>
-          {product.originalPrice && (
-            <span className="product-card__original-price">₹{product.originalPrice.toLocaleString('en-IN')}</span>
+          {originalPrice && (
+            <span className="product-card__original-price">₹{originalPrice.toLocaleString('en-IN')}</span>
           )}
         </div>
 

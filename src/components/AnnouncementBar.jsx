@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useStore } from '../context/StoreContext';
+import { fetchAnnouncements } from '../lib/api';
 import './AnnouncementBar.css';
 
 function pad(n) {
@@ -7,45 +7,33 @@ function pad(n) {
 }
 
 export default function AnnouncementBar() {
-  const { storeData } = useStore();
+  const [announcements, setAnnouncements] = useState([]);
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 3, seconds: 0 });
-  const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
 
+  // Fetch fresh announcements from dedicated endpoint (not cached)
+  useEffect(() => {
+    fetchAnnouncements().then(setAnnouncements).catch(() => {});
+  }, []);
+
+  // Countdown timer
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         let { hours, minutes, seconds } = prev;
-        if (seconds > 0) {
-          seconds--;
-        } else if (minutes > 0) {
-          minutes--;
-          seconds = 59;
-        } else if (hours > 0) {
-          hours--;
-          minutes = 59;
-          seconds = 59;
-        } else {
-          hours = 0;
-          minutes = 3;
-          seconds = 0;
-        }
+        if (seconds > 0) seconds--;
+        else if (minutes > 0) { minutes--; seconds = 59; }
+        else if (hours > 0) { hours--; minutes = 59; seconds = 59; }
+        else { hours = 0; minutes = 3; seconds = 0; }
         return { hours, minutes, seconds };
       });
     }, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (storeData?.announcements?.length > 0) {
-      const cycleInterval = setInterval(() => {
-        setCurrentAnnouncementIndex((prev) => (prev + 1) % storeData.announcements.length);
-      }, 5000);
-      return () => clearInterval(cycleInterval);
-    }
-  }, [storeData?.announcements?.length]);
-
-  const apiMessages = storeData?.announcements?.length > 0
-    ? storeData.announcements.map(a => a.message || a.text || '')
+  // Build messages from API — each announcement has title + message
+  // Fall back to static messages only if API returns nothing
+  const apiMessages = announcements.length > 0
+    ? announcements.map(a => [a.title, a.message].filter(Boolean).join(' — '))
     : [];
 
   const staticMessages = [
@@ -58,10 +46,13 @@ export default function AnnouncementBar() {
 
   const messages = apiMessages.length > 0 ? apiMessages : staticMessages;
 
-  const currentMessage = messages[currentAnnouncementIndex] || messages[0];
+  // Use backgroundColor from first announcement if available
+  const barStyle = announcements[0]?.backgroundColor
+    ? { backgroundColor: announcements[0].backgroundColor, color: announcements[0].textColor || '#fff' }
+    : {};
 
   return (
-    <div className="announcement-bar">
+    <div className="announcement-bar" style={barStyle}>
       <div className="announcement-marquee">
         <div className="announcement-track">
           {[...messages, ...messages, ...messages, ...messages].map((msg, i) => (
