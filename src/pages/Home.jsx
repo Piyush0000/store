@@ -99,19 +99,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Collection Grid */}
-      <section className="collection-grid">
+      {/* Shop by Category - Circles */}
+      <section className="category-circles">
         <h2 className="section-title">Shop by Category</h2>
-        <div className="collection-grid__items">
+        <div className="category-circles__grid">
           {collectionImages.map((collection) => (
-            <div key={collection.id} className="collection-card">
+            <div key={collection.id} className="category-circle">
               <Link to={`/catalogue?category=${collection.id}`}>
-                <img src={collection.image} alt={collection.name} />
-                <span className="collection-card__title">{collection.name}</span>
+                <div className="category-circle__image">
+                  <img src={collection.image} alt={collection.name} />
+                </div>
+                <span className="category-circle__title">{collection.name}</span>
               </Link>
               {isAdmin && (
-                <div className="collection-card__admin">
-                  <label className="collection-card__upload">
+                <div className="category-circle__admin">
+                  <label className="category-circle__upload">
                     Upload
                     <input type="file" accept="image/*" onChange={(e) => handleCollectionUpload(e, collection.id)} />
                   </label>

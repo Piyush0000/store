@@ -15,13 +15,15 @@ import ShippingPolicy from './pages/ShippingPolicy';
 import About from './pages/About';
 
 export default function App() {
+  const isProduction = import.meta.env.PROD;
   return (
-    <BrowserRouter basename="/store">
+    <BrowserRouter basename={isProduction ? '/store' : '/'}>
       <AnnouncementBar />
       <Header />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/index.html" element={<Home />} />
           <Route path="/catalogue" element={<Catalogue />} />
           <Route path="/product/:id" element={<Product />} />
           <Route path="/cart" element={<Cart />} />

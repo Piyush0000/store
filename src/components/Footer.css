@@ -7,6 +7,19 @@
 .footer__newsletter {
   background: linear-gradient(135deg, var(--color-gold-bg) 0%, #F5EDD6 100%);
   padding: var(--space-3xl) 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer__newsletter::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(183, 148, 60, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
 }
 
 .footer__newsletter-inner {
@@ -74,6 +87,17 @@
 .footer__main {
   background: var(--color-bg-footer);
   padding: var(--space-3xl) 0;
+  position: relative;
+}
+
+.footer__main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
 }
 
 .footer__grid {
@@ -234,6 +258,41 @@
 
 .footer__bottom-links a:hover {
   color: var(--color-gold-light);
+}
+
+/* Payment Methods */
+.footer__payment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer__payment-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.footer__payment-icons {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.footer__payment-icon {
+  width: 40px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--color-text-light);
+  font-weight: 600;
 }
 
 /* ── Responsive ── */

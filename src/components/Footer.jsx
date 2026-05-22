@@ -1,6 +1,14 @@
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Clock, Globe } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import './Footer.css';
+
+const InstagramIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 18} height={props.size || 18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+  </svg>
+);
 
 const collections = [
   { label: 'BEST SELLER', path: '/catalogue?category=best-seller' },
@@ -11,6 +19,14 @@ const collections = [
 ];
 
 export default function Footer() {
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    const email = document.getElementById('newsletter-email').value;
+    if (email) {
+      alert('Thank you for subscribing!');
+      document.getElementById('newsletter-email').value = '';
+    }
+  };
   return (
     <footer className="footer" id="site-footer">
       {/* Top: Newsletter */}
@@ -20,17 +36,18 @@ export default function Footer() {
             <h3>Stay Royal, Stay Updated</h3>
             <p>Subscribe for exclusive offers and new arrivals</p>
           </div>
-          <div className="footer__newsletter-form">
+          <form className="footer__newsletter-form" onSubmit={handleSubscribe}>
             <input
               type="email"
               placeholder="Enter your email"
               className="footer__newsletter-input"
               id="newsletter-email"
+              required
             />
-            <button className="footer__newsletter-btn" id="newsletter-subscribe">
+            <button type="submit" className="footer__newsletter-btn" id="newsletter-subscribe">
               Subscribe
             </button>
-          </div>
+          </form>
         </div>
       </div>
 
@@ -47,18 +64,18 @@ export default function Footer() {
               At Swarajya Imperial, We Believe Jewellery Is More than Just an Accessory — It's an Expression of Identity, Emotion, and Timeless Beauty. Founded on A Passion for Craftsmanship.
             </p>
             <div className="footer__social">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="Facebook" id="footer-facebook">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-              </a>
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="Instagram" id="footer-instagram">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5"/></svg>
+                <InstagramIcon size={18} />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="Twitter" id="footer-twitter">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="YouTube" id="footer-youtube">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-              </a>
+            </div>
+            <div className="footer__payment">
+              <span className="footer__payment-label">We Accept</span>
+              <div className="footer__payment-icons">
+                <span className="footer__payment-icon">VISA</span>
+                <span className="footer__payment-icon">MC</span>
+                <span className="footer__payment-icon">UPI</span>
+                <span className="footer__payment-icon">PAYTM</span>
+              </div>
             </div>
           </div>
 
