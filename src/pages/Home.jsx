@@ -27,15 +27,13 @@ export default function Home() {
         },
       ];
 
-  const collections = storeData?.collections?.length > 0
-    ? storeData.collections
-    : [];
+  const collections = storeData?.customization?.productSections || [];
 
   const brandCategories = storeData?.categories?.length > 0
     ? storeData.categories.slice(0, 3).map(cat => ({
-        name: cat.name?.toUpperCase() || cat.title?.toUpperCase() || '',
-        path: `/catalogue?category=${cat.id || cat.slug}`,
-        image: cat.image || cat.imageUrl || '',
+        name: cat.toUpperCase(),
+        path: `/catalogue?category=${cat}`,
+        image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80',
       }))
     : [
         { name: 'JEWELLERY SETS', path: '/catalogue?category=jewellery-sets', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' },
@@ -141,8 +139,8 @@ export default function Home() {
         <div className="featured-collection__grid">
           {collections.slice(0, 4).map((col) => (
             <Link key={col.id} to={`/catalogue?category=${col.id}`} className="featured-collection__item">
-              <img src={col.image || col.imageUrl} alt={col.name || col.title} />
-              <span>{col.name || col.title}</span>
+              <img src={storeData?.customization?.homePageConfig?.images?.[0] || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&q=80'} alt={col.title} />
+              <span>{col.title}</span>
             </Link>
           ))}
         </div>

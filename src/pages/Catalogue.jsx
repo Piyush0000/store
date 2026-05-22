@@ -15,7 +15,7 @@ export default function Catalogue() {
   const apiProducts = storeData?.products || [];
 
   const categories = apiCategories.length > 0
-    ? [{ id: 'all', label: 'All' }, ...apiCategories.map(c => ({ id: c.id || c.slug, label: c.name || c.title }))]
+    ? [{ id: 'all', label: 'All' }, ...apiCategories.map(c => ({ id: c, label: c.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }))]
     : [
         { id: 'all', label: 'All' },
         { id: 'jewellery-sets', label: 'Jewellery Sets' },
