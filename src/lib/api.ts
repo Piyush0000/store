@@ -1,4 +1,4 @@
-import { API_URL } from './config';
+import { getApiUrl } from './config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -123,7 +123,7 @@ export interface StorefrontData {
 
 /** Main call — fetches everything in one request (cached 5 min on server) */
 export async function fetchStorefront(): Promise<StorefrontData> {
-  const res = await fetch(API_URL);
+  const res = await fetch(getApiUrl());
   const data = await res.json();
   if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
   return data;
@@ -131,7 +131,7 @@ export async function fetchStorefront(): Promise<StorefrontData> {
 
 /** Single product with full variants + reviews */
 export async function fetchProduct(id: string): Promise<Product> {
-  const res = await fetch(`${API_URL}/products/${id}`);
+  const res = await fetch(`${getApiUrl()}/products/${id}`);
   const data = await res.json();
   if (!data.success) throw new Error(data.message || `Failed to fetch product ${id}`);
   return data.product;
@@ -139,7 +139,7 @@ export async function fetchProduct(id: string): Promise<Product> {
 
 /** Fresh announcements for sliding carousel (not cached) */
 export async function fetchAnnouncements(): Promise<Announcement[]> {
-  const res = await fetch(`${API_URL}/announcements`);
+  const res = await fetch(`${getApiUrl()}/announcements`);
   const data = await res.json();
   if (!data.success) throw new Error(data.message || 'Failed to fetch announcements');
   return data.announcements || [];
@@ -147,7 +147,7 @@ export async function fetchAnnouncements(): Promise<Announcement[]> {
 
 /** All legal pages */
 export async function fetchLegal(): Promise<LegalPage[]> {
-  const res = await fetch(`${API_URL}/legal`);
+  const res = await fetch(`${getApiUrl()}/legal`);
   const data = await res.json();
   if (!data.success) throw new Error(data.message || 'Failed to fetch legal pages');
   return data.legalPages || [];
@@ -162,7 +162,7 @@ export async function submitReview(review: {
   title: string;
   content: string;
 }): Promise<{ message: string; review: Partial<ProductReview> }> {
-  const res = await fetch(`${API_URL}/reviews`, {
+  const res = await fetch(`${getApiUrl()}/reviews`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(review),
