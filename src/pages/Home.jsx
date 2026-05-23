@@ -1,38 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useCustomization, useCategories, useBestSellers } from '../context/StoreContext';
+import ProductCard from '../components/ProductCard';
 import './Home.css';
 
 export default function Home() {
-  const { storeData } = useStore();
+  const c = useCustomization();
+  const categories = useCategories();
+  const bestSellers = useBestSellers();
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const heroSlides = storeData?.store?.heroSlides?.length > 0
-    ? storeData.store.heroSlides
+  // API: customization.homePageConfig.images — array of slide image URLs
+  const heroImages = c?.homePageConfig?.images ?? [];
+
+  // Build slides from API hero section + images array
+  const heroSlides = heroImages.length > 0
+    ? heroImages.map((image, i) => ({
+        id: i,
+        image,
+        title: i === 0 ? (c?.heroSection?.title || 'Elegant Jewellery') : '',
+        subtitle: i === 0 ? (c?.heroSection?.subtitle || 'Discover timeless pieces') : '',
+        cta: i === 0 ? (c?.heroSection?.ctaText || 'Shop Now') : 'Shop Now',
+        link: i === 0 ? (c?.heroSection?.ctaLink || '/catalogue') : '/catalogue',
+      }))
     : [
-        {
-          id: 1,
-          image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80',
-          title: 'Elegant Jewellery',
-          subtitle: 'Discover timeless pieces',
-          cta: 'Shop Now',
-        },
-        {
-          id: 2,
-          image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1400&q=80',
-          title: 'Premium Collection',
-          subtitle: 'Crafted with excellence',
-          cta: 'Explore',
-        },
+        { id: 1, image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80', title: 'Elegant Jewellery', subtitle: 'Discover timeless pieces', cta: 'Shop Now', link: '/catalogue' },
+        { id: 2, image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1400&q=80', title: 'Premium Collection', subtitle: 'Crafted with excellence', cta: 'Explore', link: '/catalogue' },
       ];
 
-  const collections = storeData?.customization?.productSections || [];
-
-  const brandCategories = storeData?.categories?.length > 0
-    ? storeData.categories.slice(0, 3).map(cat => ({
+  // API: categories is string[] e.g. ["Jewellery Sets", "Necklace", "Earrings"]
+  const brandCategories = categories.length > 0
+    ? categories.slice(0, 3).map(cat => ({
         name: cat.toUpperCase(),
-        path: `/catalogue?category=${cat}`,
+        path: `/catalogue?category=${cat.toLowerCase().replace(/\s+/g, '-')}`,
         image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80',
       }))
     : [
@@ -55,12 +56,12 @@ export default function Home() {
       <section className="hero-carousel">
         <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
           {heroSlides.map((slide, index) => (
-            <div key={slide.id || index} className="hero-carousel__slide">
+            <div key={slide.id ?? index} className="hero-carousel__slide">
               <img src={slide.image} alt={slide.title} className="hero-carousel__image" />
               <div className="hero-carousel__content">
-                <h1>{slide.title}</h1>
-                <p>{slide.subtitle}</p>
-                <Link to="/catalogue?category=jewellery-sets" className="hero-carousel__cta">
+                {slide.title && <h1>{slide.title}</h1>}
+                {slide.subtitle && <p>{slide.subtitle}</p>}
+                <Link to={slide.link || '/catalogue'} className="hero-carousel__cta">
                   {slide.cta}
                 </Link>
               </div>
@@ -117,13 +118,7 @@ export default function Home() {
       {/* Brand Video Section */}
       <section className="brand-video">
         <div className="brand-video__wrapper">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="brand-video__player"
-          >
+          <video autoPlay muted loop playsInline className="brand-video__player">
             <source
               src="https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:q-50/686907a872a04e21d2c32db3/cat_vid/1755514917928_FM3UBAP14Z_2025-08-18_1.mp4"
               type="video/mp4"
@@ -133,15 +128,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Collection */}
+      {/* Best Sellers — API: products where isBestSeller === true */}
       <section className="featured-collection">
         <h2 className="section-title">BEST SELLER</h2>
         <div className="featured-collection__grid">
-          {collections.slice(0, 4).map((col) => (
-            <Link key={col.id} to={`/catalogue?category=${col.id}`} className="featured-collection__item">
-              <img src={storeData?.customization?.homePageConfig?.images?.[0] || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&q=80'} alt={col.title} />
-              <span>{col.title}</span>
-            </Link>
+          {bestSellers.slice(0, 4).map((product) => (
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       </section>

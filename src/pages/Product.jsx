@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Heart, ShoppingBag, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
-import { fetchProduct } from '../lib/api';
+import { fetchProduct, submitReview } from '../lib/api';
 import { useCart } from '../context/CartContext';
 import './Product.css';
 
@@ -14,10 +14,15 @@ export default function Product() {
   const [error, setError] = useState(null);
 
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedVariants, setSelectedVariants] = useState({});
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [addedToCart, setAddedToCart] = useState(false);
+
+  // Review form state
+  const [reviewForm, setReviewForm] = useState({ userName: '', userEmail: '', rating: 5, title: '', content: '' });
+  const [reviewStatus, setReviewStatus] = useState('idle'); // idle | loading | success | error
+  const [reviewMessage, setReviewMessage] = useState('');
 
   useEffect(() => {
     async function loadProduct() {
@@ -25,11 +30,8 @@ export default function Product() {
         setLoading(true);
         const data = await fetchProduct(id);
         setProduct(data);
-        const variants = {};
-        if (data.variants?.colors?.length > 0) variants.color = data.variants.colors[0];
-        if (data.variants?.sizes?.length > 0) variants.size = data.variants.sizes[0];
-        if (data.variants?.types?.length > 0) variants.type = data.variants.types[0];
-        setSelectedVariants(variants);
+        // API: variants is an array — pre-select first variant
+        if (data.variants?.length > 0) setSelectedVariant(data.variants[0]);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -62,50 +64,68 @@ export default function Product() {
     );
   }
 
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  // API: product.compareAtPrice (not product.originalPrice)
+  const originalPrice = product.compareAtPrice || null;
+  const discount = originalPrice
+    ? Math.round(((originalPrice - product.price) / originalPrice) * 100)
     : 0;
 
-  const handleVariantChange = (type, value) => {
-    setSelectedVariants((prev) => ({ ...prev, [type]: value }));
-  };
+  // Use selected variant price if available
+  const displayPrice = selectedVariant?.price || product.price;
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedVariants);
+    addToCart({ ...product, price: displayPrice }, quantity, selectedVariant?.options || {});
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleBuyNow = () => {
-    addToCart(product, quantity, selectedVariants);
-    setTimeout(() => {
-      window.location.href = '/cart';
-    }, 500);
+    addToCart({ ...product, price: displayPrice }, quantity, selectedVariant?.options || {});
+    setTimeout(() => { window.location.href = '/cart'; }, 500);
   };
 
-  const nextImage = () => {
-    const images = product.images || [product.image];
-    setSelectedImage((prev) => (prev + 1) % images.length);
-  };
+  const nextImage = () => setSelectedImage(prev => (prev + 1) % product.images.length);
+  const prevImage = () => setSelectedImage(prev => (prev - 1 + product.images.length) % product.images.length);
 
-  const prevImage = () => {
-    const images = product.images || [product.image];
-    setSelectedImage((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const renderStars = (rating) => {
-    return [...Array(5)].map((_, i) => (
-      <Star
-        key={i}
-        size={14}
-        fill={i < Math.floor(rating) ? '#c9a84c' : 'none'}
-        stroke="#c9a84c"
-        strokeWidth={1.5}
-      />
+  const renderStars = (rating) =>
+    [...Array(5)].map((_, i) => (
+      <Star key={i} size={14} fill={i < Math.floor(rating) ? '#c9a84c' : 'none'} stroke="#c9a84c" strokeWidth={1.5} />
     ));
+
+  // API: variants is [{ id, name, sku, price, stock, options: { size, color } }]
+  // Group variants by option keys for display
+  const variantOptionKeys = product.variants?.length > 0
+    ? [...new Set(product.variants.flatMap(v => Object.keys(v.options || {})))]
+    : [];
+
+  const getOptionValues = (key) =>
+    [...new Set(product.variants.map(v => v.options?.[key]).filter(Boolean))];
+
+  const handleOptionChange = (key, value) => {
+    const match = product.variants.find(v =>
+      v.options?.[key] === value &&
+      Object.keys(selectedVariant?.options || {})
+        .filter(k => k !== key)
+        .every(k => v.options?.[k] === selectedVariant?.options?.[k])
+    );
+    if (match) setSelectedVariant(match);
   };
 
-  const images = product.images || [product.image];
+  // Review submit
+  async function handleReviewSubmit(e) {
+    e.preventDefault();
+    setReviewStatus('loading');
+    try {
+      const res = await submitReview({ productId: product.id, ...reviewForm });
+      setReviewStatus('success');
+      // API returns approval message — show it exactly
+      setReviewMessage(res.message || 'Review submitted! It will appear after merchant approval.');
+      setReviewForm({ userName: '', userEmail: '', rating: 5, title: '', content: '' });
+    } catch (err) {
+      setReviewStatus('error');
+      setReviewMessage(err.message || 'Failed to submit review');
+    }
+  }
 
   return (
     <div className="product-page">
@@ -113,8 +133,8 @@ export default function Product() {
         {/* Image Gallery */}
         <div className="product-page__gallery">
           <div className="product-page__main-image">
-            <img src={images[selectedImage]} alt={product.name} />
-            {images.length > 1 && (
+            <img src={product.images[selectedImage]} alt={product.name} />
+            {product.images.length > 1 && (
               <>
                 <button className="product-page__nav product-page__nav--prev" onClick={prevImage}>
                   <ChevronLeft size={20} />
@@ -126,7 +146,7 @@ export default function Product() {
             )}
           </div>
           <div className="product-page__thumbnails">
-            {images.map((img, index) => (
+            {product.images.map((img, index) => (
               <button
                 key={index}
                 className={`product-page__thumb ${index === selectedImage ? 'active' : ''}`}
@@ -140,76 +160,53 @@ export default function Product() {
 
         {/* Product Info */}
         <div className="product-page__info">
-          <span className="product-page__brand">{product.brand || 'Swarajya Imperial'}</span>
+          <span className="product-page__brand">Swarajya Imperial</span>
           <h1 className="product-page__title">{product.name}</h1>
 
+          {/* API: product.averageRating + product.reviewCount */}
           <div className="product-page__rating">
-            {renderStars(product.rating || 4.5)}
-            <span className="product-page__rating-count">{product.rating || 4.5} | {product.reviewCount || 0} reviews</span>
+            {renderStars(product.averageRating || 0)}
+            <span className="product-page__rating-count">
+              {product.averageRating || 0} | {product.reviewCount || 0} reviews
+            </span>
           </div>
 
           <div className="product-page__pricing">
-            <span className="product-page__price">₹{product.price?.toLocaleString('en-IN')}</span>
-            {product.originalPrice && (
+            <span className="product-page__price">₹{displayPrice?.toLocaleString('en-IN')}</span>
+            {originalPrice && (
               <>
-                <span className="product-page__original-price">₹{product.originalPrice?.toLocaleString('en-IN')}</span>
+                <span className="product-page__original-price">₹{originalPrice.toLocaleString('en-IN')}</span>
                 <span className="product-page__discount">{discount}% OFF</span>
               </>
             )}
           </div>
 
-          {/* Variants */}
-          {product.variants && (
+          {/* API: variants[].options — group by key (size, color, etc.) */}
+          {variantOptionKeys.length > 0 && (
             <div className="product-page__variants">
-              {product.variants.colors && (
-                <div className="product-page__variant-group">
-                  <label>Color: <strong>{selectedVariants.color}</strong></label>
+              {variantOptionKeys.map(key => (
+                <div key={key} className="product-page__variant-group">
+                  <label>
+                    {key.charAt(0).toUpperCase() + key.slice(1)}:{' '}
+                    <strong>{selectedVariant?.options?.[key]}</strong>
+                  </label>
                   <div className="product-page__variant-options">
-                    {product.variants.colors.map((color) => (
+                    {getOptionValues(key).map(value => (
                       <button
-                        key={color}
-                        className={`product-page__variant-btn ${selectedVariants.color === color ? 'active' : ''}`}
-                        onClick={() => handleVariantChange('color', color)}
+                        key={value}
+                        className={`product-page__variant-btn ${selectedVariant?.options?.[key] === value ? 'active' : ''}`}
+                        onClick={() => handleOptionChange(key, value)}
                       >
-                        {color}
+                        {value}
                       </button>
                     ))}
                   </div>
                 </div>
-              )}
-
-              {product.variants.sizes && (
-                <div className="product-page__variant-group">
-                  <label>Size: <strong>{selectedVariants.size}</strong></label>
-                  <div className="product-page__variant-options">
-                    {product.variants.sizes.map((size) => (
-                      <button
-                        key={size}
-                        className={`product-page__variant-btn ${selectedVariants.size === size ? 'active' : ''}`}
-                        onClick={() => handleVariantChange('size', size)}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {product.variants.types && (
-                <div className="product-page__variant-group">
-                  <label>Type: <strong>{selectedVariants.type}</strong></label>
-                  <div className="product-page__variant-options">
-                    {product.variants.types.map((type) => (
-                      <button
-                        key={type}
-                        className={`product-page__variant-btn ${selectedVariants.type === type ? 'active' : ''}`}
-                        onClick={() => handleVariantChange('type', type)}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              ))}
+              {selectedVariant && (
+                <p className="product-page__variant-stock">
+                  {selectedVariant.stock > 0 ? `${selectedVariant.stock} in stock` : 'Out of stock'}
+                </p>
               )}
             </div>
           )}
@@ -236,24 +233,13 @@ export default function Product() {
           </div>
 
           <button className="product-page__wishlist">
-            <Heart size={16} />
-            Add to Wishlist
+            <Heart size={16} /> Add to Wishlist
           </button>
 
-          {/* Benefits */}
           <div className="product-page__benefits">
-            <div className="product-page__benefit">
-              <Truck size={16} />
-              <span>Free Delivery on orders ₹499+</span>
-            </div>
-            <div className="product-page__benefit">
-              <Shield size={16} />
-              <span>100% Authentic</span>
-            </div>
-            <div className="product-page__benefit">
-              <RotateCcw size={16} />
-              <span>7-Day Easy Returns</span>
-            </div>
+            <div className="product-page__benefit"><Truck size={16} /><span>Free Delivery on orders ₹499+</span></div>
+            <div className="product-page__benefit"><Shield size={16} /><span>100% Authentic</span></div>
+            <div className="product-page__benefit"><RotateCcw size={16} /><span>7-Day Easy Returns</span></div>
           </div>
 
           <p className="product-page__promo">Extra ₹650 off at checkout</p>
@@ -262,24 +248,9 @@ export default function Product() {
 
       {/* Tabs */}
       <div className="product-page__tabs">
-        <button
-          className={`product-page__tab ${activeTab === 'description' ? 'active' : ''}`}
-          onClick={() => setActiveTab('description')}
-        >
-          Description
-        </button>
-        <button
-          className={`product-page__tab ${activeTab === 'reviews' ? 'active' : ''}`}
-          onClick={() => setActiveTab('reviews')}
-        >
-          Reviews ({product.reviewCount || 0})
-        </button>
-        <button
-          className={`product-page__tab ${activeTab === 'shipping' ? 'active' : ''}`}
-          onClick={() => setActiveTab('shipping')}
-        >
-          Shipping
-        </button>
+        <button className={`product-page__tab ${activeTab === 'description' ? 'active' : ''}`} onClick={() => setActiveTab('description')}>Description</button>
+        <button className={`product-page__tab ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>Reviews ({product.reviewCount || 0})</button>
+        <button className={`product-page__tab ${activeTab === 'shipping' ? 'active' : ''}`} onClick={() => setActiveTab('shipping')}>Shipping</button>
       </div>
 
       <div className="product-page__tab-content">
@@ -291,25 +262,61 @@ export default function Product() {
 
         {activeTab === 'reviews' && (
           <div className="product-page__reviews">
-            {!product.reviews || product.reviews.length === 0 ? (
-              <p className="product-page__no-reviews">No reviews yet. Be the first to review this product!</p>
+            {product.reviews?.length === 0 ? (
+              <p className="product-page__no-reviews">No reviews yet. Be the first!</p>
             ) : (
-              product.reviews.map((review) => (
+              product.reviews?.map((review) => (
                 <div key={review.id} className="product-page__review">
                   <div className="product-page__review-header">
                     <div className="product-page__review-author">
-                      <span className="product-page__review-name">{review.name}</span>
-                      {review.verified && <span className="product-page__review-verified">Verified</span>}
+                      {/* API: review.userName (not review.name) */}
+                      <span className="product-page__review-name">{review.userName}</span>
                     </div>
                     <div className="product-page__review-rating">
                       {renderStars(review.rating)}
-                      <span>{review.date}</span>
+                      {/* API: review.createdAt (not review.date) */}
+                      <span>{new Date(review.createdAt).toLocaleDateString('en-IN')}</span>
                     </div>
                   </div>
-                  <p className="product-page__review-text">{review.text}</p>
+                  <strong>{review.title}</strong>
+                  {/* API: review.content (not review.text) */}
+                  <p className="product-page__review-text">{review.content}</p>
                 </div>
               ))
             )}
+
+            {/* Review submission form */}
+            <div className="product-page__review-form">
+              <h3>Write a Review</h3>
+              {reviewStatus === 'success' ? (
+                <p style={{ color: 'green' }}>✅ {reviewMessage}</p>
+              ) : (
+                <form onSubmit={handleReviewSubmit}>
+                  {reviewStatus === 'error' && <p style={{ color: 'red' }}>❌ {reviewMessage}</p>}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                    {[1,2,3,4,5].map(star => (
+                      <span key={star} onClick={() => setReviewForm(f => ({ ...f, rating: star }))}
+                        style={{ fontSize: '22px', cursor: 'pointer', color: star <= reviewForm.rating ? '#c9a84c' : '#ddd' }}>★</span>
+                    ))}
+                  </div>
+                  <input required placeholder="Your name" value={reviewForm.userName}
+                    onChange={e => setReviewForm(f => ({ ...f, userName: e.target.value }))}
+                    className="product-page__review-input" />
+                  <input required type="email" placeholder="Your email" value={reviewForm.userEmail}
+                    onChange={e => setReviewForm(f => ({ ...f, userEmail: e.target.value }))}
+                    className="product-page__review-input" />
+                  <input required placeholder="Review title" value={reviewForm.title}
+                    onChange={e => setReviewForm(f => ({ ...f, title: e.target.value }))}
+                    className="product-page__review-input" />
+                  <textarea required placeholder="Your review..." value={reviewForm.content} rows={4}
+                    onChange={e => setReviewForm(f => ({ ...f, content: e.target.value }))}
+                    className="product-page__review-input" />
+                  <button type="submit" className="product-page__add-cart" disabled={reviewStatus === 'loading'}>
+                    {reviewStatus === 'loading' ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         )}
 

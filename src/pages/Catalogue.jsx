@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { useStore } from '../context/StoreContext';
+import { useProducts, useCategories } from '../context/StoreContext';
 import './Catalogue.css';
 
 export default function Catalogue() {
@@ -9,13 +9,29 @@ export default function Catalogue() {
   const categoryParam = searchParams.get('category') || 'all';
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
   const [sortBy, setSortBy] = useState('featured');
-  const { storeData } = useStore();
 
-  const apiCategories = storeData?.categories || [];
-  const apiProducts = storeData?.products || [];
+  // API: categories is string[] e.g. ["Jewellery Sets", "Necklace", "Earrings"]
+  const apiCategories = useCategories();
+
+  // API: products[] — use directly, no remapping needed (ProductCard already fixed)
+  const apiProducts = useProducts();
+
+  // Sync selectedCategory when URL param changes
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setSelectedCategory(categoryParam);
+  }, 0);
+  return () => clearTimeout(timer);
+}, [categoryParam]);
 
   const categories = apiCategories.length > 0
-    ? [{ id: 'all', label: 'All' }, ...apiCategories.map(c => ({ id: c, label: c.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }))]
+    ? [
+        { id: 'all', label: 'All' },
+        ...apiCategories.map(c => ({
+          id: c.toLowerCase().replace(/\s+/g, '-'),
+          label: c,
+        })),
+      ]
     : [
         { id: 'all', label: 'All' },
         { id: 'jewellery-sets', label: 'Jewellery Sets' },
@@ -24,41 +40,20 @@ export default function Catalogue() {
         { id: 'best-seller', label: 'Best Seller' },
       ];
 
-  const products = apiProducts.length > 0
-    ? apiProducts.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        originalPrice: p.originalPrice,
-        image: p.images?.[0] || p.image,
-        images: p.images || [p.image],
-        category: p.category?.id || p.category,
-        rating: p.rating || 4.5,
-        reviewCount: p.reviewCount || 0,
-        description: p.description || '',
-        variants: p.variants,
-      }))
-    : [];
-
+  // API: product.category is a string e.g. "Jewellery Sets"
   const filteredProducts = selectedCategory === 'all'
-    ? products
-    : products.filter((p) => {
-        if (typeof p.category === 'string') {
-          return p.category.toLowerCase() === selectedCategory.toLowerCase();
-        }
-        return p.category?.id === selectedCategory;
-      });
+    ? apiProducts
+    : apiProducts.filter(p =>
+        p.category?.toLowerCase().replace(/\s+/g, '-') === selectedCategory.toLowerCase()
+      );
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'rating':
-        return b.rating - a.rating;
-      default:
-        return 0;
+      case 'price-low': return a.price - b.price;
+      case 'price-high': return b.price - a.price;
+      // API: product.averageRating (not product.rating)
+      case 'rating': return (b.averageRating || 0) - (a.averageRating || 0);
+      default: return 0;
     }
   });
 
@@ -71,7 +66,7 @@ export default function Catalogue() {
     }
   };
 
-  const categoryLabel = categories.find((c) => c.id === selectedCategory)?.label || 'All Products';
+  const categoryLabel = categories.find(c => c.id === selectedCategory)?.label || 'All Products';
 
   return (
     <div className="catalogue">
