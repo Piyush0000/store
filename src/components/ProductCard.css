@@ -41,9 +41,14 @@
   object-fit: cover;
   transition: transform 0.4s, opacity 0.3s;
   opacity: 0;
+  background: #faf9f6;
 }
 
 .product-card__image.loaded {
+  opacity: 1;
+}
+
+.product-card__image[src] {
   opacity: 1;
 }
 
