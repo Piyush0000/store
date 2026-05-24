@@ -1,0 +1,59 @@
+/* Skeleton shimmer animation */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-pulse {
+  background: linear-gradient(90deg, #f0ece4 25%, #faf6ee 50%, #f0ece4 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease infinite;
+  border-radius: 4px;
+}
+
+/* Category skeleton */
+.skeleton-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeleton-category-item {
+  border-radius: 4px;
+}
+
+/* Product grid skeleton */
+.skeleton-card {
+  background: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.skeleton-card__image {
+  width: 100%;
+  padding-bottom: 120%;
+  background: linear-gradient(90deg, #f0ece4 25%, #faf6ee 50%, #f0ece4 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease infinite;
+}
+
+.skeleton-card__info {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-card__line {
+  border-radius: 4px;
+}
+
+.skeleton-card__btn {
+  width: 100%;
+  height: 38px;
+  margin-top: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0ece4 25%, #faf6ee 50%, #f0ece4 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease infinite;
+}
