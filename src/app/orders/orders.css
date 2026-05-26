@@ -1,0 +1,127 @@
+.orders {
+  min-height: 100vh;
+  padding: 40px 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.orders__header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.orders__header h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+}
+
+.orders__empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: #888;
+}
+
+.orders__empty svg {
+  color: #c9a84c;
+  margin-bottom: 24px;
+}
+
+.orders__empty h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.orders__empty p {
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.orders__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: #1a1a1a;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.orders__cta:hover {
+  background: #c9a84c;
+}
+
+.orders__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.orders__item {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.orders__item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.orders__order-id {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.orders__status {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.orders__item-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.orders__total {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.orders__view {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c9a84c;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.orders__view:hover {
+  opacity: 0.8;
+}

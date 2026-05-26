@@ -1,0 +1,72 @@
+.policy {
+  min-height: 100vh;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.policy__header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.policy__header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.policy__content {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #555;
+}
+
+.policy__content h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 32px 0 16px;
+}
+
+.policy__content p {
+  margin-bottom: 16px;
+}
+
+.policy__content ul {
+  margin: 16px 0 24px 24px;
+}
+
+.policy__content li {
+  margin-bottom: 8px;
+}
+
+.policy__content a {
+  color: #c9a84c;
+  text-decoration: none;
+}
+
+.policy__content a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .policy {
+    padding: 40px 16px;
+  }
+
+  .policy__header h1 {
+    font-size: 28px;
+  }
+
+  .policy__content {
+    font-size: 14px;
+  }
+
+  .policy__content h2 {
+    font-size: 16px;
+  }
+}
