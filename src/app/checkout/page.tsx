@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Script from 'next/script';
-import { Loader2, Phone, CheckCircle2, Truck, ChevronRight } from 'lucide-react';
+import { Loader2, Phone, CheckCircle2, Truck, ChevronRight, Banknote, CreditCard, ShoppingBag, Lock, RefreshCw } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
 import {
   sendOtp,
@@ -66,35 +65,40 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [payUData, setPayUData] = useState<any>(null);
+  const launchAttemptedRef = useRef(false);
+  const [orderSummary, setOrderSummary] = useState<{ items: typeof cartItems; subtotal: number; paymentMethod: string | null } | null>(null);
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  // Launch PayU Checkout Plus when data is ready
+  // Launch PayU Checkout Plus in iframe mode (SPA-like experience)
   useEffect(() => {
-    if (!payUData) return;
+    if (!payUData || !pendingOrderId) return;
+    if (launchAttemptedRef.current) return;
+    launchAttemptedRef.current = true;
+
+    const currentOrderId = pendingOrderId;
 
     const launchPayU = () => {
       const bolt = (window as any).bolt;
       if (bolt && typeof bolt.launch === 'function') {
-        console.log('Launching PayU Checkout Plus...');
-        bolt.launch({
-          key: payUData.key,
-          txnid: payUData.txnid,
-          amount: payUData.amount,
-          productinfo: payUData.productinfo,
-          firstname: payUData.firstname,
-          email: payUData.email,
-          phone: payUData.phone,
-          hash: payUData.hash,
-          surl: payUData.surl,
-          furl: payUData.furl,
-          onSuccess: (response: any) => {
-            console.log('PayU Success:', response);
-            window.location.href = `${payUData.surl}?${new URLSearchParams(response).toString()}`;
+        console.log('Launching PayU Checkout Plus...', payUData);
+        bolt.launch(payUData, {
+          responseHandler: function (BOLT: any) {
+            console.log('PayU Response:', BOLT);
+            setIsLoading(false);
+            const res = BOLT.response;
+            if (res && (res.status === 'success' || res.txnStatus === 'SUCCESS')) {
+              window.location.href = `/checkout/success?orderId=${currentOrderId}&txn=${res.mihpayid || ''}`;
+            } else {
+              window.location.href = `/checkout/failure?reason=${res?.error_Message || 'payment_failed'}`;
+            }
+            launchAttemptedRef.current = false;
           },
-          onFailure: (response: any) => {
-            console.log('PayU Failure:', response);
-            window.location.href = `${payUData.furl}?${new URLSearchParams(response).toString()}`;
+          catchException: function (BOLT: any) {
+            console.error('PayU Exception:', BOLT);
+            setIsLoading(false);
+            setError('Payment modal closed or failed to load.');
+            launchAttemptedRef.current = false;
           },
         });
         setPayUData(null);
@@ -105,10 +109,16 @@ export default function CheckoutPage() {
     };
 
     launchPayU();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payUData]);
 
   // Initialize device ID and validate session on mount
+  const sessionChecked = useRef(false);
+
   useEffect(() => {
+    if (sessionChecked.current) return;
+    sessionChecked.current = true;
+
     // Get or create device ID
     let storedDeviceId = localStorage.getItem('checkout_device_id');
     if (!storedDeviceId) {
@@ -345,17 +355,47 @@ export default function CheckoutPage() {
   const handleCreateCodOrder = async () => {
     setIsLoading(true);
     setError(null);
+
+    // Validate cart has items
+    if (!cartItems || cartItems.length === 0) {
+      setError('Your cart is empty. Please add items before checkout.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate prices
+    const calculatedSubtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    if (calculatedSubtotal <= 0) {
+      setError('Invalid cart total. Please refresh the page and try again.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Log price issues for debugging
+    const zeroPriceItems = cartItems.filter(item => item.price <= 0);
+    if (zeroPriceItems.length > 0) {
+      console.warn('[Checkout] Items with 0 or negative price:', zeroPriceItems.map(i => ({ id: i.id, name: i.name, price: i.price })));
+    }
+
     try {
+      const orderItems = cartItems.map((item) => ({
+        productId: item.id,
+        name: item.name,
+        price: Number(item.price),
+        quantity: item.quantity,
+        image: item.images?.[0] || '',
+      }));
+
+      console.log('[Checkout] Creating COD order:', {
+        itemCount: orderItems.length,
+        calculatedSubtotal,
+        prices: orderItems.map(i => ({ name: i.name, price: i.price, qty: i.quantity }))
+      });
+
       const result = await createCodOrder({
         userId: userId || `temp_${phone}`,
-        items: cartItems.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.images?.[0] || '',
-        })),
-        totalAmount: subtotal + COD_FEE,
+        items: orderItems,
+        totalAmount: calculatedSubtotal + COD_FEE,
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
@@ -368,10 +408,28 @@ export default function CheckoutPage() {
           pincode: selectedAddress?.pincode || '',
         },
       });
+
+      console.log('[Checkout] COD order result:', result);
+
       if (result.success && result.orderId) {
+        console.log('[Checkout] Order success, setting orderSummary with subtotal:', calculatedSubtotal);
+        // Store order summary in a ref to preserve data even after state clears
+        const capturedItems = [...cartItems];
+        const capturedSubtotal = calculatedSubtotal;
+
         setOrderId(result.orderId);
-        setStep('success');
+        setOrderSummary({ items: capturedItems, subtotal: capturedSubtotal, paymentMethod: 'COD' });
+
+        // Log state after setOrderSummary
+        console.log('[Checkout] After setOrderSummary, orderSummary:', { items: capturedItems.length, subtotal: capturedSubtotal });
+
+        // Clear cart AFTER setting orderSummary
         clearCart();
+
+        // Change step last
+        setStep('success');
+
+        console.log('[Checkout] Step changed to success');
       } else {
         throw new Error(result.message);
       }
@@ -385,6 +443,21 @@ export default function CheckoutPage() {
   const handleInitiatePayU = async () => {
     setIsLoading(true);
     setError(null);
+
+    // Validate cart has items and valid prices
+    if (!cartItems || cartItems.length === 0) {
+      setError('Your cart is empty. Please add items before checkout.');
+      setIsLoading(false);
+      return;
+    }
+
+    const calculatedSubtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    if (calculatedSubtotal <= 0) {
+      setError('Invalid cart total. Please refresh the page and try again.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const ordId = `ORD-${Date.now().toString(36).toUpperCase()}`;
       const txnId = ordId.slice(-12).toUpperCase();
@@ -411,6 +484,7 @@ export default function CheckoutPage() {
 
       const result = await createOrder({
         userId: uid,
+        storeId: process.env.NEXT_PUBLIC_STORE_ID || '',
         items: cartItems.map((item) => ({
           productId: item.id,
           name: item.name,
@@ -418,11 +492,22 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           image: item.images?.[0] || '',
         })),
-        totalAmount: subtotal,
+        totalAmount: calculatedSubtotal,
+        subtotal: calculatedSubtotal,
+        tax: 0,
+        shipping: 0,
         paymentMethod: 'PAYU',
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
+        phone,
+        shippingAddress: {
+          flatHouse: selectedAddress?.flatHouse || '',
+          areaStreet: selectedAddress?.areaStreet || '',
+          city: selectedAddress?.city || '',
+          state: selectedAddress?.state || '',
+          pincode: selectedAddress?.pincode || '',
+        },
         payuTxnId: txnId,
       });
 
@@ -455,10 +540,12 @@ export default function CheckoutPage() {
   if (cartItems.length === 0 && step !== 'success') {
     return (
       <div className="checkout">
+        <h1 className="checkout__title">Checkout</h1>
         <div className="checkout__empty">
-          <h1 className="checkout__title">CHECKOUT</h1>
-          <p>Your cart is empty</p>
-          <Link href="/catalogue" className="checkout__empty-btn">START SHOPPING</Link>
+          <ShoppingBag size={64} className="checkout__empty-icon" />
+          <h2>Your cart is empty</h2>
+          <p>Add some beautiful pieces to get started</p>
+          <Link href="/catalogue" className="checkout__empty-btn">Browse Collection</Link>
         </div>
       </div>
     );
@@ -490,14 +577,24 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* PayU Checkout Plus SDK - loaded after page is interactive */}
-      <Script
-        src="https://www.paytexpress.in/checkout.js"
-        strategy="afterInteractive"
-      />
-
       <div className="checkout__layout">
         <div className="checkout__form">
+          {step === 'success' && orderSummary && (
+            <section className="checkout__section">
+              <CheckCircle2 size={64} className="checkout__success-icon" />
+              <h2 className="checkout__success-heading">Order Confirmed!</h2>
+              <p className="checkout__success-order">Order #{orderId?.split('-')[0]}</p>
+              <p className="checkout__success-message">Your shipment is being packed and will ship to you soon.</p>
+              <div className="checkout__success-delivery">
+                <Truck size={18} />
+                <span>{orderSummary.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment'}</span>
+              </div>
+              <Link href="/catalogue" className="checkout__continue-btn checkout__continue-btn--success">
+                CONTINUE SHOPPING
+              </Link>
+            </section>
+          )}
+
           {step === 'identify' && (
             <section className="checkout__section">
               <div className="checkout__step-header">
@@ -700,7 +797,7 @@ export default function CheckoutPage() {
           {step === 'payment' && (
             <section className="checkout__section">
               <div className="checkout__step-header">
-                <h2>PAYMENT METHOD - step: {step}, paymentMethod: {paymentMethod}</h2>
+                <h2>PAYMENT METHOD</h2>
               </div>
               <p className="checkout__step-desc">Select your preferred way to pay</p>
 
@@ -708,18 +805,26 @@ export default function CheckoutPage() {
                 <div className="checkout__payment-options">
                   <div className="checkout__payment-card" onClick={() => setPaymentMethod('COD')}>
                     <div className="checkout__payment-header">
-                      <span className="checkout__payment-icon">💵</span>
-                      <span>Cash on Delivery</span>
+                      <div className="checkout__payment-icon">
+                        <Banknote size={24} />
+                      </div>
+                      <div>
+                        <p className="checkout__payment-title">Cash on Delivery</p>
+                        <p className="checkout__payment-note">+ Rs. {COD_FEE} fee</p>
+                      </div>
                     </div>
-                    <p className="checkout__payment-note">+ Rs. {COD_FEE} fee</p>
                   </div>
 
                   <div className="checkout__payment-card" onClick={() => setPaymentMethod('PAYU')}>
                     <div className="checkout__payment-header">
-                      <span className="checkout__payment-icon">💳</span>
-                      <span>Online Payment</span>
+                      <div className="checkout__payment-icon">
+                        <CreditCard size={24} />
+                      </div>
+                      <div>
+                        <p className="checkout__payment-title">Online Payment</p>
+                        <p className="checkout__payment-note">Cards, UPI, Net Banking</p>
+                      </div>
                     </div>
-                    <p className="checkout__payment-note">Cards, UPI, Net Banking</p>
                   </div>
                 </div>
               )}
@@ -757,29 +862,13 @@ export default function CheckoutPage() {
               )}
             </section>
           )}
-
-          {step === 'success' && (
-            <section className="checkout__section checkout__success">
-              <CheckCircle2 size={64} className="checkout__success-icon" />
-              <h2>Order Confirmed!</h2>
-              <p className="checkout__success-order">Order #{orderId?.split('-')[0]}</p>
-              <p>Your shipment is being packed and will ship to you soon.</p>
-              <div className="checkout__success-delivery">
-                <Truck size={18} />
-                <span>{paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment'}</span>
-              </div>
-              <Link href="/catalogue" className="checkout__continue-btn checkout__continue-btn--success">
-                CONTINUE SHOPPING
-              </Link>
-            </section>
-          )}
         </div>
 
         <div className="checkout__summary">
           <h2 className="checkout__summary-title">ORDER SUMMARY</h2>
 
           <div className="checkout__summary-items">
-            {cartItems.map((item) => (
+            {(orderSummary?.items || cartItems).map((item) => (
               <div key={`${item.id}-${JSON.stringify(item.variants || {})}`} className="checkout__summary-item">
                 <img src={item.images?.[0] || 'https://via.placeholder.com/60'} alt={item.name} />
                 <div className="checkout__summary-item-info">
@@ -792,21 +881,21 @@ export default function CheckoutPage() {
           </div>
 
           <div className="checkout__summary-rows">
-            <div className="checkout__summary-row"><span>Subtotal</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
-            {paymentMethod === 'COD' && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{COD_FEE}</span></div>}
+            <div className="checkout__summary-row"><span>Subtotal</span><span>₹{(orderSummary?.subtotal ?? subtotal).toLocaleString('en-IN')}</span></div>
+            {(orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{COD_FEE}</span></div>}
             <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
           </div>
 
           <div className="checkout__summary-divider" />
           <div className="checkout__summary-row checkout__summary-row--total">
             <span>Total</span>
-            <span className="checkout__summary-total-price">₹{(subtotal + (paymentMethod === 'COD' ? COD_FEE : 0)).toLocaleString('en-IN')}</span>
+            <span className="checkout__summary-total-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? COD_FEE : 0)).toLocaleString('en-IN')}</span>
           </div>
 
           <div className="checkout__summary-badges">
-            <span>🔒 Secure Payment</span>
-            <span>✓ 100% Authentic</span>
-            <span>↩ Easy Returns</span>
+            <span><Lock size={14} /> Secure Payment</span>
+            <span><CheckCircle2 size={14} /> 100% Authentic</span>
+            <span><RefreshCw size={14} /> Easy Returns</span>
           </div>
         </div>
       </div>

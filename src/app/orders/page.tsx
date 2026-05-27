@@ -16,7 +16,9 @@ export default function OrdersPage() {
 
       {orders.length === 0 ? (
         <div className="orders__empty">
-          <Package size={48} strokeWidth={1} />
+          <div className="orders__empty-icon">
+            <Package size={48} strokeWidth={1} />
+          </div>
           <h2>No orders yet</h2>
           <p>When you place an order, it will appear here.</p>
           <Link href="/catalogue" className="orders__cta">

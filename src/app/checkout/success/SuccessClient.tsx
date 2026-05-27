@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, Truck, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, Truck, ArrowRight, Loader2, Package } from 'lucide-react';
 import { getOrderById } from '@/actions/order-actions';
 import { useCart } from '@/components/CartProvider';
 import '../checkout.css';
@@ -26,13 +26,12 @@ export default function SuccessClient() {
     } else {
       setLoading(false);
     }
-    // Clear cart on successful payment
     clearCart();
   }, [orderId, clearCart]);
 
   if (loading) {
     return (
-      <div className="checkout__success-container">
+      <div className="checkout__success-wrapper">
         <Loader2 size={48} className="checkout__loading-spinner" />
       </div>
     );
@@ -47,7 +46,7 @@ export default function SuccessClient() {
 
         <h1 className="checkout__success-title">Order Confirmed!</h1>
         <p className="checkout__success-subtitle">
-          Thank you for your purchase. Your order is being processed.
+          Thank you for your purchase. Your order is being processed and will ship soon.
         </p>
 
         {orderId && (
@@ -60,10 +59,10 @@ export default function SuccessClient() {
               <>
                 <div className="checkout__success-info-row">
                   <span>Amount Paid</span>
-                  <span>₹{order.totalAmount?.toLocaleString()}</span>
+                  <span>₹{Number(order.total)?.toLocaleString()}</span>
                 </div>
                 <div className="checkout__success-info-row">
-                  <span>Payment Method</span>
+                  <span>Payment</span>
                   <span>{order.paymentMethod}</span>
                 </div>
               </>

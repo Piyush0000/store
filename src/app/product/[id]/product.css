@@ -43,12 +43,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: background 200ms var(--ease-out), transform 160ms var(--ease-out);
   color: #1a1a1a;
 }
 
 .product-page__nav:hover {
   background: #fff;
+}
+
+.product-page__nav:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 .product-page__nav--prev {
@@ -88,7 +92,7 @@
 
 /* Info */
 .product-page__brand {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -97,7 +101,7 @@
 }
 
 .product-page__title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 22px;
   font-weight: 600;
   color: #1a1a1a;
@@ -113,7 +117,7 @@
 }
 
 .product-page__rating-count {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   color: #888;
   font-size: 13px;
   margin-left: 8px;
@@ -129,14 +133,14 @@
 }
 
 .product-page__price {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 28px;
   font-weight: 700;
   color: #1a1a1a;
 }
 
 .product-page__original-price {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   color: #999;
   text-decoration: line-through;
@@ -146,7 +150,7 @@
   background: #c9a84c;
   color: #fff;
   padding: 4px 12px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
   border-radius: 2px;
@@ -163,7 +167,7 @@
 
 .product-page__variant-group label {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   margin-bottom: 10px;
   color: #666;
@@ -185,14 +189,18 @@
   background: #fff;
   color: #1a1a1a;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
-  transition: all 0.2s;
+  transition: border-color 200ms var(--ease-out), background 200ms var(--ease-out), color 200ms var(--ease-out), transform 160ms var(--ease-out);
   border-radius: 4px;
 }
 
 .product-page__variant-btn:hover {
   border-color: #1a1a1a;
+}
+
+.product-page__variant-btn:active {
+  transform: scale(0.97);
 }
 
 .product-page__variant-btn.active {
@@ -210,7 +218,7 @@
 }
 
 .product-page__quantity label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: #666;
 }
@@ -230,17 +238,21 @@
   cursor: pointer;
   font-size: 18px;
   color: #1a1a1a;
-  transition: background 0.2s;
+  transition: background 200ms var(--ease-out);
 }
 
 .product-page__quantity-controls button:hover {
   background: #f5f5f5;
 }
 
+.product-page__quantity-controls button:active {
+  transform: scale(0.95);
+}
+
 .product-page__quantity-controls span {
   width: 48px;
   text-align: center;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   border-left: 1px solid #ddd;
@@ -266,17 +278,21 @@
   background: #fff;
   color: #1a1a1a;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: all 0.2s;
+  transition: background 200ms var(--ease-out), transform 160ms var(--ease-out);
   border-radius: 4px;
 }
 
 .product-page__add-cart:hover {
   background: #f5f5f5;
+}
+
+.product-page__add-cart:active {
+  transform: scale(0.97);
 }
 
 .product-page__buy-now {
@@ -286,17 +302,21 @@
   background: #1a1a1a;
   color: #fff;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: background 0.2s;
+  transition: background 200ms var(--ease-out), transform 160ms var(--ease-out);
   border-radius: 4px;
 }
 
 .product-page__buy-now:hover {
   background: #c9a84c;
+}
+
+.product-page__buy-now:active {
+  transform: scale(0.97);
 }
 
 .product-page__wishlist {
@@ -310,17 +330,21 @@
   background: #fff;
   color: #666;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
   margin-bottom: 24px;
   border-radius: 4px;
-  transition: all 0.2s;
+  transition: border-color 200ms var(--ease-out), color 200ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
 .product-page__wishlist:hover {
   border-color: #1a1a1a;
   color: #1a1a1a;
+}
+
+.product-page__wishlist:active {
+  transform: scale(0.98);
 }
 
 /* Benefits */
@@ -338,7 +362,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: #666;
 }
@@ -350,7 +374,7 @@
 .product-page__promo {
   text-align: center;
   color: #c9a84c;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: 13px;
 }
@@ -366,13 +390,13 @@
   padding: 16px 28px;
   border: none;
   background: none;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   position: relative;
   color: #888;
-  transition: color 0.2s;
+  transition: color 200ms var(--ease-out);
 }
 
 .product-page__tab:hover {
@@ -393,12 +417,16 @@
   background: #c9a84c;
 }
 
+.product-page__tab:active {
+  transform: scale(0.97);
+}
+
 .product-page__tab-content {
   max-width: 800px;
 }
 
 .product-page__description {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.8;
   color: #666;
@@ -411,7 +439,7 @@
 .product-page__no-reviews {
   text-align: center;
   padding: 48px 20px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   color: #888;
   font-size: 14px;
 }
@@ -436,7 +464,7 @@
 }
 
 .product-page__review-name {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: 14px;
   color: #1a1a1a;
@@ -446,7 +474,7 @@
   background: #4CAF50;
   color: #fff;
   padding: 2px 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 10px;
   border-radius: 2px;
 }
@@ -455,13 +483,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   color: #888;
 }
 
 .product-page__review-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: #666;
   line-height: 1.6;
@@ -469,7 +497,7 @@
 
 /* Shipping */
 .product-page__shipping-info {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
 }
 
 .product-page__shipping-info h3 {
@@ -487,7 +515,7 @@
 
 .product-page__shipping-info li {
   padding: 10px 0;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: #666;
   position: relative;
@@ -510,11 +538,11 @@
 .product-not-found {
   text-align: center;
   padding: 100px 20px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
 }
 
 .product-not-found h1 {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   margin-bottom: 20px;
   color: #1a1a1a;
 }

@@ -41,24 +41,55 @@ model Address {
 }
 
 model Order {
-  id             String   @id @default(cuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id])
-  firstName      String?
-  lastName       String?
-  email          String?
-  items          Json
-  totalAmount    Float
-  status         String   @default("PENDING")
-  paymentMethod  String?
-  payuTxnId      String?  @unique
-  payuStatus     String?
-  payuResponse   Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                String           @id @default(cuid())
+  storeId           String
+  orderNumber       String           @unique
+  customerEmail     String
+  customerName      String
+  shippingAddress   Json
+  billingAddress    Json
+  subtotal          Float
+  tax               Float           @default(0)
+  shipping          Float           @default(0)
+  total             Float
+  status            String          @default("PENDING")
+  paymentMethod     String?
+  paymentStatus     String          @default("PENDING")
+  fulfillmentStatus String          @default("UNFULFILLED")
+  couponCode        String?
+  discountAmount    Float?
+  freeShipping      Boolean         @default(false)
+  source            String          @default("MANUAL")
+  riskLevel         String          @default("Low")
+  payuTxnId         String?          @unique
+  payuStatus        String?
+  payuResponse      Json?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  userId            String
+  user              User             @relation(fields: [userId], references: [id])
+  items             OrderItem[]
 
   @@index([userId])
+  @@index([storeId])
   @@index([status])
+  @@index([orderNumber])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  name        String
+  quantity    Int
+  price       Float
+  variantInfo Json?
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model OtpVerification {

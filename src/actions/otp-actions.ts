@@ -80,10 +80,22 @@ export async function sendOtp(data: unknown) {
     }
 
     const sessionId = result.Details;
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
+    // Store in database (serverless-safe, persists across instances)
+    await prisma.otpVerification.create({
+      data: {
+        phone: cleanPhone,
+        sessionId,
+        expiresAt,
+        verified: false,
+      },
+    });
+
+    // Also keep in-memory for rate limiting (still useful)
     pendingOtps.set(cleanPhone, {
       sessionId,
-      expiresAt: Date.now() + 5 * 60 * 1000,
+      expiresAt: expiresAt.getTime(),
     });
 
     return {
@@ -108,12 +120,26 @@ export async function verifyOtp(data: unknown) {
     return { success: false, message: "OTP service not configured" };
   }
 
+  // Use database OTP instead of in-memory Map (serverless-safe)
+  const dbOtp = await prisma.otpVerification.findFirst({
+    where: {
+      phone: cleanPhone,
+      expiresAt: { gt: new Date() },
+      verified: false,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // Fallback to in-memory for dev/testing if no DB record exists
   const pending = pendingOtps.get(cleanPhone);
-  if (!pending) {
+  if (!dbOtp && !pending) {
     return { success: false, message: "No OTP found. Please request a new one." };
   }
 
-  if (pending.expiresAt < Date.now()) {
+  // Check expiry using DB record if available, else in-memory
+  const expiresAt = dbOtp?.expiresAt?.getTime() || pending?.expiresAt;
+  if (expiresAt && expiresAt < Date.now()) {
+    if (dbOtp) await prisma.otpVerification.delete({ where: { id: dbOtp.id } });
     pendingOtps.delete(cleanPhone);
     return { success: false, message: "OTP has expired. Please request a new one." };
   }
@@ -139,6 +165,13 @@ export async function verifyOtp(data: unknown) {
       return { success: false, message: result.Details || "Invalid OTP" };
     }
 
+    // Clean up both DB and in-memory
+    if (dbOtp) {
+      await prisma.otpVerification.update({
+        where: { id: dbOtp.id },
+        data: { verified: true },
+      });
+    }
     pendingOtps.delete(cleanPhone);
 
     return {

@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { Search, Heart, ShoppingBag, User, Menu, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from './CartProvider';
+import { fetchStorefront } from '@/lib/api';
 import './Header.css';
 
 const HomeIcon = () => (
@@ -13,13 +14,50 @@ const HomeIcon = () => (
   </svg>
 );
 
+const DEFAULT_NAV_LINKS = [
+  { label: 'HOME', path: '/' },
+  { label: 'JEWELLERY SETS', path: '/catalogue?category=jewellery-sets' },
+  { label: 'NECKLACE', path: '/catalogue?category=necklace' },
+  { label: 'EARRINGS', path: '/catalogue?category=earrings' },
+  { label: 'BEST SELLER', path: '/catalogue?category=best-seller' },
+];
+
+const DEFAULT_LOGO = 'https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg';
+
 export default function Header() {
-  const { cartCount, isHydrated } = useCart();
+  const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO);
+  const [storeName, setStoreName] = useState('Swarajya Imperial');
+  const [navLinks, setNavLinks] = useState(DEFAULT_NAV_LINKS);
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    fetchStorefront()
+      .then((data) => {
+        const customization = data.customization;
+        if (customization?.headerConfig?.logoUrl) {
+          setLogoUrl(customization.headerConfig.logoUrl);
+        }
+        if (customization?.headerConfig?.storeName) {
+          setStoreName(customization.headerConfig.storeName);
+        }
+        if (customization?.navLinks && customization.navLinks.length > 0) {
+          setNavLinks(customization.navLinks.map((link: { label: string; href: string }) => ({
+            label: link.label,
+            path: link.href,
+          })));
+        }
+      })
+      .catch((err) => console.error('[Header] Failed to fetch config:', err));
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -31,16 +69,6 @@ export default function Header() {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
-
-  const navLinks = [
-    { label: 'HOME', path: '/' },
-    { label: 'JEWELLERY SETS', path: '/catalogue?category=jewellery-sets' },
-    { label: 'NECKLACE', path: '/catalogue?category=necklace' },
-    { label: 'EARRINGS', path: '/catalogue?category=earrings' },
-    { label: 'BEST SELLER', path: '/catalogue?category=best-seller' },
-  ];
-
-  const logoUrl = 'https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg';
 
   return (
     <>
@@ -81,7 +109,7 @@ export default function Header() {
           <Link href="/" className="header__logo">
             <img
               src={logoUrl}
-              alt="Swarajya Imperial"
+              alt={storeName}
               className="header__logo-img"
             />
           </Link>
@@ -93,10 +121,14 @@ export default function Header() {
             <Link href="/wishlist" className="header__icon-btn" aria-label="Wishlist">
               <Heart size={20} strokeWidth={1.5} />
             </Link>
-            <Link href="/cart" className="header__icon-btn header__cart-btn" aria-label="Cart">
+            <button
+              className="header__icon-btn header__cart-btn"
+              onClick={() => setIsCartOpen(true)}
+              aria-label="Cart"
+            >
               <ShoppingBag size={20} strokeWidth={1.5} />
               {isHydrated && cartCount > 0 && <span className="header__cart-count">{cartCount}</span>}
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -120,7 +152,7 @@ export default function Header() {
         <div className="header__mobile-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div className="header__mobile-menu" onClick={(e) => e.stopPropagation()}>
             <div className="header__mobile-header">
-              <span className="header__mobile-logo">SWARAJYA IMPERIAL</span>
+              <span className="header__mobile-logo">{storeName.toUpperCase()}</span>
               <button onClick={() => setMobileMenuOpen(false)} aria-label="Close">
                 <X size={24} />
               </button>

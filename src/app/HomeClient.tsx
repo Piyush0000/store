@@ -179,7 +179,6 @@ export default function HomeClient({ bestSellers, customization, categories }: H
             <video autoPlay muted loop playsInline className="brand-video__player">
               <source src={videoUrl} type="video/mp4" />
             </video>
-            <div className="brand-video__overlay" />
           </div>
         </section>
       )}

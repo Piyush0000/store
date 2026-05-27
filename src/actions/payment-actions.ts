@@ -23,24 +23,35 @@ export async function initiatePayUPayment(data: {
     const { orderId, amount, firstName, email, phone, productinfo } = data;
     const txnid = orderId.slice(-12).toUpperCase();
 
-    // PayU Checkout Plus hash format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|SALT
-    // 11 parts total
+    // PayU hash format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|SALT
+    // 17 parts total (with udf6-udf10 empty)
     const hashString = [
-      PAYU_KEY,      // key
-      txnid,         // txnid
+      PAYU_KEY,         // key
+      txnid,            // txnid
       amount.toFixed(2), // amount (2 decimal places)
-      productinfo,   // productinfo
-      firstName,     // firstname
-      email,         // email
-      '',            // udf1
-      '',            // udf2
-      '',            // udf3
-      '',            // udf4
-      '',            // udf5
-      PAYU_SALT,     // SALT
+      productinfo,      // productinfo
+      firstName,        // firstname
+      email,            // email
+      '',               // udf1
+      '',               // udf2
+      '',               // udf3
+      '',               // udf4
+      '',               // udf5
+      '',               // udf6
+      '',               // udf7
+      '',               // udf8
+      '',               // udf9
+      '',               // udf10
+      PAYU_SALT,        // SALT
     ].join('|');
 
     const hash = generatePayUHash(hashString);
+
+    // Enforce production callback URL - localhost fallback is a security risk
+    const callbackUrl = PAYU_CALLBACK_URL;
+    if (!callbackUrl) {
+      return { success: false, message: 'PAYU_CALLBACK_URL environment variable is required' };
+    }
 
     return {
       success: true,
@@ -53,8 +64,8 @@ export async function initiatePayUPayment(data: {
         email,
         phone,
         hash,
-        surl: PAYU_CALLBACK_URL || 'http://localhost:3000/api/payu/callback',
-        furl: PAYU_CALLBACK_URL || 'http://localhost:3000/api/payu/callback',
+        surl: callbackUrl,
+        furl: callbackUrl,
       },
     };
   } catch (error: any) {

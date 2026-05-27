@@ -11,7 +11,7 @@
 }
 
 .wishlist__header h1 {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -21,7 +21,7 @@
 }
 
 .wishlist__count {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: #888;
 }
@@ -38,7 +38,7 @@
 }
 
 .wishlist__empty h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-heading);
   font-size: 24px;
   color: #1a1a1a;
   margin-bottom: 12px;
@@ -56,16 +56,20 @@
   padding: 14px 28px;
   background: #1a1a1a;
   color: #fff;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   border-radius: 4px;
-  transition: background 0.2s;
+  transition: background 200ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
 .wishlist__cta:hover {
   background: #c9a84c;
+}
+
+.wishlist__cta:active {
+  transform: scale(0.97);
 }
 
 .wishlist__grid {
@@ -96,11 +100,15 @@
   cursor: pointer;
   color: #666;
   z-index: 2;
-  transition: all 0.2s;
+  transition: color 200ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
 .wishlist__remove:hover {
   color: #c9a84c;
+}
+
+.wishlist__remove:active {
+  transform: scale(0.95);
 }
 
 .wishlist__item img {
@@ -114,7 +122,7 @@
 }
 
 .wishlist__item-info h3 {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   color: #1a1a1a;
@@ -122,7 +130,7 @@
 }
 
 .wishlist__price {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   font-weight: 700;
   color: #1a1a1a;
@@ -136,17 +144,21 @@
   background: #1a1a1a;
   color: #fff;
   border: none;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   cursor: pointer;
   border-radius: 4px;
-  transition: background 0.2s;
+  transition: background 200ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
 .wishlist__add-cart:hover {
   background: #c9a84c;
+}
+
+.wishlist__add-cart:active {
+  transform: scale(0.97);
 }
 
 @media (max-width: 768px) {

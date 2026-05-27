@@ -15,7 +15,7 @@ export default function FailureClient() {
     'amount_mismatch': 'There was a discrepancy in the order amount.',
     'payment_declined': 'The payment was declined by your bank.',
     'timeout': 'Payment session timed out.',
-    'user_cancel': 'Payment was cancelled by user.',
+    'user_cancel': 'Payment was cancelled by you.',
     'failed': 'The payment could not be processed.',
     'error': 'An unexpected error occurred.',
     'order_not_found': 'Order not found. Please contact support.',
