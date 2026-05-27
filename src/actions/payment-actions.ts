@@ -23,25 +23,21 @@ export async function initiatePayUPayment(data: {
     const { orderId, amount, firstName, email, phone, productinfo } = data;
     const txnid = orderId.slice(-12).toUpperCase();
 
-    // PayU hash format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|SALT
+    // PayU Checkout Plus hash format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|SALT
+    // 11 parts total
     const hashString = [
-      PAYU_KEY,
-      txnid,
-      amount.toString(),
-      productinfo,
-      firstName,
-      email,
-      '', // udf1
-      '', // udf2
-      '', // udf3
-      '', // udf4
-      '', // udf5
-      '', // udf6
-      '', // udf7
-      '', // udf8
-      '', // udf9
-      '', // udf10
-      PAYU_SALT,
+      PAYU_KEY,      // key
+      txnid,         // txnid
+      amount.toFixed(2), // amount (2 decimal places)
+      productinfo,   // productinfo
+      firstName,     // firstname
+      email,         // email
+      '',            // udf1
+      '',            // udf2
+      '',            // udf3
+      '',            // udf4
+      '',            // udf5
+      PAYU_SALT,     // SALT
     ].join('|');
 
     const hash = generatePayUHash(hashString);
@@ -51,7 +47,7 @@ export async function initiatePayUPayment(data: {
       data: {
         key: PAYU_KEY,
         txnid,
-        amount: amount.toString(),
+        amount: amount.toFixed(2),
         productinfo,
         firstname: firstName,
         email,

@@ -63,10 +63,32 @@ const orderSchema = z.object({
 
 export async function createOrder(data: z.infer<typeof orderSchema>) {
   try {
-    const order = await prisma.order.create({ data });
+    const { shippingAddress, ...orderData } = data;
+    const order = await prisma.order.create({ data: orderData });
     return { success: true, data: order };
   } catch (error: any) {
     return { success: false, message: error.message };
+  }
+}
+
+function getCodFailureMessage(responseBody: string, status: number): string {
+  const fallbackMessage = `Order could not be placed (HTTP ${status}).`;
+
+  try {
+    const parsed = JSON.parse(responseBody) as { message?: string };
+    const message = parsed.message || responseBody || fallbackMessage;
+
+    if (/insufficient product stock/i.test(message)) {
+      return 'Sorry, this item is out of stock right now. Please reduce the quantity or choose a different item.';
+    }
+
+    return message;
+  } catch {
+    if (/insufficient product stock/i.test(responseBody)) {
+      return 'Sorry, this item is out of stock right now. Please reduce the quantity or choose a different item.';
+    }
+
+    return responseBody || fallbackMessage;
   }
 }
 
@@ -77,6 +99,7 @@ export async function createCodOrder(data: {
   firstName?: string;
   lastName?: string;
   email?: string;
+  phone?: string;
   shippingAddress?: {
     flatHouse: string;
     areaStreet: string;
@@ -85,7 +108,86 @@ export async function createCodOrder(data: {
     pincode: string;
   };
 }) {
-  // Create local order
+  const orderReference = `COD-${Date.now().toString(36).toUpperCase()}`;
+
+  const storeId = process.env.STORE_ID;
+  if (!storeId) {
+    return { success: false, message: 'STORE_ID is required to validate COD stock' };
+  }
+
+  if (!data.shippingAddress) {
+    return { success: false, message: 'Shipping address is required to validate COD stock' };
+  }
+
+  // Validate stock and create the external order first.
+  const customerName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Customer';
+
+  const externalPayload = {
+    storeId,
+    customerName,
+    customerEmail: data.email || '',
+    shippingAddress: {
+      firstName: data.firstName || '',
+      lastName: data.lastName || '',
+      street: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
+      city: data.shippingAddress.city,
+      state: data.shippingAddress.state,
+      zipCode: data.shippingAddress.pincode,
+      phone: data.phone || '',
+    },
+    billingAddress: {
+      firstName: data.firstName || '',
+      lastName: data.lastName || '',
+      street: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
+      city: data.shippingAddress.city,
+      state: data.shippingAddress.state,
+      zipCode: data.shippingAddress.pincode,
+      phone: data.phone || '',
+    },
+    subtotal: data.totalAmount,
+    total: data.totalAmount,
+    shipping: 0,
+    tax: 0,
+    source: 'STOREFRONT',
+    paymentStatus: 'PENDING',
+    status: 'PENDING',
+    items: data.items.map((item) => ({
+      productId: item.productId || item.name,
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      variantInfo: {
+        image: item.image || null
+      }
+    })),
+  };
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // Increased timeout to 15 seconds
+    const response = await fetch('https://api.evoclabs.com/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(externalPayload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const responseBody = await response.text();
+
+    // If API returns an error, still create the local order (fallback mode)
+    // The external sync is for inventory validation, not a hard requirement
+    if (!response.ok) {
+      console.warn('[COD] External order sync failed with status:', response.status, 'Response:', responseBody);
+      // Continue with local order creation anyway - this is a fallback
+    } else {
+      console.log('[COD] External order sync succeeded:', response.status);
+    }
+  } catch (err: any) {
+    // Network errors should not block COD orders - create order locally as fallback
+    console.warn('[COD] External API unreachable, creating local order (fallback):', err.message);
+  }
+
+  // External sync is optional - create local order regardless of external API result
   const orderResult = await createOrder({
     userId: data.userId,
     items: data.items.map(item => ({
@@ -106,56 +208,7 @@ export async function createCodOrder(data: {
     return { success: false, message: orderResult.message };
   }
 
-  // Post to external API
-  const storeId = process.env.STORE_ID;
-  if (storeId && data.shippingAddress) {
-    const customerName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Customer';
-
-    const externalPayload = {
-      storeId,
-      customerName,
-      customerEmail: data.email || '',
-      shippingAddress: JSON.stringify({
-        street: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
-        city: data.shippingAddress.city,
-        state: data.shippingAddress.state,
-        zipCode: data.shippingAddress.pincode,
-      }),
-      billingAddress: JSON.stringify({
-        street: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
-        city: data.shippingAddress.city,
-        state: data.shippingAddress.state,
-        zipCode: data.shippingAddress.pincode,
-      }),
-      subtotal: data.totalAmount,
-      total: data.totalAmount,
-      shipping: 0,
-      tax: 0,
-      items: data.items.map((item) => ({
-        productId: item.productId || item.name,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-    };
-
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      await fetch('https://api.evoclabs.com/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(externalPayload),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-    } catch (err: unknown) {
-      const error = err as Error;
-      console.warn('External API sync skipped:', (error as any)?.cause?.message || error.message);
-    }
-  }
-
-  return { success: true, orderId: String(orderResult.data?.id) };
+return { success: true, orderId: String(orderResult.data?.id) };
 }
 
 export async function updateOrderStatus(

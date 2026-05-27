@@ -17,7 +17,6 @@ import { initiatePayUPayment } from '@/actions/payment-actions';
 import './checkout.css';
 
 const COD_FEE = 40;
-const PAYU_URL = 'https://test.payu.in/_payment';
 
 type Step = 'identify' | 'verify' | 'details' | 'payment' | 'success';
 
@@ -69,6 +68,44 @@ export default function CheckoutPage() {
   const [payUData, setPayUData] = useState<any>(null);
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  // Launch PayU Checkout Plus when data is ready
+  useEffect(() => {
+    if (!payUData) return;
+
+    const launchPayU = () => {
+      const bolt = (window as any).bolt;
+      if (bolt && typeof bolt.launch === 'function') {
+        console.log('Launching PayU Checkout Plus...');
+        bolt.launch({
+          key: payUData.key,
+          txnid: payUData.txnid,
+          amount: payUData.amount,
+          productinfo: payUData.productinfo,
+          firstname: payUData.firstname,
+          email: payUData.email,
+          phone: payUData.phone,
+          hash: payUData.hash,
+          surl: payUData.surl,
+          furl: payUData.furl,
+          onSuccess: (response: any) => {
+            console.log('PayU Success:', response);
+            window.location.href = `${payUData.surl}?${new URLSearchParams(response).toString()}`;
+          },
+          onFailure: (response: any) => {
+            console.log('PayU Failure:', response);
+            window.location.href = `${payUData.furl}?${new URLSearchParams(response).toString()}`;
+          },
+        });
+        setPayUData(null);
+      } else {
+        console.log('Waiting for PayU SDK...');
+        setTimeout(launchPayU, 300);
+      }
+    };
+
+    launchPayU();
+  }, [payUData]);
 
   // Initialize device ID and validate session on mount
   useEffect(() => {
@@ -162,9 +199,11 @@ export default function CheckoutPage() {
             setSelectedAddress(defaultAddr);
           }
         } else {
-          // New user - use phone as userId
-          const newUserId = `user_${phone.replace(/\D/g, '')}`;
-          setUserId(newUserId);
+          const newUserResult = await createOrUpdateUser({ phone });
+          if (newUserResult.success && newUserResult.data) {
+            setUser(newUserResult.data);
+            setUserId(newUserResult.data.id);
+          }
         }
         setStep('details');
       } else {
@@ -294,6 +333,7 @@ export default function CheckoutPage() {
         throw new Error('Failed to create user');
       }
 
+      setPaymentMethod(null); // Reset payment method when entering payment step
       setStep('payment');
     } catch (err: any) {
       setError(err.message);
@@ -319,6 +359,7 @@ export default function CheckoutPage() {
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
+        phone,
         shippingAddress: {
           flatHouse: selectedAddress?.flatHouse || '',
           areaStreet: selectedAddress?.areaStreet || '',
@@ -349,8 +390,27 @@ export default function CheckoutPage() {
       const txnId = ordId.slice(-12).toUpperCase();
       setPendingOrderId(ordId);
 
+      let uid = userId;
+      if (!uid) {
+        const userResult = await createOrUpdateUser({
+          phone,
+          email: customerEmail,
+          firstName: customerFirstName,
+          lastName: customerLastName,
+        });
+        if (userResult.success && userResult.data) {
+          uid = userResult.data.id;
+          setUserId(uid);
+          setUser(userResult.data);
+        }
+      }
+
+      if (!uid) {
+        throw new Error('Failed to create user');
+      }
+
       const result = await createOrder({
-        userId: userId || `temp_${phone}`,
+        userId: uid,
         items: cartItems.map((item) => ({
           productId: item.id,
           name: item.name,
@@ -380,6 +440,7 @@ export default function CheckoutPage() {
       });
 
       if (payUResult.success && payUResult.data) {
+        // Store the data for the SDK to use
         setPayUData(payUResult.data);
       } else {
         throw new Error(payUResult.message || 'Failed to initiate payment');
@@ -429,28 +490,11 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* PayU Form - Hidden, auto-submits */}
-      {payUData && (
-        <form id="payu-form" action={PAYU_URL} method="POST" style={{ display: 'none' }}>
-          <input type="hidden" name="key" value={payUData.key} />
-          <input type="hidden" name="txnid" value={payUData.txnid} />
-          <input type="hidden" name="amount" value={payUData.amount} />
-          <input type="hidden" name="productinfo" value={payUData.productinfo} />
-          <input type="hidden" name="firstname" value={payUData.firstname} />
-          <input type="hidden" name="email" value={payUData.email} />
-          <input type="hidden" name="phone" value={payUData.phone} />
-          <input type="hidden" name="hash" value={payUData.hash} />
-          <input type="hidden" name="surl" value={payUData.surl} />
-          <input type="hidden" name="furl" value={payUData.furl} />
-        </form>
-      )}
-
-      {/* Auto-submit PayU form */}
-      {payUData && (
-        <Script id="payu-submit" strategy="lazyOnload">
-          {`if(document.getElementById('payu-form')) { document.getElementById('payu-form').submit(); }`}
-        </Script>
-      )}
+      {/* PayU Checkout Plus SDK - loaded after page is interactive */}
+      <Script
+        src="https://www.paytexpress.in/checkout.js"
+        strategy="afterInteractive"
+      />
 
       <div className="checkout__layout">
         <div className="checkout__form">
@@ -656,7 +700,7 @@ export default function CheckoutPage() {
           {step === 'payment' && (
             <section className="checkout__section">
               <div className="checkout__step-header">
-                <h2>PAYMENT METHOD</h2>
+                <h2>PAYMENT METHOD - step: {step}, paymentMethod: {paymentMethod}</h2>
               </div>
               <p className="checkout__step-desc">Select your preferred way to pay</p>
 
@@ -696,7 +740,7 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {paymentMethod === 'PAYU' && !payUData && (
+              {paymentMethod === 'PAYU' && (
                 <div className="checkout__payment-confirm">
                   <div className="checkout__online-info">
                     <p>Pay securely via PayU.</p>
