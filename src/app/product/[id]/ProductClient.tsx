@@ -43,6 +43,8 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
+  const [imageLoading, setImageLoading] = useState(true);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
@@ -169,16 +171,31 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
         <div className="product-page__container" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' }}>
           <div className="product-page__gallery" style={{ position: 'sticky', top: '120px', alignSelf: 'start' }}>
             <div className="product-page__main-image">
+              {imageLoading && (
+                <div className="product-page__loading-spinner">
+                  <img src="/spinner.svg" alt="Loading..." className="spinner-icon" />
+                </div>
+              )}
               <img
-                src={product.images?.[0] || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80'}
+                src={product.images?.[selectedImageIndex] || product.images?.[0] || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80'}
                 alt={product.name}
+                onLoadingStart={() => setImageLoading(true)}
+                onLoad={() => setImageLoading(false)}
+                onError={() => setImageLoading(false)}
                 style={{ width: '100%', height: '500px', objectFit: 'cover', borderRadius: '4px' }}
               />
             </div>
             {product.images.length > 1 && (
               <div className="product-page__thumbnails">
                 {product.images.map((img, index) => (
-                  <button key={index} className="product-page__thumb">
+                  <button 
+                    key={index} 
+                    className={`product-page__thumb ${index === selectedImageIndex ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedImageIndex(index);
+                      setImageLoading(true);
+                    }}
+                  >
                     <img src={img} alt={`Thumbnail ${index + 1}`} />
                   </button>
                 ))}
