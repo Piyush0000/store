@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Loader2, Phone, CheckCircle2, Truck, ChevronRight, Banknote, CreditCard, ShoppingBag, Lock, RefreshCw } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
+import { fetchStorefront } from '@/lib/api';
 import {
   sendOtp,
   verifyOtp,
@@ -67,8 +68,20 @@ export default function CheckoutPage() {
   const [payUData, setPayUData] = useState<any>(null);
   const launchAttemptedRef = useRef(false);
   const [orderSummary, setOrderSummary] = useState<{ items: typeof cartItems; subtotal: number; paymentMethod: string | null } | null>(null);
+  const [storeId, setStoreId] = useState<string>('');
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  // Fetch storeId from API on mount
+  useEffect(() => {
+    fetchStorefront()
+      .then((data) => {
+        if (data.store?.id) {
+          setStoreId(data.store.id);
+        }
+      })
+      .catch((err) => console.error('[Checkout] Failed to fetch store:', err));
+  }, []);
 
   // Launch PayU Checkout Plus in iframe mode (SPA-like experience)
   useEffect(() => {
@@ -394,6 +407,7 @@ export default function CheckoutPage() {
 
       const result = await createCodOrder({
         userId: userId || `temp_${phone}`,
+        storeId: storeId,
         items: orderItems,
         totalAmount: calculatedSubtotal + COD_FEE,
         firstName: customerFirstName,
@@ -484,7 +498,7 @@ export default function CheckoutPage() {
 
       const result = await createOrder({
         userId: uid,
-        storeId: process.env.NEXT_PUBLIC_STORE_ID || '',
+        storeId: storeId, // From API response
         items: cartItems.map((item) => ({
           productId: item.id,
           name: item.name,
@@ -836,12 +850,20 @@ export default function CheckoutPage() {
                     <p className="checkout__cod-fee">A fee of Rs. {COD_FEE} applies.</p>
                   </div>
                   {error && <span className="checkout__error">{error}</span>}
-                  <div className="checkout__payment-actions">
-                    <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
-                    <button className="checkout__place-order-btn" onClick={handleCreateCodOrder} disabled={isLoading}>
-                      {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${(subtotal + COD_FEE).toLocaleString()}`}
-                    </button>
-                  </div>
+                  {error && (error.includes('Unable to verify') || error.includes('stock')) ? (
+                    <div className="checkout__payment-actions">
+                      <button className="checkout__btn-secondary" onClick={() => { setPaymentMethod(null); setError(null); }}>
+                        Choose Different Payment
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="checkout__payment-actions">
+                      <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
+                      <button className="checkout__place-order-btn" onClick={handleCreateCodOrder} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${(subtotal + COD_FEE).toLocaleString()}`}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -59,7 +59,7 @@ export async function sendOtp(data: unknown) {
   }
 
   try {
-    const url = `https://2factor.in/API/V1/${process.env.TWO_FACTOR_API_KEY}/SMS/${encodeURIComponent(formattedPhone)}/AUTOGEN3/OTP1`;
+    const url = `https://2factor.in/API/V1/${process.env.TWO_FACTOR_API_KEY}/SMS/${encodeURIComponent(formattedPhone)}/AUTOGEN3`;
     console.log('[OTP] Send URL:', url.replace(process.env.TWO_FACTOR_API_KEY!, '***'));
 
     const response = await fetch(url, {

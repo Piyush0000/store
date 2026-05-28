@@ -182,7 +182,7 @@ export async function createCodOrder(data: {
     pincode: string;
   };
 }) {
-  const storeId = data.storeId || process.env.STORE_ID;
+  const storeId = data.storeId;
 
   if (!storeId) {
     return { success: false, message: 'STORE_ID is required to validate COD stock' };
@@ -219,7 +219,7 @@ export async function createCodOrder(data: {
     shippingAddress: {
       firstName: data.firstName || '',
       lastName: data.lastName || '',
-      street: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
+      addressLine1: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
       city: data.shippingAddress.city,
       state: data.shippingAddress.state,
       zipCode: data.shippingAddress.pincode,
@@ -228,7 +228,7 @@ export async function createCodOrder(data: {
     billingAddress: {
       firstName: data.firstName || '',
       lastName: data.lastName || '',
-      street: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
+      addressLine1: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
       city: data.shippingAddress.city,
       state: data.shippingAddress.state,
       zipCode: data.shippingAddress.pincode,
@@ -276,8 +276,12 @@ export async function createCodOrder(data: {
     externalSyncFailed = true;
   }
 
-  // If external sync failed, still create local order but flag it
-  // Success requires local order creation to succeed
+  // External sync MUST succeed - reject if it fails
+  if (externalSyncFailed) {
+    return { success: false, message: 'Unable to verify stock availability. Please try again.' };
+  }
+
+  // External sync succeeded, create local order
   const orderResult = await createOrder({
     userId: data.userId,
     storeId,
@@ -304,11 +308,9 @@ export async function createCodOrder(data: {
     return { success: false, message: orderResult.message };
   }
 
-  // Order created locally - return success with warning if external sync failed
   return {
     success: true,
     orderId: String(orderResult.data?.id),
-    warning: externalSyncFailed ? 'Order created but stock sync delayed' : undefined
   };
 }
 

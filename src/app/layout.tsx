@@ -39,7 +39,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${playfair.variable}`}>
         <Script
           src={payuScriptUrl}
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           id="payu-bolt"
         />
         <CartProvider>
