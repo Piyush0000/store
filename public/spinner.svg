@@ -6,18 +6,21 @@
     }
     .spinner {
       animation: spin 2s linear infinite;
-      transform-origin: center;
+      transform-origin: 50px 50px;
     }
   </style>
   <g class="spinner">
-    <path d="M50 10 Q70 30 70 50 Q70 70 50 70 Q30 70 30 50" 
+    <!-- Curved spiral line -->
+    <path d="M 50 15 Q 75 15 75 40 Q 75 65 50 65 Q 30 65 30 50" 
           fill="none" 
-          stroke="#c9a84c" 
-          stroke-width="6" 
-          stroke-linecap="round"/>
-    <path d="M45 20 L30 10 L35 25" 
-          fill="#c9a84c" 
-          stroke="#c9a84c" 
+          stroke="black" 
+          stroke-width="8" 
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    <!-- Arrow head -->
+    <path d="M 35 35 L 20 25 L 28 42 Z" 
+          fill="black" 
+          stroke="black" 
           stroke-width="1" 
           stroke-linejoin="round"/>
   </g>
