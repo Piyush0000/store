@@ -6,23 +6,9 @@ import { useCart } from '@/components/CartProvider';
 import ProductCard from '@/components/ProductCard';
 import './product.css';
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  compareAtPrice: number;
-  images: string[];
-  category: string;
-  averageRating: number;
-  reviewCount: number;
-  variants: any[];
-  reviews: any[];
-}
-
 interface ProductClientProps {
-  product: Product;
-  relatedProducts: Product[];
+  product: any;
+  relatedProducts: any[];
 }
 
 export default function ProductClient({ product, relatedProducts }: ProductClientProps) {
@@ -73,11 +59,11 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
     ));
 
   const variantOptionKeys = product.variants?.length > 0
-    ? [...new Set(product.variants.flatMap(v => Object.keys(v.options || {})))]
+    ? [...new Set(product.variants.flatMap((v: any) => Object.keys(v.options || {})))]
     : [];
 
   const getOptionValues = (key: string) =>
-    [...new Set(product.variants.map(v => v.options?.[key]).filter(Boolean))];
+    [...new Set(product.variants.map((v: any) => v.options?.[key]).filter(Boolean))];
 
   const handleOptionChange = (key: string, value: string) => {
     const match = product.variants.find((v: any) =>
@@ -110,7 +96,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
             </div>
             {product.images.length > 1 && (
               <div className="product-page__thumbnails">
-                {product.images.map((img, index) => (
+                {product.images.map((img: string, index: number) => (
                   <button 
                     key={index} 
                     className={`product-page__thumb ${index === selectedImageIndex ? 'active' : ''}`}
