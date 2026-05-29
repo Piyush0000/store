@@ -245,6 +245,7 @@
   background: #fff;
   border-top: 1px solid #eee;
   padding: 8px 0;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 100;
 }
 

@@ -122,6 +122,11 @@ export default function CartPage() {
           <Link href="/catalogue" className="cart__continue-btn">
             CONTINUE SHOPPING
           </Link>
+
+          <div className="cart__powered-by">
+            <span className="cart__powered-by-text">Powered by</span>
+            <img src="/evoc-logo.png" alt="EvocLabs" className="cart__evoc-logo" />
+          </div>
         </div>
       </div>
     </div>

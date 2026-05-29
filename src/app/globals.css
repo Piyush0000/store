@@ -58,6 +58,13 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 60px;
+  }
 }
 
 ::selection {
