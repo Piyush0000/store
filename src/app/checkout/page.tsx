@@ -956,6 +956,11 @@ export default function CheckoutPage() {
             <span><CheckCircle2 size={14} /> 100% Authentic</span>
             <span><RefreshCw size={14} /> Easy Returns</span>
           </div>
+
+          <div className="checkout__powered-by">
+            <span>Powered by</span>
+            <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+          </div>
         </div>
       </div>
     </div>

@@ -276,6 +276,13 @@ export default function Footer({ initialCustomization }: FooterProps) {
           <ArrowUpIcon /> GO TO TOP
         </button>
       </div>
+
+      <div className="footer__divider" />
+
+      <div className="footer__powered-by">
+        <span>Powered by</span>
+        <img src="/evoc-logo.png" alt="EvocLabs" className="footer__evoc-logo" />
+      </div>
     </footer>
   );
 }

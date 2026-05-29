@@ -1180,3 +1180,18 @@
     font-size: 24px;
   }
 }
+
+.checkout__powered-by {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 20px;
+  font-size: 12px;
+  color: #888;
+}
+
+.checkout__evoc-logo {
+  height: 20px;
+  width: auto;
+}
