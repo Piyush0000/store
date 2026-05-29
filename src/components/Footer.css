@@ -1,96 +1,113 @@
-/* ── Footer ───────────────────────────────────────────────── */
 .footer {
   background: #0a0a0a;
-  color: rgba(255, 255, 255, 0.85);
-  padding: 72px 60px 40px;
+  color: #fff;
+  padding: 60px 60px 40px;
+  font-family: 'Inter', sans-serif;
+  overflow: visible;
 }
 
-/* Row 1 - Brand & Contact */
+.footer__divider {
+  height: 1px;
+  background: #222;
+  width: 100%;
+  margin: 0;
+}
+
 .footer__row1 {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1.2fr 1fr;
   gap: 80px;
-  margin-bottom: 48px;
+  padding-bottom: 48px;
 }
 
-/* Brand Section */
+.footer__brand {
+  display: flex;
+  flex-direction: column;
+}
+
 .footer__logo-wrap {
   display: inline-block;
-  background: #fff;
-  padding: 10px 16px;
+  background: transparent;
+  padding: 0;
   margin-bottom: 24px;
-  border-radius: 4px;
 }
 
 .footer__logo {
-  height: 48px;
+  height: 40px;
   width: auto;
-  display: block;
 }
 
 .footer__brand-name {
-  font-family: var(--font-heading);
-  font-size: 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
   font-weight: 600;
   color: #fff;
-  margin-bottom: 16px;
-  letter-spacing: 0.01em;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
 }
 
 .footer__brand-desc {
-  font-family: var(--font-body);
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #999;
   line-height: 1.8;
   max-width: 400px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
-/* Social Icons */
 .footer__social {
   display: flex;
   gap: 16px;
+  margin-top: auto;
 }
 
 .footer__social-link {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
+  background: #1a1a1a;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
   text-decoration: none;
-  transition: all 200ms var(--ease-out);
+}
+
+.footer__social-link img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .footer__social-link:hover {
-  background: var(--gold);
-  color: #fff;
-  transform: translateY(-3px);
+  background: #c9a84c;
+  transform: translateY(-2px);
 }
 
 .footer__social-link:active {
-  transform: scale(0.95);
+  transform: translateY(0);
 }
 
-.footer__social-link svg {
-  width: 20px;
-  height: 20px;
+.footer__go-top svg {
+  width: 14px;
+  height: 14px;
 }
 
-/* Contact Section */
+.footer__contact {
+  padding-left: 20px;
+  border-left: 1px solid #222;
+}
+
 .footer__contact-heading {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
   color: #fff;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #222;
 }
 
 .footer__contact-list {
@@ -100,34 +117,22 @@
 }
 
 .footer__contact-list li {
-  font-family: var(--font-body);
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.65);
-  line-height: 1.7;
-  padding: 8px 0;
-}
-
-.footer__contact-list li:first-child {
-  padding-top: 0;
+  color: #ccc;
+  line-height: 2.2;
 }
 
 .footer__contact-list a {
-  color: rgba(255, 255, 255, 0.85);
+  color: #ccc;
   text-decoration: none;
-  transition: color 200ms var(--ease-out);
+  transition: color 0.2s;
 }
 
 .footer__contact-list a:hover {
-  color: var(--gold-light);
+  color: #c9a84c;
 }
 
-/* Divider */
-.footer__divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* Row 2 - Quick Links */
 .footer__row2 {
   padding: 32px 0;
 }
@@ -140,26 +145,23 @@
 }
 
 .footer__quick-link {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #999;
   text-decoration: none;
-  text-transform: uppercase;
-  transition: color 200ms var(--ease-out);
+  transition: color 0.2s;
+  letter-spacing: 0.5px;
 }
 
 .footer__quick-link:hover {
-  color: var(--gold-light);
+  color: #c9a84c;
 }
 
-/* Row 4 - Payment & Go Top */
 .footer__row4 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 32px 0 0;
+  padding: 24px 0;
   gap: 24px;
   flex-wrap: wrap;
 }
@@ -172,68 +174,71 @@
 }
 
 .footer__payment-icon {
-  height: 32px;
+  height: 28px;
   width: auto;
-  border-radius: 6px;
-  transition: transform 200ms var(--ease-out);
-  will-change: transform;
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
 
 .footer__payment-icon:hover {
-  transform: scale(1.1);
+  opacity: 1;
 }
 
 .footer__go-top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 12px 24px;
-  font-family: var(--font-body);
-  font-size: 11px;
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 14px 32px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  letter-spacing: 1.5px;
   cursor: pointer;
-  transition: all 200ms var(--ease-out);
+  transition: all 0.3s ease;
+  border-radius: 4px;
 }
 
 .footer__go-top:hover {
-  background: var(--gold);
-  border-color: var(--gold);
+  background: #c9a84c;
   color: #fff;
+  transform: translateY(-2px);
 }
 
 .footer__go-top:active {
-  transform: scale(0.97);
+  transform: translateY(0);
 }
 
 .footer__powered-by {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 16px 0;
-  font-size: 12px;
-  color: #888;
+  gap: 10px;
+  padding: 24px 0 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #1A6FBF;
+  text-decoration: none;
+  transition: filter 0.2s;
+}
+
+.footer__powered-by:hover {
+  filter: brightness(1.15);
 }
 
 .footer__evoc-logo {
-  height: 24px;
+  height: 36px;
   width: auto;
 }
 
-@media (max-width: 900px) {
-  .footer {
-    padding: 32px 40px;
-  }
+.footer__powered-by-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: #1A6FBF;
 }
 
-.footer__go-top svg {
-  width: 14px;
-  height: 14px;
+.footer__powered-by-text {
+  font-size: 15px;
+  color: #1A6FBF;
 }
 
 /* ── Brand Video Section ─────────────────────────────────────── */
@@ -280,63 +285,90 @@
   background: linear-gradient(to top, var(--bg-primary), transparent);
 }
 
-/* ── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
+  .footer {
+    padding: 48px 40px 32px;
+  }
+
   .footer__row1 {
     grid-template-columns: 1fr;
-    gap: 48px;
+    gap: 40px;
+  }
+
+  .footer__contact {
+    padding-left: 0;
+    border-left: none;
+    padding-top: 24px;
+    border-top: 1px solid #222;
   }
 
   .footer__brand-desc {
     max-width: 100%;
   }
-}
 
-@media (max-width: 900px) {
-  .footer {
-    padding: 56px 40px 32px;
-  }
-
-  .footer__contact {
-    padding-top: 32px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  .footer__social {
+    margin-top: 16px;
   }
 }
 
 @media (max-width: 768px) {
   .footer {
-    padding: 24px 16px;
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    padding: 32px 20px 100px;
   }
 
   .footer__row1 {
-    gap: 40px;
-    margin-bottom: 40px;
+    gap: 32px;
+    padding-bottom: 32px;
   }
 
-  .footer__brand-name {
-    font-size: 20px;
+  .footer__brand-desc {
+    max-width: 100%;
+    font-size: 13px;
   }
 
   .footer__quick-links {
-    gap: 24px;
+    gap: 16px;
+    justify-content: flex-start;
+  }
+
+  .footer__quick-link {
+    font-size: 12px;
   }
 
   .footer__row4 {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 24px;
-    padding-top: 24px;
+    align-items: stretch;
+    gap: 20px;
+  }
+
+  .footer__payment-icons {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .footer__payment-icon {
+    height: 24px;
   }
 
   .footer__go-top {
     width: 100%;
-    justify-content: center;
+    text-align: center;
+    padding: 16px;
   }
 
-  .footer__payment-icons {
-    width: 100%;
-    justify-content: flex-start;
+  .footer__powered-by {
+    padding-top: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    font-size: 14px;
+    gap: 12px;
+  }
+
+  .footer__evoc-logo {
+    height: 30px;
+  }
+
+  .footer__powered-by-name {
+    font-size: 15px;
   }
 
   .brand-video__wrapper {
@@ -345,13 +377,5 @@
 
   .brand-video__player {
     max-height: 50vh;
-  }
-
-  .footer__powered-by {
-    width: 100%;
-    padding-top: 16px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom));
-    margin-top: 0;
-    flex-shrink: 0;
   }
 }

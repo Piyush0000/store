@@ -279,10 +279,11 @@ export default function Footer({ initialCustomization }: FooterProps) {
 
       <div className="footer__divider" />
 
-      <div className="footer__powered-by">
-        <span>Powered by</span>
+      <a href="https://evoclabs.com" target="_blank" rel="noopener noreferrer" className="footer__powered-by">
+        <span className="footer__powered-by-text">Powered by</span>
         <img src="/evoc-logo.png" alt="EvocLabs" className="footer__evoc-logo" />
-      </div>
+        <span className="footer__powered-by-name">EvocLabs</span>
+      </a>
     </footer>
   );
 }
