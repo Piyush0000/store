@@ -38,7 +38,7 @@
 }
 
 .orders__empty-icon svg {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .orders__empty h2 {
@@ -69,7 +69,7 @@
 }
 
 .orders__cta:hover {
-  background: #c9a84c;
+  background: var(--gold-light);
 }
 
 .orders__cta:active {
@@ -132,7 +132,7 @@
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
-  color: #c9a84c;
+  color: var(--gold-light);
   text-decoration: none;
   transition: opacity 200ms var(--ease-out);
 }
@@ -152,7 +152,7 @@
 }
 
 .orders__loading svg {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .orders__phone {
@@ -206,6 +206,6 @@
 
 .orders__more-items {
   font-size: 11px;
-  color: #c9a84c;
+  color: var(--gold-light);
   padding: 4px 8px;
 }

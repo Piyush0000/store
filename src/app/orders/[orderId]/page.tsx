@@ -216,7 +216,7 @@ export default function OrderDetailPage() {
               <span>Subtotal</span>
               <span>₹{Number(order.subtotal || order.total).toLocaleString('en-IN')}</span>
             </div>
-            {order.discountAmount > 0 && (
+            {(order.discountAmount ?? 0) > 0 && (
               <div className="order-detail__summary-row order-detail__summary-row--discount">
                 <span>Discount {order.couponCode && `(${order.couponCode})`}</span>
                 <span>-₹{Number(order.discountAmount).toLocaleString('en-IN')}</span>

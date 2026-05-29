@@ -7,6 +7,9 @@ import Footer from "@/components/Footer";
 import Script from "next/script";
 import { Inter, Playfair_Display } from "next/font/google";
 
+import { fetchStorefront } from "@/lib/api";
+import PreviewBridge from "@/components/PreviewBridge";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -21,7 +24,7 @@ const playfair = Playfair_Display({
   weight: ["400", "500", "600", "700"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -31,12 +34,28 @@ export default function RootLayout({
     ? "https://jssdk-uat.payu.in/bolt/bolt.min.js"
     : "https://jssdk.payu.in/bolt/bolt.min.js";
 
+  let customization = null;
+  try {
+    const data = await fetchStorefront();
+    customization = data.customization;
+  } catch (err) {
+    console.error("[RootLayout] Failed to fetch storefront customization:", err);
+  }
+
+  let headerStyle = customization?.headerStyle;
+  if (headerStyle && typeof headerStyle === 'string') {
+    try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+  }
+
+  const faviconUrl = customization?.favicon || headerStyle?.faviconUrl || "/favicon.svg";
+
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href={faviconUrl} />
       </head>
       <body className={`${inter.variable} ${playfair.variable}`}>
+        <PreviewBridge initialCustomization={customization} />
         <Script
           src={payuScriptUrl}
           strategy="afterInteractive"
@@ -44,10 +63,10 @@ export default function RootLayout({
         />
         <CartProvider>
           <CartDrawer />
-          <AnnouncementBar />
-          <Header />
+          <AnnouncementBar initialCustomization={customization} />
+          <Header initialCustomization={customization} />
           <main>{children}</main>
-          <Footer />
+          <Footer initialCustomization={customization} />
         </CartProvider>
       </body>
     </html>

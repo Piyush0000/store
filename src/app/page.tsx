@@ -22,13 +22,13 @@ export default async function HomePage() {
 
     customization = data.customization;
     categories = data.categories || [];
-    bestSellers = (data.products || []).filter((p: any) => p.isBestSeller).slice(0, 4);
-    console.log('[PAGE:Home] Best sellers count:', bestSellers.length);
+    bestSellers = data.products || [];
+    console.log('[PAGE:Home] Products count:', bestSellers.length);
   } catch (error) {
     console.error('[PAGE:Home] Failed to fetch data:', error);
   }
 
-  console.log('[PAGE:Home] Rendering HomeClient with', bestSellers.length, 'best sellers');
+  console.log('[PAGE:Home] Rendering HomeClient with', bestSellers.length, 'products');
 
   return <HomeClient
     bestSellers={bestSellers}

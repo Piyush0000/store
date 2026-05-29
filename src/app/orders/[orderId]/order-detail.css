@@ -344,7 +344,7 @@
 }
 
 .order-detail__btn--primary:hover {
-  background: #c9a84c;
+  background: var(--gold-light);
 }
 
 .order-detail__btn--secondary {
@@ -374,7 +374,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #eee;
-  border-top-color: #c9a84c;
+  border-top-color: var(--gold-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;

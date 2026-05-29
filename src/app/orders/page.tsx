@@ -23,9 +23,9 @@ interface Order {
   status: string;
   paymentStatus: string;
   total: number;
-  createdAt: string;
+  createdAt: string | Date;
   items: OrderItem[];
-  paymentMethod: string;
+  paymentMethod: string | null;
 }
 
 export default function OrdersPage() {
@@ -57,7 +57,7 @@ export default function OrdersPage() {
 
       const ordersResult = await getOrdersByUser(userResult.data.id);
       if (ordersResult.success) {
-        setOrders(ordersResult.data || []);
+        setOrders((ordersResult.data as any) || []);
       } else {
         setOrders([]);
       }
@@ -68,7 +68,7 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | Date) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-IN', {
       day: 'numeric',

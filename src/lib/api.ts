@@ -33,6 +33,9 @@ export interface Customization {
   announcementBar: { text: string };
   metaTitle: string;
   metaDescription: string;
+  headerStyle?: any;
+  footerStyle?: any;
+  footerContent?: any;
 }
 
 export interface ProductVariant {

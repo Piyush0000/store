@@ -25,7 +25,8 @@ export async function proxy(request: Request) {
   const subdomain = parts[0];
 
   try {
-    const apiUrl = `https://api.evoclabs.com/api/storefront/public/${subdomain}/frontend`;
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+    const apiUrl = `${apiBase}/${subdomain}/frontend`;
     const response = await fetch(apiUrl, { next: { revalidate: 0 } });
     const data = await response.json();
 

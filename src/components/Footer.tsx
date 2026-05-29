@@ -70,22 +70,45 @@ function ArrowUpIcon() {
   );
 }
 
-export default function Footer() {
-  const [storeName, setStoreName] = useState(DEFAULT_NAME);
-  const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO);
-  const [brandDesc, setBrandDesc] = useState(DEFAULT_DESC);
-  const [contactInfo, setContactInfo] = useState({
-    phone: DEFAULT_PHONE,
-    email: DEFAULT_EMAIL,
-    address: DEFAULT_ADDRESS,
+interface FooterProps {
+  initialCustomization?: any;
+}
+
+export default function Footer({ initialCustomization }: FooterProps) {
+  const getInitialLogo = () => {
+    let headerStyle = initialCustomization?.headerStyle;
+    if (headerStyle && typeof headerStyle === 'string') {
+      try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+    }
+    return initialCustomization?.logo || headerStyle?.logoUrl || initialCustomization?.headerConfig?.logoUrl || DEFAULT_LOGO;
+  };
+
+  const [storeName, setStoreName] = useState(() => initialCustomization?.headerConfig?.storeName || DEFAULT_NAME);
+  const [logoUrl, setLogoUrl] = useState(getInitialLogo);
+  const [brandDesc, setBrandDesc] = useState(() => initialCustomization?.aboutSection?.content || DEFAULT_DESC);
+  const [contactInfo, setContactInfo] = useState(() => {
+    // Support footerContent structure from admin panel
+    const fc = initialCustomization?.footerContent;
+    return {
+      phone: fc?.contact?.phone || initialCustomization?.contactInfo?.phone || DEFAULT_PHONE,
+      email: fc?.contact?.email || initialCustomization?.contactInfo?.email || DEFAULT_EMAIL,
+      address: fc?.contact?.address || initialCustomization?.contactInfo?.address || DEFAULT_ADDRESS,
+    };
   });
-  const [socialLinks, setSocialLinks] = useState({
-    facebook: DEFAULT_FB,
-    instagram: DEFAULT_IG,
+  const [socialLinks, setSocialLinks] = useState(() => {
+    const fc = initialCustomization?.footerContent;
+    return {
+      facebook: fc?.socials?.facebook || initialCustomization?.socialLinks?.facebook || DEFAULT_FB,
+      instagram: fc?.socials?.instagram || initialCustomization?.socialLinks?.instagram || DEFAULT_IG,
+    };
   });
   const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (initialCustomization) {
+      return; // Skip fetch since we have initialCustomization!
+    }
+
     if (hasFetched.current) return;
     hasFetched.current = true;
 
@@ -94,7 +117,33 @@ export default function Footer() {
         const { customization, store } = data;
 
         if (store?.name) setStoreName(store.name);
-        if (customization?.contactInfo) {
+
+        let headerStyle = customization?.headerStyle;
+        if (headerStyle && typeof headerStyle === 'string') {
+          try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+        }
+
+        if (customization?.logo) {
+          setLogoUrl(customization.logo);
+        } else if (headerStyle?.logoUrl) {
+          setLogoUrl(headerStyle.logoUrl);
+        } else if (customization?.headerConfig?.logoUrl) {
+          setLogoUrl(customization.headerConfig.logoUrl);
+        }
+
+        // Also support footerContent structure from admin panel
+        if (customization?.footerContent) {
+          const fc = customization.footerContent;
+          setContactInfo({
+            phone: fc?.contact?.phone || customization.contactInfo?.phone || DEFAULT_PHONE,
+            email: fc?.contact?.email || customization.contactInfo?.email || DEFAULT_EMAIL,
+            address: fc?.contact?.address || customization.contactInfo?.address || DEFAULT_ADDRESS,
+          });
+          setSocialLinks({
+            facebook: fc?.socials?.facebook || customization.socialLinks?.facebook || DEFAULT_FB,
+            instagram: fc?.socials?.instagram || customization.socialLinks?.instagram || DEFAULT_IG,
+          });
+        } else if (customization?.contactInfo) {
           setContactInfo({
             phone: customization.contactInfo.phone || DEFAULT_PHONE,
             email: customization.contactInfo.email || DEFAULT_EMAIL,
@@ -112,6 +161,56 @@ export default function Footer() {
         }
       })
       .catch((err) => console.error('[Footer] Failed to fetch config:', err));
+  }, [initialCustomization]);
+
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
+        const cust = e.data.data;
+        let headerStyle = cust?.headerStyle;
+        if (headerStyle && typeof headerStyle === 'string') {
+          try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+        }
+
+        if (cust?.logo) {
+          setLogoUrl(cust.logo);
+        } else if (headerStyle?.logoUrl) {
+          setLogoUrl(headerStyle.logoUrl);
+        } else if (cust?.headerConfig?.logoUrl) {
+          setLogoUrl(cust.headerConfig.logoUrl);
+        }
+
+        if (cust?.footerContent) {
+          const fc = cust.footerContent;
+          setContactInfo({
+            phone: fc?.contact?.phone || cust.contactInfo?.phone || DEFAULT_PHONE,
+            email: fc?.contact?.email || cust.contactInfo?.email || DEFAULT_EMAIL,
+            address: fc?.contact?.address || cust.contactInfo?.address || DEFAULT_ADDRESS,
+          });
+          setSocialLinks({
+            facebook: fc?.socials?.facebook || cust.socialLinks?.facebook || DEFAULT_FB,
+            instagram: fc?.socials?.instagram || cust.socialLinks?.instagram || DEFAULT_IG,
+          });
+        } else if (cust?.contactInfo) {
+          setContactInfo({
+            phone: cust.contactInfo.phone || DEFAULT_PHONE,
+            email: cust.contactInfo.email || DEFAULT_EMAIL,
+            address: cust.contactInfo.address || DEFAULT_ADDRESS,
+          });
+        }
+        if (cust?.socialLinks) {
+          setSocialLinks({
+            facebook: cust.socialLinks.facebook || DEFAULT_FB,
+            instagram: cust.socialLinks.instagram || DEFAULT_IG,
+          });
+        }
+        if (cust?.aboutSection?.content) {
+          setBrandDesc(cust.aboutSection.content);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -41,7 +41,7 @@
 }
 
 .header__icon-btn:hover {
-  color: #c9a84c;
+  color: var(--gold-light);
   background: rgba(201, 168, 76, 0.05);
 }
 
@@ -103,13 +103,13 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: #c9a84c;
+  background: var(--gold-light);
   transition: width 200ms var(--ease-out);
 }
 
 .header__nav-link:hover,
 .header__nav-link--active {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .header__nav-link:hover::after,
@@ -125,7 +125,7 @@
   transform: translateY(-50%);
   width: 18px;
   height: 18px;
-  background: #c9a84c;
+  background: var(--gold-light);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -169,7 +169,7 @@
 }
 
 .header__search-input:focus {
-  border-color: #c9a84c;
+  border-color: var(--gold-light);
 }
 
 /* Mobile Navigation */
@@ -237,7 +237,7 @@
 }
 
 .header__mobile-link:hover {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 /* Mobile Bottom Tab Bar */
@@ -270,7 +270,7 @@
 }
 
 .header__mobile-tab--active {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .header__mobile-tab svg {

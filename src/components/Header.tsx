@@ -19,36 +19,84 @@ const DEFAULT_NAV_LINKS = [
   { label: 'JEWELLERY SETS', path: '/catalogue?category=jewellery-sets' },
   { label: 'NECKLACE', path: '/catalogue?category=necklace' },
   { label: 'EARRINGS', path: '/catalogue?category=earrings' },
-  { label: 'BEST SELLER', path: '/catalogue?category=best-seller' },
+  { label: 'ALL PRODUCTS', path: '/catalogue' },
 ];
 
 const DEFAULT_LOGO = 'https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg';
 
-export default function Header() {
+interface HeaderProps {
+  initialCustomization?: any;
+}
+
+export default function Header({ initialCustomization }: HeaderProps) {
   const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO);
-  const [storeName, setStoreName] = useState('Swarajya Imperial');
-  const [navLinks, setNavLinks] = useState(DEFAULT_NAV_LINKS);
+
+  const getInitialLogo = () => {
+    let headerStyle = initialCustomization?.headerStyle;
+    if (headerStyle && typeof headerStyle === 'string') {
+      try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+    }
+    return initialCustomization?.logo || headerStyle?.logoUrl || initialCustomization?.headerConfig?.logoUrl || DEFAULT_LOGO;
+  };
+
+  const getInitialStoreName = () => {
+    let headerStyle = initialCustomization?.headerStyle;
+    if (headerStyle && typeof headerStyle === 'string') {
+      try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+    }
+    return headerStyle?.storeName || headerStyle?.logoText || initialCustomization?.headerConfig?.storeName || 'Swarajya Imperial';
+  };
+
+  const getInitialNavLinks = () => {
+    if (initialCustomization?.navLinks && initialCustomization.navLinks.length > 0) {
+      return initialCustomization.navLinks.map((link: { label: string; href: string }) => ({
+        label: link.label,
+        path: link.href,
+      }));
+    }
+    return DEFAULT_NAV_LINKS;
+  };
+
+  const [logoUrl, setLogoUrl] = useState(getInitialLogo);
+  const [storeName, setStoreName] = useState(getInitialStoreName);
+  const [navLinks, setNavLinks] = useState<{ label: string; path: string }[]>(getInitialNavLinks);
   const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (initialCustomization) {
+      return; // Skip fetch since we have initialCustomization!
+    }
+
     if (hasFetched.current) return;
     hasFetched.current = true;
 
     fetchStorefront()
       .then((data) => {
         const customization = data.customization;
-        if (customization?.headerConfig?.logoUrl) {
+        let headerStyle = customization?.headerStyle;
+        if (headerStyle && typeof headerStyle === 'string') {
+          try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+        }
+
+        if (customization?.logo) {
+          setLogoUrl(customization.logo);
+        } else if (headerStyle?.logoUrl) {
+          setLogoUrl(headerStyle.logoUrl);
+        } else if (customization?.headerConfig?.logoUrl) {
           setLogoUrl(customization.headerConfig.logoUrl);
         }
-        if (customization?.headerConfig?.storeName) {
+
+        if (headerStyle?.storeName || headerStyle?.logoText) {
+          setStoreName(headerStyle.storeName || headerStyle.logoText);
+        } else if (customization?.headerConfig?.storeName) {
           setStoreName(customization.headerConfig.storeName);
         }
+
         if (customization?.navLinks && customization.navLinks.length > 0) {
           setNavLinks(customization.navLinks.map((link: { label: string; href: string }) => ({
             label: link.label,
@@ -57,6 +105,41 @@ export default function Header() {
         }
       })
       .catch((err) => console.error('[Header] Failed to fetch config:', err));
+  }, [initialCustomization]);
+
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
+        const cust = e.data.data;
+        let headerStyle = cust?.headerStyle;
+        if (headerStyle && typeof headerStyle === 'string') {
+          try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+        }
+
+        if (cust?.logo) {
+          setLogoUrl(cust.logo);
+        } else if (headerStyle?.logoUrl) {
+          setLogoUrl(headerStyle.logoUrl);
+        } else if (cust?.headerConfig?.logoUrl) {
+          setLogoUrl(cust.headerConfig.logoUrl);
+        }
+
+        if (headerStyle?.storeName || headerStyle?.logoText) {
+          setStoreName(headerStyle.storeName || headerStyle.logoText);
+        } else if (cust?.headerConfig?.storeName) {
+          setStoreName(cust.headerConfig.storeName);
+        }
+
+        if (cust?.navLinks && cust.navLinks.length > 0) {
+          setNavLinks(cust.navLinks.map((link: { label: string; href: string }) => ({
+            label: link.label,
+            path: link.href,
+          })));
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   useEffect(() => {

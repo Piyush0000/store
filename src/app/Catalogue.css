@@ -66,11 +66,11 @@
 }
 
 .catalogue__filter-option:hover {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .catalogue__filter-option input {
-  accent-color: #c9a84c;
+  accent-color: var(--gold-light);
   width: 16px;
   height: 16px;
 }
@@ -101,12 +101,12 @@
 }
 
 .catalogue__toolbar select:hover {
-  border-color: #c9a84c;
+  border-color: var(--gold-light);
 }
 
 .catalogue__toolbar select:focus {
   outline: none;
-  border-color: #c9a84c;
+  border-color: var(--gold-light);
 }
 
 .catalogue__grid {

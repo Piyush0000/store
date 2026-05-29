@@ -420,6 +420,8 @@ export default function CheckoutPage() {
         price: Number(item.price),
         quantity: item.quantity,
         image: item.images?.[0] || '',
+        variantId: item.variantId,
+        variant: item.variants ? Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ') : undefined,
       }));
 
       console.log('[Checkout] Creating COD order:', {
@@ -528,6 +530,8 @@ export default function CheckoutPage() {
           price: item.price,
           quantity: item.quantity,
           image: item.images?.[0] || '',
+          variantId: item.variantId,
+          variant: item.variants ? Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ') : undefined,
         })),
         totalAmount: calculatedSubtotal,
         subtotal: calculatedSubtotal,

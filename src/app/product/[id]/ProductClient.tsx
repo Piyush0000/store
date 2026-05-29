@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Star, Heart, ShoppingBag, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Heart, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
 import ProductCard from '@/components/ProductCard';
 import './product.css';
@@ -25,32 +25,12 @@ interface ProductClientProps {
   relatedProducts: Product[];
 }
 
-const heroSlides = [
-  { id: 1, image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80' },
-  { id: 2, image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1400&q=80' },
-];
-
-const brandCategories = [
-  { name: 'JEWELLERY SETS', path: '/catalogue?category=jewellery-sets', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' },
-  { name: 'NECKLACE', path: '/catalogue?category=necklace', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80' },
-  { name: 'EARRINGS', path: '/catalogue?category=earrings', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&q=80' },
-];
-
 export default function ProductClient({ product, relatedProducts }: ProductClientProps) {
   const { addToCart } = useCart();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
-
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
-
-  useEffect(() => {
-    const interval = setInterval(nextSlide, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (product.variants?.length > 0) {
@@ -68,6 +48,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
       name: product.name,
       price: displayPrice,
       images: product.images,
+      variantId: selectedVariant?.id,
     }, quantity, selectedVariant?.options || {});
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
@@ -79,13 +60,14 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
       name: product.name,
       price: displayPrice,
       images: product.images,
+      variantId: selectedVariant?.id,
     }, quantity, selectedVariant?.options || {});
     setTimeout(() => { window.location.href = '/cart'; }, 500);
   };
 
   const renderStars = (rating: number) =>
     [...Array(5)].map((_, i) => (
-      <Star key={i} size={14} fill={i < Math.floor(rating) ? '#c9a84c' : 'none'} stroke="#c9a84c" strokeWidth={1.5} />
+      <Star key={i} size={14} fill={i < Math.floor(rating) ? 'var(--gold-light, #c9a84c)' : 'none'} stroke="var(--gold-light, #c9a84c)" strokeWidth={1.5} />
     ));
 
   const variantOptionKeys = product.variants?.length > 0
@@ -106,73 +88,14 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
   };
 
   return (
-    <div className="home">
-      <section className="hero-carousel">
-        <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-          {heroSlides.map((slide) => (
-            <div key={slide.id} className="hero-carousel__slide">
-              <img src={slide.image} alt="" className="hero-carousel__image" />
-              <div className="hero-carousel__content">
-                <h1>Premium Jewellery Collection</h1>
-                <p>Handcrafted with love and precision</p>
-                <a href="/catalogue" className="hero-carousel__cta">Shop Now</a>
-              </div>
-            </div>
-          ))}
-        </div>
-        <button className="hero-carousel__nav hero-carousel__nav--prev" onClick={prevSlide}>
-          <ChevronLeft size={24} />
-        </button>
-        <button className="hero-carousel__nav hero-carousel__nav--next" onClick={nextSlide}>
-          <ChevronRight size={24} />
-        </button>
-        <div className="hero-carousel__dots">
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              className={`hero-carousel__dot ${index === currentSlide ? 'active' : ''}`}
-              onClick={() => setCurrentSlide(index)}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="brand-category">
-        <h2 className="section-title">BRAND CATEGORY</h2>
-        <div className="brand-category__grid">
-          {brandCategories.map((cat) => (
-            <a key={cat.name} href={cat.path} className="brand-category__item">
-              <div className="brand-category__image">
-                <img src={cat.image} alt={cat.name} />
-              </div>
-              <span className="brand-category__name">{cat.name}</span>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className="shop-category">
-        <h2 className="section-title">SHOP BY CATEGORY</h2>
-        <div className="shop-category__grid">
-          {brandCategories.map((cat) => (
-            <a key={`shop-${cat.name}`} href={cat.path} className="shop-category__card">
-              <img src={cat.image} alt={cat.name} className="shop-category__image" />
-              <div className="shop-category__overlay">
-                <span className="shop-category__name">{cat.name}</span>
-              </div>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className="product-page" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px' }}>
-        <div className="product-page__container" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' }}>
-          <div className="product-page__gallery" style={{ position: 'sticky', top: '120px', alignSelf: 'start' }}>
+    <>
+      <section className="product-page">
+        <div className="product-page__container">
+          <div className="product-page__gallery">
             <div className="product-page__main-image">
               <img
                 src={product.images?.[0] || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80'}
                 alt={product.name}
-                style={{ width: '100%', height: '500px', objectFit: 'cover', borderRadius: '4px' }}
               />
             </div>
             {product.images.length > 1 && (
@@ -328,6 +251,6 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
           </div>
         </section>
       )}
-    </div>
+    </>
   );
 }

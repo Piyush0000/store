@@ -81,7 +81,7 @@
 }
 
 .product-page__thumb.active {
-  border-color: #c9a84c;
+  border-color: var(--gold-light);
 }
 
 .product-page__thumb img {
@@ -147,7 +147,7 @@
 }
 
 .product-page__discount {
-  background: #c9a84c;
+  background: var(--gold-light);
   color: #fff;
   padding: 4px 12px;
   font-family: var(--font-body);
@@ -312,7 +312,7 @@
 }
 
 .product-page__buy-now:hover {
-  background: #c9a84c;
+  background: var(--gold-light);
 }
 
 .product-page__buy-now:active {
@@ -368,12 +368,12 @@
 }
 
 .product-page__benefit svg {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .product-page__promo {
   text-align: center;
-  color: #c9a84c;
+  color: var(--gold-light);
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 13px;
@@ -414,7 +414,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #c9a84c;
+  background: var(--gold-light);
 }
 
 .product-page__tab:active {
@@ -531,7 +531,7 @@
   content: '✓';
   position: absolute;
   left: 0;
-  color: #c9a84c;
+  color: var(--gold-light);
   font-weight: bold;
 }
 
@@ -548,7 +548,7 @@
 }
 
 .product-not-found a {
-  color: #c9a84c;
+  color: var(--gold-light);
   text-decoration: none;
 }
 

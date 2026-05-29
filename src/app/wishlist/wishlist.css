@@ -33,7 +33,7 @@
 }
 
 .wishlist__empty svg {
-  color: #c9a84c;
+  color: var(--gold-light);
   margin-bottom: 24px;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .wishlist__cta:hover {
-  background: #c9a84c;
+  background: var(--gold-light);
 }
 
 .wishlist__cta:active {
@@ -104,7 +104,7 @@
 }
 
 .wishlist__remove:hover {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .wishlist__remove:active {
@@ -154,7 +154,7 @@
 }
 
 .wishlist__add-cart:hover {
-  background: #c9a84c;
+  background: var(--gold-light);
 }
 
 .wishlist__add-cart:active {

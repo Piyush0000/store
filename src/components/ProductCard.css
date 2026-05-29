@@ -61,7 +61,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  background: #c9a84c;
+  background: var(--gold-light);
   color: #fff;
   font-family: var(--font-body);
   font-size: 10px;
@@ -144,11 +144,11 @@
 .product-card__heart:hover {
   transform: scale(1.1);
   background: #fff;
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .product-card__heart--active {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .product-card__info {
@@ -171,7 +171,7 @@
 }
 
 .product-card__name:hover {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .product-card__rating {
@@ -227,7 +227,7 @@
 }
 
 .product-card__add-btn:hover {
-  background: #c9a84c;
+  background: var(--gold-light);
 }
 
 .product-card__add-btn:active {

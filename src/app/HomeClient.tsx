@@ -46,9 +46,9 @@ function buildHeroSlides(customization: Customization | null) {
     return [{
       id: 1,
       image: customization.heroSection.backgroundImage,
-      title: customization.heroSection.title || 'Welcome',
+      title: customization.heroSection.title || '',
       subtitle: customization.heroSection.subtitle || '',
-      cta: customization.heroSection.ctaText || 'Shop Now',
+      cta: customization.heroSection.ctaText || '',
       link: customization.heroSection.ctaLink || '/catalogue',
     }];
   }
@@ -110,11 +110,13 @@ export default function HomeClient({ bestSellers, customization, categories }: H
           <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
             {heroSlides.map((slide) => (
               <div key={slide.id} className="hero-carousel__slide">
-                <img src={slide.image} alt={slide.title} className="hero-carousel__image" />
+                <img src={slide.image} alt={slide.title || 'Hero Banner'} className="hero-carousel__image" />
                 <div className="hero-carousel__content">
-                  <h1>{slide.title}</h1>
-                  <p>{slide.subtitle}</p>
-                  <Link href={slide.link} className="hero-carousel__cta">{slide.cta}</Link>
+                  {slide.title && <h1>{slide.title}</h1>}
+                  {slide.subtitle && <p>{slide.subtitle}</p>}
+                  {slide.cta && (
+                    <Link href={slide.link} className="hero-carousel__cta">{slide.cta}</Link>
+                  )}
                 </div>
               </div>
             ))}
@@ -186,7 +188,7 @@ export default function HomeClient({ bestSellers, customization, categories }: H
       {(customization?.homePageConfig?.featuredEnabled !== false) && (
         bestSellers.length > 0 ? (
           <section className="featured-collection">
-            <h2 className="section-title">BEST SELLER</h2>
+            <h2 className="section-title">ALL PRODUCTS</h2>
             <div className="featured-collection__grid">
               {bestSellers.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -195,8 +197,8 @@ export default function HomeClient({ bestSellers, customization, categories }: H
           </section>
         ) : (
           <section className="featured-collection">
-            <h2 className="section-title">BEST SELLER</h2>
-            <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No best sellers available</p>
+            <h2 className="section-title">ALL PRODUCTS</h2>
+            <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products available</p>
           </section>
         )
       )}

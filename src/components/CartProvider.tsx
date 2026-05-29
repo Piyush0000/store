@@ -9,6 +9,7 @@ export interface CartItem {
   quantity: number;
   images?: string[];
   variants?: Record<string, string>;
+  variantId?: string;
 }
 
 interface CartContextType {

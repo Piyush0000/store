@@ -2,18 +2,38 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { fetchAnnouncements } from '@/lib/api';
+import Link from 'next/link';
 import './AnnouncementBar.css';
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
-export default function AnnouncementBar() {
-  const [announcements, setAnnouncements] = useState<any[]>([]);
+interface AnnouncementBarProps {
+  initialCustomization?: any;
+}
+
+export default function AnnouncementBar({ initialCustomization }: AnnouncementBarProps) {
+  const getInitialAnnouncements = () => {
+    if (initialCustomization?.announcementBar?.announcements) {
+      return initialCustomization.announcementBar.announcements;
+    }
+    if (initialCustomization?.announcementBar?.text) {
+      return [{
+        text: initialCustomization.announcementBar.text,
+        link: initialCustomization.announcementBar.link || ""
+      }];
+    }
+    return [];
+  };
+
+  const [announcements, setAnnouncements] = useState<any[]>(getInitialAnnouncements);
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 3, seconds: 0 });
   const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (initialCustomization) return; // Skip fetch since we have initialCustomization!
+
     if (hasFetched.current) return;
     hasFetched.current = true;
 
@@ -21,11 +41,35 @@ export default function AnnouncementBar() {
     fetchAnnouncements()
       .then((data) => {
         console.log('[ANNOUNCEMENT] Announcements fetched:', data.length);
-        setAnnouncements(data);
+        // Map database structure (message/link) to unified list format (text/link)
+        setAnnouncements(data.map(a => ({
+          text: [a.title, a.message].filter(Boolean).join(' — '),
+          link: a.link || ""
+        })));
       })
       .catch((err) => {
         console.error('[ANNOUNCEMENT] Failed to fetch:', err);
       });
+  }, [initialCustomization]);
+
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
+        const cust = e.data.data;
+        if (cust?.announcementBar?.announcements) {
+          setAnnouncements(cust.announcementBar.announcements);
+        } else if (cust?.announcementBar?.text) {
+          setAnnouncements([{
+            text: cust.announcementBar.text,
+            link: cust.announcementBar.link || ""
+          }]);
+        } else {
+          setAnnouncements([]);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   useEffect(() => {
@@ -42,34 +86,49 @@ export default function AnnouncementBar() {
     return () => clearInterval(interval);
   }, []);
 
-  const apiMessages = announcements.length > 0
-    ? announcements.map(a => [a.title, a.message].filter(Boolean).join(' — '))
-    : [];
-
   const staticMessages = [
-    'Extra discounts of Rs.650 at checkout',
-    'Hurry Up, Shop Now!',
-    '50% Off',
-    `Limited Time: ${pad(timeLeft.hours)}H:${pad(timeLeft.minutes)}M:${pad(timeLeft.seconds)}S`,
-    'Save Min 50% on all orders and get free shipping',
+    { text: 'Extra discounts of Rs.650 at checkout', link: '' },
+    { text: 'Hurry Up, Shop Now!', link: '' },
+    { text: '50% Off', link: '' },
+    { text: `Limited Time: ${pad(timeLeft.hours)}H:${pad(timeLeft.minutes)}M:${pad(timeLeft.seconds)}S`, link: '' },
+    { text: 'Save Min 50% on all orders and get free shipping', link: '' },
   ];
 
-  const messages = apiMessages.length > 0 ? apiMessages : staticMessages;
+  const displayList = announcements.length > 0 ? announcements : staticMessages;
 
-  const barStyle = announcements[0]?.backgroundColor
-    ? { backgroundColor: announcements[0].backgroundColor, color: announcements[0].textColor || '#fff' }
+  const barStyle = initialCustomization?.announcementBar?.backgroundColor
+    ? { backgroundColor: initialCustomization.announcementBar.backgroundColor, color: initialCustomization.announcementBar.textColor || '#fff' }
     : {};
+
+  // Duplicate items to ensure smooth continuous infinite scrolling marquee
+  const trackItems = [...displayList, ...displayList, ...displayList, ...displayList];
 
   return (
     <div className="announcement-bar" style={barStyle}>
       <div className="announcement-marquee">
         <div className="announcement-track">
-          {[...messages, ...messages, ...messages, ...messages].map((msg, i) => (
-            <span key={i} className="announcement-item">
-              <span className="announcement-diamond">◆</span>
-              {msg}
-            </span>
-          ))}
+          {trackItems.map((ann, i) => {
+            const itemContent = (
+              <span className="announcement-item">
+                <span className="announcement-diamond">◆</span>
+                {ann.text}
+              </span>
+            );
+
+            if (ann.link) {
+              return (
+                <Link key={i} href={ann.link} className="announcement-link hover:underline transition-all">
+                  {itemContent}
+                </Link>
+              );
+            }
+
+            return (
+              <span key={i}>
+                {itemContent}
+              </span>
+            );
+          })}
         </div>
       </div>
     </div>

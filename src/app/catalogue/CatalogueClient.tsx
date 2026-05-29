@@ -14,6 +14,10 @@ interface Product {
   compareAtPrice?: number;
   averageRating?: number;
   reviewCount?: number;
+  isFeatured?: boolean;
+  isBestSeller?: boolean;
+  isNewArrival?: boolean;
+  isValueCombo?: boolean;
 }
 
 interface CatalogueClientProps {
@@ -34,22 +38,41 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
     ? [{ id: 'all', label: 'All' }, ...categories.map(c => ({ id: c.toLowerCase().replace(/\s+/g, '-'), label: c }))]
     : [{ id: 'all', label: 'All' }, { id: 'jewellery-sets', label: 'Jewellery Sets' }, { id: 'necklace', label: 'Necklace' }, { id: 'earrings', label: 'Earrings' }];
 
+  const selectedStream = searchParams.get('stream') || '';
+
   const handleCategoryChange = useCallback((categoryId: string) => {
     setIsLoading(true);
     setSelectedCategory(categoryId);
 
+    // Keep stream param if present when changing category
+    const params = new URLSearchParams(searchParams.toString());
     if (categoryId === 'all') {
-      router.push('/catalogue', { scroll: false });
+      params.delete('category');
     } else {
-      router.push(`/catalogue?category=${categoryId}`, { scroll: false });
+      params.set('category', categoryId);
     }
+    const newQuery = params.toString() ? `?${params.toString()}` : '';
+    router.push(`/catalogue${newQuery}`, { scroll: false });
 
     setTimeout(() => setIsLoading(false), 300);
-  }, [router]);
+  }, [router, searchParams]);
 
-  const filteredProducts = selectedCategory === 'all'
-    ? products
-    : products.filter(p => p.category?.toLowerCase().replace(/\s+/g, '-') === selectedCategory.toLowerCase());
+  const filteredProducts = products.filter(p => {
+    // 1. Filter by category
+    if (selectedCategory !== 'all') {
+      const matchCat = p.category?.toLowerCase().replace(/\s+/g, '-') === selectedCategory.toLowerCase();
+      if (!matchCat) return false;
+    }
+    // 2. Filter by stream
+    if (selectedStream) {
+      const s = selectedStream.toLowerCase();
+      if (s === 'featured' && !p.isFeatured) return false;
+      if (s === 'best-seller' && !p.isBestSeller) return false;
+      if (s === 'new-arrival' && !p.isNewArrival) return false;
+      if (s === 'value-combo' && !p.isValueCombo) return false;
+    }
+    return true;
+  });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
@@ -60,7 +83,11 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
     }
   });
 
-  const categoryLabel = categoryList.find(c => c.id === selectedCategory)?.label || 'All Products';
+  let categoryLabel = categoryList.find(c => c.id === selectedCategory)?.label || 'All Products';
+  if (selectedStream) {
+    const streamName = selectedStream.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    categoryLabel = `${streamName} Products`;
+  }
 
   return (
     <div className="catalogue">

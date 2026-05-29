@@ -66,7 +66,7 @@
 
 .about__feature-icon {
   font-size: 24px;
-  color: #c9a84c;
+  color: var(--gold-light);
   flex-shrink: 0;
 }
 
@@ -118,7 +118,7 @@
 }
 
 .about__contact-item a:hover {
-  color: #c9a84c;
+  color: var(--gold-light);
 }
 
 .about__cta {
@@ -156,7 +156,7 @@
 }
 
 .about__btn:hover {
-  background: #c9a84c;
+  background: var(--gold-light);
 }
 
 @media (max-width: 768px) {

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
 import './CartDrawer.css';
@@ -73,7 +72,7 @@ export default function CartDrawer() {
               {cartItems.map((item) => (
                 <li key={`${item.id}-${JSON.stringify(item.variants || {})}`} className="cart-item">
                   <div className="cart-item__image">
-                    <Image
+                    <img
                       src={item.images?.[0] || 'https://via.placeholder.com/80'}
                       alt={item.name}
                       width={80}

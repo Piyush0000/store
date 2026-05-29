@@ -42,6 +42,7 @@ const orderItemInputSchema = z.object({
   quantity: z.number(),
   image: z.string().optional(),
   variant: z.string().optional(),
+  variantId: z.string().optional(),
 });
 
 const orderInputSchema = z.object({
@@ -141,7 +142,9 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
         items: {
           create: orderData.items.map(item => {
             let variantInfo: Prisma.InputJsonValue | undefined = undefined;
-            if (item.variant) {
+            if (item.variantId) {
+              variantInfo = { variantId: item.variantId, variant: item.variant, image: item.image } as Prisma.InputJsonValue;
+            } else if (item.variant) {
               variantInfo = { variant: item.variant, image: item.image } as Prisma.InputJsonValue;
             } else if (item.image) {
               variantInfo = { image: item.image } as Prisma.InputJsonValue;
@@ -168,7 +171,7 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
 export async function createCodOrder(data: {
   userId: string;
   storeId?: string;
-  items: { productId: string; name: string; price: number; quantity: number; image?: string }[];
+  items: { productId: string; name: string; price: number; quantity: number; image?: string; variantId?: string; variant?: string }[];
   totalAmount: number;
   firstName?: string;
   lastName?: string;
@@ -219,19 +222,27 @@ export async function createCodOrder(data: {
     shippingAddress: {
       firstName: data.firstName || '',
       lastName: data.lastName || '',
+      line1: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
       addressLine1: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
       city: data.shippingAddress.city,
       state: data.shippingAddress.state,
+      zip: data.shippingAddress.pincode,
+      postalCode: data.shippingAddress.pincode,
       zipCode: data.shippingAddress.pincode,
+      country: 'IN',
       phone: data.phone || '',
     },
     billingAddress: {
       firstName: data.firstName || '',
       lastName: data.lastName || '',
+      line1: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
       addressLine1: `${data.shippingAddress.flatHouse}, ${data.shippingAddress.areaStreet}`,
       city: data.shippingAddress.city,
       state: data.shippingAddress.state,
+      zip: data.shippingAddress.pincode,
+      postalCode: data.shippingAddress.pincode,
       zipCode: data.shippingAddress.pincode,
+      country: 'IN',
       phone: data.phone || '',
     },
     subtotal: itemSubtotal,
@@ -246,24 +257,32 @@ export async function createCodOrder(data: {
       name: item.name,
       quantity: item.quantity,
       price: Number(item.price),
+      variantId: item.variantId || undefined,
       variantInfo: {
+        id: item.variantId || null,
+        variant: item.variant || null,
         image: item.image || null,
       },
     })),
   };
 
   let externalSyncFailed = false;
+  let responseBody = '';
+  let responseStatus = 500;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    const response = await fetch('https://api.evoclabs.com/api/orders', {
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+    const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
+    const response = await fetch(ordersApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(externalPayload),
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    const responseBody = await response.text();
+    responseStatus = response.status;
+    responseBody = await response.text();
 
     if (!response.ok) {
       console.warn('[COD] External order sync failed with status:', response.status, 'Response:', responseBody);
@@ -274,11 +293,13 @@ export async function createCodOrder(data: {
   } catch (err: any) {
     console.warn('[COD] External API unreachable, creating local order (fallback):', err.message);
     externalSyncFailed = true;
+    responseBody = err.message;
   }
 
   // External sync MUST succeed - reject if it fails
   if (externalSyncFailed) {
-    return { success: false, message: 'Unable to verify stock availability. Please try again.' };
+    const errorMsg = responseBody ? getCodFailureMessage(responseBody, responseStatus) : 'Unable to verify stock availability. Please try again.';
+    return { success: false, message: errorMsg };
   }
 
   // External sync succeeded, create local order
@@ -291,6 +312,8 @@ export async function createCodOrder(data: {
       price: Number(item.price),
       quantity: item.quantity,
       image: item.image,
+      variantId: item.variantId,
+      variant: item.variant,
     })),
     totalAmount: data.totalAmount,
     subtotal: itemSubtotal,

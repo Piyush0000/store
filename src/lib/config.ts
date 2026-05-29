@@ -1,5 +1,5 @@
 // API base URL - subdomain determines which store's data is returned
-const API_BASE = 'https://api.evoclabs.com/api/storefront/public';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
 
 // Extract subdomain from hostname (e.g., moonstruck.evoclabs.com -> moonstruck)
 export function getSubdomain(): string {
