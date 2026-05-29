@@ -764,6 +764,11 @@ export default function CheckoutPage() {
             <span>✓ 100% Authentic</span>
             <span>↩ Easy Returns</span>
           </div>
+
+          <div className="checkout__powered-by">
+            <span>Powered by</span>
+            <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+          </div>
         </div>
       </div>
     </div>
