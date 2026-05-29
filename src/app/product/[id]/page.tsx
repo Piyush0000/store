@@ -13,6 +13,7 @@ export default async function ProductPage({ params }: PageProps) {
   let product: any = null;
 
   try {
+    // Cache for 60 seconds to avoid hammering the API
     const data = await fetchStorefront();
     products = data.products || [];
     product = products.find((p: any) => p.id === id);

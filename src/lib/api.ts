@@ -122,7 +122,7 @@ export interface StorefrontData {
 // ─── Public Endpoints ────────────────────────────────────────────────────────
 
 export async function fetchStorefront(): Promise<StorefrontData> {
-  const res = await fetch(getApiUrl(), { cache: 'no-store' });
+  const res = await fetch(getApiUrl(), { next: { revalidate: 60 } });
   const data = await res.json();
   if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
   return data;
