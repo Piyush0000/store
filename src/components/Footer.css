@@ -345,5 +345,9 @@
   .brand-video__player {
     max-height: 50vh;
   }
-}
 
+  .footer__powered-by {
+    width: 100%;
+    padding-top: 16px;
+  }
+}

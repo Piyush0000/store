@@ -839,6 +839,11 @@ export default function CheckoutPage() {
               <button className="checkout__continue-btn" onClick={handleContinueToPayment} disabled={isLoading || !selectedAddress}>
                 {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'CONTINUE TO PAYMENT'} <ChevronRight size={18} />
               </button>
+
+              <div className="checkout__powered-by">
+                <span>Powered by</span>
+                <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+              </div>
             </section>
           )}
 
@@ -874,6 +879,13 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {(paymentMethod === 'COD' || paymentMethod === 'PAYU') && (
+                <div className="checkout__powered-by">
+                  <span>Powered by</span>
+                  <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
                 </div>
               )}
 
