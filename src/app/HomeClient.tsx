@@ -35,17 +35,27 @@ export default function HomeClient({ bestSellers }: HomeClientProps) {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
 
   useEffect(() => {
-    const interval = setInterval(nextSlide, 5000);
-    return () => clearInterval(interval);
+    const timer = setTimeout(() => {
+      const interval = setInterval(nextSlide, 5000);
+      return () => clearInterval(interval);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="home">
       <section className="hero-carousel">
         <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-          {heroSlides.map((slide) => (
+          {heroSlides.map((slide, index) => (
             <div key={slide.id} className="hero-carousel__slide">
-              <img src={slide.image} alt={slide.title} className="hero-carousel__image" />
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="hero-carousel__image"
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+                decoding="async"
+              />
               <div className="hero-carousel__content">
                 <h1>{slide.title}</h1>
                 <p>{slide.subtitle}</p>

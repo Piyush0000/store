@@ -11,6 +11,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://d1311wbk6unapo.cloudfront.net" />
+        <link rel="dns-prefetch" href="https://d1311wbk6unapo.cloudfront.net" />
+        <link rel="preload" as="image" href="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80" />
+      </head>
       <body>
         <CartProvider>
           <AnnouncementBar />
