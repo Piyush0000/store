@@ -99,18 +99,31 @@ export default function HomeClient({ bestSellers, customization, categories }: H
   };
 
   useEffect(() => {
-    const interval = setInterval(nextSlide, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    let intervalId: NodeJS.Timeout;
+    const timerId = setTimeout(() => {
+      intervalId = setInterval(nextSlide, 5000);
+    }, 100);
+    return () => {
+      clearTimeout(timerId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [heroSlides.length]); // Added dependency to make it robust
 
   return (
     <div className="home">
       {(customization?.homePageConfig?.heroEnabled !== false) && (
         <section className="hero-carousel">
           <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-            {heroSlides.map((slide) => (
+            {heroSlides.map((slide, index) => (
               <div key={slide.id} className="hero-carousel__slide">
-                <img src={slide.image} alt={slide.title || 'Hero Banner'} className="hero-carousel__image" />
+                <img
+                  src={slide.image}
+                  alt={slide.title || 'Hero Banner'}
+                  className="hero-carousel__image"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  {...(index === 0 ? { fetchPriority: 'high' } : {})}
+                  decoding="async"
+                />
                 <div className="hero-carousel__content">
                   {slide.title && <h1>{slide.title}</h1>}
                   {slide.subtitle && <p>{slide.subtitle}</p>}
