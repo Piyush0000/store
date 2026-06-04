@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
-import './Cart.css';
+import './cart.css';
 
 export default function CartPage() {
   console.log('[PAGE:Cart] Rendering CartPage');
