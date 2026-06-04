@@ -122,7 +122,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
           </div>
 
           <div className="product-page__info">
-            <span className="product-page__brand">Swarajya Imperial</span>
+            {product.brand && <span className="product-page__brand">{product.brand}</span>}
             <h1 className="product-page__title">{product.name}</h1>
 
             <div className="product-page__rating">

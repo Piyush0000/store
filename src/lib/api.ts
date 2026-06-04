@@ -87,7 +87,7 @@ export interface Announcement {
 }
 
 export interface LegalPage {
-  type: 'TERMS_OF_SERVICE' | 'PRIVACY_POLICY' | 'REFUND_POLICY';
+  type: 'TERMS_OF_SERVICE' | 'PRIVACY_POLICY' | 'REFUND_POLICY' | 'SHIPPING_POLICY';
   title: string;
   content: string;
 }
@@ -127,61 +127,62 @@ export interface StorefrontData {
 const DUMMY_PRODUCTS = [
   {
     id: 'prod-1',
-    slug: 'dummy-product-1',
-    name: 'Gold Plated Kundan Necklace Set',
-    description: 'Beautiful traditional gold plated kundan necklace set with matching earrings.',
-    price: 2999,
-    compareAtPrice: 5999,
-    sku: 'NK-001',
+    slug: 'sample-product-1',
+    name: 'Sample Product',
+    description: 'This is a sample product description. It highlights the features of the item.',
+    price: 1999,
+    compareAtPrice: 2999,
+    sku: 'SMP-001',
     stock: 10,
-    images: ['https://images.unsplash.com/photo-1599643478524-fb66f7ca0f47?q=80&w=600&auto=format&fit=crop'],
-    category: 'jewellery-sets',
-    tags: ['kundan', 'gold', 'wedding'],
+    images: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600&auto=format&fit=crop'],
+    category: 'sample-category',
+    tags: ['sample', 'new'],
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: false,
     variants: [],
     reviews: [],
-    averageRating: 4.8,
-    reviewCount: 124,
+    averageRating: 4.5,
+    reviewCount: 12,
   },
   {
     id: 'prod-2',
-    slug: 'dummy-product-2',
-    name: 'Diamond Studded Bridal Choker',
-    description: 'Elegant diamond studded bridal choker set for your special day.',
-    price: 4999,
-    compareAtPrice: 8999,
-    sku: 'NK-002',
+    slug: 'sample-product-2',
+    name: 'Featured Item',
+    description: 'Another sample product to demonstrate layout and styling.',
+    price: 3499,
+    compareAtPrice: 4999,
+    sku: 'SMP-002',
     stock: 5,
-    images: ['https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=600&auto=format&fit=crop'],
-    category: 'jewellery-sets',
-    tags: ['diamond', 'bridal', 'choker'],
+    images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop'],
+    category: 'sample-category',
+    tags: ['featured', 'premium'],
     isFeatured: true,
     isBestSeller: false,
     isNewArrival: true,
     variants: [],
     reviews: [],
-    averageRating: 4.5,
-    reviewCount: 56,
+    averageRating: 4.8,
+    reviewCount: 24,
   }
 ] as Product[];
 
 const MOCK_STOREFRONT: StorefrontData = {
   success: true,
-  store: { id: 's-1', name: 'Swarajya Imperial', subdomain: 'swarajya', customDomain: null, description: 'Store', logo: null, category: 'Jewelry', theme: 'default', createdAt: '' },
+  store: { id: 's-1', name: 'Demo Store', subdomain: 'demo', customDomain: null, description: 'Welcome to our generic demo store.', logo: null, category: 'General', theme: 'default', createdAt: '' },
   customization: {} as any,
-  settings: { currency: 'INR', timezone: 'Asia/Kolkata', contactEmail: '', contactPhone: '', enabledGateways: {} },
+  settings: { currency: 'INR', timezone: 'Asia/Kolkata', contactEmail: 'contact@example.com', contactPhone: '', enabledGateways: {} },
   announcements: [],
   legalPages: [],
   products: DUMMY_PRODUCTS,
-  categories: ['jewellery-sets', 'earrings', 'necklaces', 'rings'],
+  categories: ['sample-category', 'featured-items'],
   theme: { id: '1', name: 'default', slug: 'default', category: 'all' }
 };
 
-export async function fetchStorefront(): Promise<StorefrontData> {
+export async function fetchStorefront(subdomain?: string): Promise<StorefrontData> {
   try {
-    const res = await fetch(getApiUrl(), { next: { revalidate: 60 } });
+    const apiUrl = getApiUrl(subdomain);
+    const res = await fetch(apiUrl, { next: { revalidate: 60 } });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
     return data;
@@ -190,9 +191,10 @@ export async function fetchStorefront(): Promise<StorefrontData> {
   }
 }
 
-export async function fetchProduct(id: string): Promise<Product> {
+export async function fetchProduct(id: string, subdomain?: string): Promise<Product> {
   try {
-    const res = await fetch(`${getApiUrl()}/products/${id}`, { cache: 'no-store' });
+    const apiUrl = `${getApiUrl(subdomain)}/products/${id}`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || `Failed to fetch product ${id}`);
     return data.product;
@@ -201,8 +203,8 @@ export async function fetchProduct(id: string): Promise<Product> {
   }
 }
 
-export async function fetchAnnouncements(): Promise<Announcement[]> {
-  const apiUrl = `${getApiUrl()}/announcements`;
+export async function fetchAnnouncements(subdomain?: string): Promise<Announcement[]> {
+  const apiUrl = `${getApiUrl(subdomain)}/announcements`;
 
   const res = await fetch(apiUrl, { cache: 'no-store' });
   const data = await res.json();
@@ -211,8 +213,8 @@ export async function fetchAnnouncements(): Promise<Announcement[]> {
   return data.announcements || [];
 }
 
-export async function fetchLegal(): Promise<LegalPage[]> {
-  const apiUrl = `${getApiUrl()}/legal`;
+export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
+  const apiUrl = `${getApiUrl(subdomain)}/legal`;
 
   const res = await fetch(apiUrl, { cache: 'no-store' });
   const data = await res.json();
@@ -228,8 +230,8 @@ export async function submitReview(review: {
   rating: number;
   title: string;
   content: string;
-}): Promise<{ message: string; review: Partial<ProductReview> }> {
-  const apiUrl = `${getApiUrl()}/reviews`;
+}, subdomain?: string): Promise<{ message: string; review: Partial<ProductReview> }> {
+  const apiUrl = `${getApiUrl(subdomain)}/reviews`;
 
   const res = await fetch(apiUrl, {
     method: 'POST',

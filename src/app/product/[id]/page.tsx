@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { fetchStorefront } from '@/lib/api';
+import { getServerSubdomain } from '@/lib/server-utils';
 import ProductClient from './ProductClient';
 
 interface PageProps {
@@ -14,7 +15,8 @@ export default async function ProductPage({ params }: PageProps) {
 
   try {
     // Cache for 60 seconds to avoid hammering the API
-    const data = await fetchStorefront();
+    const subdomain = await getServerSubdomain();
+    const data = await fetchStorefront(subdomain);
     products = data.products || [];
     product = products.find((p: any) => p.id === id);
   } catch (error) {

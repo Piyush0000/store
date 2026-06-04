@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import crypto from 'crypto';
-
-const PAYU_SALT = process.env.PAYU_SALT || '';
+import { confirmAndSyncPayUOrder } from '@/actions/order-actions';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,34 +26,43 @@ export async function POST(request: NextRequest) {
       udf2,
     } = data;
 
-    // PayU response hash validation
-    // Format: SALT|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-    const verificationString = [
-      PAYU_SALT,
-      status,
-      "", // udf10
-      "", // udf9
-      "", // udf8
-      "", // udf7
-      "", // udf6
-      "", // udf5
-      "", // udf4
-      "", // udf3
-      udf2 || "",
-      udf1 || "",
-      email,
-      firstname,
-      productinfo,
-      amount,
-      txnid,
-      key,
-    ].join("|");
+    // Resolve subdomain: check udf1 (set during payment initiation) first, then headers/hostname fallback
+    let subdomain = udf1 || request.headers.get('x-subdomain') || '';
+    if (!subdomain) {
+      let host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+      if (host.includes(',')) {
+        host = host.split(',')[0].trim();
+      }
+      if (host) {
+        const hostname = host.split(':')[0];
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          subdomain = process.env.NEXT_PUBLIC_SUBDOMAIN || '';
+        } else {
+          const parts = hostname.split('.');
+          if (parts.length >= 2) {
+            subdomain = parts[0];
+          }
+        }
+      }
+    }
+    if (!subdomain) {
+      subdomain = process.env.NEXT_PUBLIC_SUBDOMAIN || '';
+    }
 
-    const calculatedHash = crypto.createHash("sha512").update(verificationString).digest("hex");
+    // Verify hash BEFORE any database operations on the backend
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+    const verifyUrl = `${apiBase}/${subdomain}/payment/payu-verify`;
 
-    // Verify hash BEFORE any database operations
-    if (calculatedHash !== hash) {
-      console.error("PayU callback: Hash mismatch!", { calculatedHash, receivedHash: hash });
+    const verifyRes = await fetch(verifyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    const verifyResult = await verifyRes.json();
+
+    if (!verifyResult.success) {
+      console.error("PayU callback: Hash verification failed on backend!");
       return NextResponse.redirect(new URL(`/checkout/failure?reason=hash_mismatch`, request.url));
     }
 
@@ -87,7 +94,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.redirect(new URL(`/checkout/failure?reason=order_not_found`, baseUrl));
     }
 
-    // Update customer name in shipping address
+    // Update shipping address customer name details
     const shippingAddress = order.shippingAddress as any;
     const updatedShippingAddress = {
       ...shippingAddress,
@@ -95,20 +102,33 @@ export async function POST(request: NextRequest) {
       lastName: lastname || shippingAddress.lastName,
     };
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        shippingAddress: updatedShippingAddress,
-        customerEmail: email || order.customerEmail,
-        paymentStatus: isSuccess ? "PAID" : "FAILED",
-        status: isSuccess ? "CONFIRMED" : "CANCELLED",
-        payuTxnId: mihpayid || order.payuTxnId,
-        payuStatus: status,
-        payuResponse: data,
-      },
-    });
+    if (isSuccess) {
+      await confirmAndSyncPayUOrder(order.id, mihpayid || txnid, status, data);
+      
+      // Update shipping details locally (confirmAndSyncPayUOrder handles status/paymentStatus)
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          shippingAddress: updatedShippingAddress,
+          customerEmail: email || order.customerEmail,
+        },
+      });
+    } else {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          shippingAddress: updatedShippingAddress,
+          customerEmail: email || order.customerEmail,
+          paymentStatus: "FAILED",
+          status: "CANCELLED",
+          payuTxnId: mihpayid || order.payuTxnId,
+          payuStatus: status,
+          payuResponse: data,
+        },
+      });
+    }
 
-    console.log(`PayU callback: Order ${order.id} updated to ${status}`);
+    console.log(`PayU callback: Order ${order.id} processed status: ${status}`);
 
     // Redirect based on payment status
     if (isSuccess) {

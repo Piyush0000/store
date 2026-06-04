@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Loader2, Phone, CheckCircle2, Truck, ChevronRight, Banknote, CreditCard, ShoppingBag, Lock, RefreshCw } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
-import { fetchStorefront } from '@/lib/api';
 import {
   sendOtp,
   verifyOtp,
@@ -69,63 +68,42 @@ export default function CheckoutPage() {
   const [payUData, setPayUData] = useState<any>(null);
   const launchAttemptedRef = useRef(false);
   const [orderSummary, setOrderSummary] = useState<{ items: typeof cartItems; subtotal: number; paymentMethod: string | null } | null>(null);
-  const [storeId, setStoreId] = useState<string>(process.env.NEXT_PUBLIC_STORE_ID || '');
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  // Fetch storeId from API on mount if not set from env
-  useEffect(() => {
-    if (storeId) return;
-    fetchStorefront()
-      .then((data) => {
-        if (data.store?.id) {
-          setStoreId(data.store.id);
-        }
-      })
-      .catch((err) => console.error('[Checkout] Failed to fetch store:', err));
-  }, [storeId]);
-
-  // Launch PayU Checkout Plus in iframe mode (SPA-like experience)
+  // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
     if (!payUData || !pendingOrderId) return;
     if (launchAttemptedRef.current) return;
     launchAttemptedRef.current = true;
 
-    const currentOrderId = pendingOrderId;
+    console.log('Redirecting to PayU Hosted Checkout...', payUData);
 
-    const launchPayU = () => {
-      const bolt = (window as any).bolt;
-      if (bolt && typeof bolt.launch === 'function') {
-        console.log('Launching PayU Checkout Plus...', payUData);
-        bolt.launch(payUData, {
-          responseHandler: function (BOLT: any) {
-            console.log('PayU Response:', BOLT);
-            setIsLoading(false);
-            const res = BOLT.response;
-            if (res && (res.status === 'success' || res.txnStatus === 'SUCCESS')) {
-              window.location.href = `/checkout/success?orderId=${currentOrderId}&txn=${res.mihpayid || ''}`;
-            } else {
-              window.location.href = `/checkout/failure?reason=${res?.error_Message || 'payment_failed'}`;
-            }
-            launchAttemptedRef.current = false;
-          },
-          catchException: function (BOLT: any) {
-            console.error('PayU Exception:', BOLT);
-            setIsLoading(false);
-            setError('Payment modal closed or failed to load.');
-            launchAttemptedRef.current = false;
-          },
-        });
-        setPayUData(null);
-      } else {
-        console.log('Waiting for PayU SDK...');
-        setTimeout(launchPayU, 300);
-      }
-    };
+    const form = document.createElement('form');
+    form.method = 'POST';
 
-    launchPayU();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payUData]);
+    // Set destination URL: PayU sandbox or production
+    const isProduction = process.env.NODE_ENV === 'production';
+    form.action = isProduction 
+      ? 'https://secure.payu.in/_payment' 
+      : 'https://test.payu.in/_payment';
+
+    // Append fields
+    Object.entries(payUData).forEach(([key, val]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = String(val);
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+
+    // Clean up state
+    setPayUData(null);
+    launchAttemptedRef.current = false;
+  }, [payUData, pendingOrderId]);
 
   // Initialize device ID and validate session on mount
   const sessionChecked = useRef(false);
@@ -433,7 +411,6 @@ export default function CheckoutPage() {
 
       const result = await createCodOrder({
         userId: userId || `temp_${phone}`,
-        storeId: storeId,
         items: orderItems,
         totalAmount: calculatedSubtotal + COD_FEE,
         firstName: customerFirstName,
@@ -524,7 +501,6 @@ export default function CheckoutPage() {
 
       const result = await createOrder({
         userId: uid,
-        storeId: storeId, // From API response
         items: cartItems.map((item) => ({
           productId: item.id,
           name: item.name,

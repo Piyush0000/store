@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { fetchStorefront } from '@/lib/api';
+import { getServerSubdomain } from '@/lib/server-utils';
 import CatalogueClient from './CatalogueClient';
 import { CategorySkeleton, ProductGridSkeleton } from './Skeleton';
 import './catalogue.css';
@@ -11,7 +12,8 @@ export default async function CataloguePage() {
   let categories: string[] = [];
 
   try {
-    const data = await fetchStorefront();
+    const subdomain = await getServerSubdomain();
+    const data = await fetchStorefront(subdomain);
     products = data.products || [];
     categories = data.categories || [];
   } catch (error) {

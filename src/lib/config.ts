@@ -1,13 +1,27 @@
 // API base URL - subdomain determines which store's data is returned
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
 
-// Extract subdomain from hostname (e.g., moonstruck.evoclabs.com -> moonstruck)
+// Extract subdomain from hostname (e.g., store.evoclabs.com -> store)
 export function getSubdomain(): string {
   if (typeof window !== 'undefined') {
+    // 1. Try URL query parameter first (great for testing)
+    const params = new URLSearchParams(window.location.search);
+    const querySub = params.get('subdomain');
+    if (querySub) {
+      localStorage.setItem('detected_subdomain', querySub);
+      return querySub;
+    }
+
+    // 2. Try localStorage saved subdomain next
+    const storedSub = localStorage.getItem('detected_subdomain');
+    if (storedSub) {
+      return storedSub;
+    }
+
     const hostname = window.location.hostname;
-    // Local development: use hardcoded default
+    // Local development: use environment variable fallback
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'moonstruck';
+      return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
     }
     // Extract subdomain from domain
     const parts = hostname.split('.');
@@ -15,7 +29,7 @@ export function getSubdomain(): string {
       return parts[0];
     }
   }
-  return 'moonstruck';
+  return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
 }
 
 export function getApiUrl(subdomain?: string): string {

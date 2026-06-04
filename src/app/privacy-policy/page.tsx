@@ -1,11 +1,15 @@
+export const dynamic = "force-dynamic";
+
 import { fetchLegal } from '@/lib/api';
+import { getServerSubdomain } from '@/lib/server-utils';
 import '@/app/policy.css';
 
 export default async function PrivacyPolicyPage() {
   let content = '';
 
   try {
-    const legalPages = await fetchLegal();
+    const subdomain = await getServerSubdomain();
+    const legalPages = await fetchLegal(subdomain);
     const privacy = legalPages.find(p => p.type === 'PRIVACY_POLICY');
     content = privacy?.content || '';
   } catch (error) {

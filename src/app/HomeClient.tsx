@@ -29,10 +29,13 @@ interface Customization {
     categoriesEnabled?: boolean;
     videoUrl?: string;
     images?: string[];
+    mediaType?: string;
+    imageUrl?: string;
   };
   features?: { title: string; description: string; icon: string }[];
   aboutSection?: { title: string; content: string; image: string };
   newsletter?: { heading: string; subtext: string };
+  categoryImages?: Record<string, string>;
 }
 
 interface HomeClientProps {
@@ -41,16 +44,25 @@ interface HomeClientProps {
   categories: string[];
 }
 
-function buildHeroSlides(customization: Customization | null) {
-  if (customization?.heroSection?.backgroundImage) {
-    return [{
-      id: 1,
-      image: customization.heroSection.backgroundImage,
-      title: customization.heroSection.title || '',
-      subtitle: customization.heroSection.subtitle || '',
-      cta: customization.heroSection.ctaText || '',
-      link: customization.heroSection.ctaLink || '/catalogue',
-    }];
+function buildHeroSlides(customization: any | null) {
+  const hero = customization?.heroSection;
+  if (hero) {
+    const title = hero.title || hero.headline || '';
+    const subtitle = hero.subtitle || hero.subheadline || hero.description || '';
+    const cta = hero.ctaText || hero.buttonText || '';
+    const image = hero.backgroundImage || hero.imageUrl || '';
+    const link = hero.ctaLink || '/catalogue';
+
+    if (title || subtitle || cta || image) {
+      return [{
+        id: 1,
+        image: image || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80',
+        title,
+        subtitle,
+        cta,
+        link,
+      }];
+    }
   }
 
   return [{
@@ -63,20 +75,36 @@ function buildHeroSlides(customization: Customization | null) {
   }];
 }
 
-function buildCategories(categories: string[]) {
+function buildCategories(categories: string[], customization: any | null, bestSellers: Product[]) {
   if (categories && categories.length > 0) {
-    return categories.map((cat) => ({
-      name: cat.toUpperCase(),
-      path: `/catalogue?category=${encodeURIComponent(cat.toLowerCase())}`,
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80',
-    }));
+    return categories.map((cat) => {
+      const catKey = cat.toLowerCase().trim();
+      let image = customization?.categoryImages?.[catKey];
+
+      // If no custom image, use first product image in this category as a fallback
+      if (!image && bestSellers && bestSellers.length > 0) {
+        const matchingProduct = bestSellers.find(
+          (p) => (p.category || '').toLowerCase().trim() === catKey
+        );
+        if (matchingProduct && matchingProduct.images && matchingProduct.images.length > 0) {
+          image = matchingProduct.images[0];
+        }
+      }
+
+      // Fallback placeholder
+      if (!image) {
+        image = 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80';
+      }
+
+      return {
+        name: cat.toUpperCase(),
+        path: `/catalogue?category=${encodeURIComponent(catKey)}`,
+        image,
+      };
+    });
   }
 
-  return [
-    { name: 'JEWELLERY SETS', path: '/catalogue?category=jewellery-sets', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' },
-    { name: 'NECKLACE', path: '/catalogue?category=necklace', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80' },
-    { name: 'EARRINGS', path: '/catalogue?category=earrings', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&q=80' },
-  ];
+  return [];
 }
 
 function buildVideoUrl(customization: Customization | null) {
@@ -86,9 +114,22 @@ function buildVideoUrl(customization: Customization | null) {
 
 export default function HomeClient({ bestSellers, customization, categories }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const heroSlides = buildHeroSlides(customization);
-  const brandCategories = buildCategories(categories);
-  const videoUrl = buildVideoUrl(customization);
+  const [customizationState, setCustomizationState] = useState(customization);
+
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
+        console.log('[HomeClient] Received customizer update:', e.data.data);
+        setCustomizationState(e.data.data);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const heroSlides = buildHeroSlides(customizationState);
+  const brandCategories = buildCategories(categories, customizationState, bestSellers);
+  const videoUrl = buildVideoUrl(customizationState);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -111,7 +152,7 @@ export default function HomeClient({ bestSellers, customization, categories }: H
 
   return (
     <div className="home">
-      {(customization?.homePageConfig?.heroEnabled !== false) && (
+      {(customizationState?.homePageConfig?.heroEnabled !== false) && (
         <section className="hero-carousel animate-slide-up delay-200">
           <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
             {heroSlides.map((slide, index) => (
@@ -156,7 +197,7 @@ export default function HomeClient({ bestSellers, customization, categories }: H
         </section>
       )}
 
-      {(customization?.homePageConfig?.categoriesEnabled !== false) && (
+      {(customizationState?.homePageConfig?.categoriesEnabled !== false) && brandCategories.length > 0 && (
         <>
           <section className="brand-category animate-slide-up delay-300">
             <h2 className="section-title">BRAND CATEGORY</h2>
@@ -188,17 +229,32 @@ export default function HomeClient({ bestSellers, customization, categories }: H
         </>
       )}
 
-      {videoUrl && (
-        <section className="brand-video animate-slide-up delay-500">
-          <div className="brand-video__wrapper">
-            <video autoPlay muted loop playsInline className="brand-video__player">
-              <source src={videoUrl} type="video/mp4" />
-            </video>
-          </div>
-        </section>
+      {customizationState?.homePageConfig?.mediaType === 'image' ? (
+        customizationState?.homePageConfig?.imageUrl && (
+          <section className="brand-video animate-slide-up delay-500">
+            <div className="brand-video__wrapper">
+              <img
+                src={customizationState.homePageConfig.imageUrl}
+                alt="Brand Banner"
+                className="brand-video__player"
+                style={{ width: '100%', height: 'auto', borderRadius: '8px', objectFit: 'cover' }}
+              />
+            </div>
+          </section>
+        )
+      ) : (
+        videoUrl && (
+          <section className="brand-video animate-slide-up delay-500">
+            <div className="brand-video__wrapper">
+              <video autoPlay muted loop playsInline className="brand-video__player" key={videoUrl}>
+                <source src={videoUrl} type="video/mp4" />
+              </video>
+            </div>
+          </section>
+        )
       )}
 
-      {(customization?.homePageConfig?.featuredEnabled !== false) && (
+      {(customizationState?.homePageConfig?.featuredEnabled !== false) && (
         bestSellers.length > 0 ? (
           <section className="featured-collection animate-slide-up delay-600">
             <h2 className="section-title">ALL PRODUCTS</h2>

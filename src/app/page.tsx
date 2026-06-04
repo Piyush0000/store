@@ -1,10 +1,11 @@
 import { fetchStorefront, type Customization, type StorefrontData } from '@/lib/api';
+import { getServerSubdomain } from '@/lib/server-utils';
 import HomeClient from './HomeClient';
 import './page.css';
 
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: Promise<any> | any }) {
   console.log('[PAGE:Home] Rendering HomePage');
   console.log('[PAGE:Home] Force dynamic mode enabled');
 
@@ -14,7 +15,11 @@ export default async function HomePage() {
 
   try {
     console.log('[PAGE:Home] Fetching storefront data...');
-    const data: StorefrontData = await fetchStorefront();
+    const params = await searchParams;
+    const querySubdomain = params?.subdomain;
+    const resolvedSubdomain = querySubdomain || (await getServerSubdomain());
+    console.log('[PAGE:Home] Query subdomain:', querySubdomain, '| Resolved subdomain:', resolvedSubdomain);
+    const data: StorefrontData = await fetchStorefront(resolvedSubdomain);
     console.log('[PAGE:Home] Storefront fetched successfully');
     console.log('[PAGE:Home] Store name:', data.store?.name);
     console.log('[PAGE:Home] Total products:', data.products?.length);

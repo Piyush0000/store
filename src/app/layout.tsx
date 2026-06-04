@@ -9,6 +9,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import PageLoader from "@/components/PageLoader";
 
 import { fetchStorefront } from "@/lib/api";
+import { getServerSubdomain } from "@/lib/server-utils";
 import PreviewBridge from "@/components/PreviewBridge";
 
 const inter = Inter({
@@ -37,7 +38,8 @@ export default async function RootLayout({
 
   let customization = null;
   try {
-    const data = await fetchStorefront();
+    const subdomain = await getServerSubdomain();
+    const data = await fetchStorefront(subdomain);
     customization = data.customization;
   } catch (err) {
     console.error("[RootLayout] Failed to fetch storefront customization:", err);

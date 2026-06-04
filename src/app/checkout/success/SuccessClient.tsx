@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, Truck, ArrowRight, Loader2, Package } from 'lucide-react';
-import { getOrderById } from '@/actions/order-actions';
+import { getOrderById, confirmAndSyncPayUOrder } from '@/actions/order-actions';
 import { useCart } from '@/components/CartProvider';
 import '../checkout.css';
 
@@ -18,7 +18,8 @@ export default function SuccessClient() {
 
   useEffect(() => {
     if (orderId) {
-      getOrderById(orderId)
+      // Confirm payment locally and sync to backend
+      confirmAndSyncPayUOrder(orderId, txnId || '')
         .then(res => {
           if (res.success && res.data) setOrder(res.data);
         })
@@ -27,7 +28,7 @@ export default function SuccessClient() {
       setLoading(false);
     }
     clearCart();
-  }, [orderId, clearCart]);
+  }, [orderId, txnId, clearCart]);
 
   if (loading) {
     return (

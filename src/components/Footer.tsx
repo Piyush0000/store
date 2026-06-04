@@ -13,14 +13,14 @@ const quickLinks = [
   { label: 'Terms and condition', path: '/terms-of-service' },
 ];
 
-const DEFAULT_LOGO = 'https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg';
-const DEFAULT_NAME = 'Swarajya Imperial';
-const DEFAULT_DESC = 'At Swarajya Imperial, We Believe Jewellery Is More than Just an Accessory. Founded on A Passion for Craftsmanship.';
-const DEFAULT_PHONE = '+91 - 9930569627';
-const DEFAULT_EMAIL = 'mauryaglobal08@gmail.com';
-const DEFAULT_ADDRESS = 'jayprakash nagar kharodi marve road malad west mumbai, Maharashtra, 400095';
-const DEFAULT_FB = 'https://www.facebook.com/profile.php?id=61579162477335';
-const DEFAULT_IG = 'https://www.instagram.com/swarajyaimperial/';
+const DEFAULT_LOGO = '';
+const DEFAULT_NAME = 'Demo Store';
+const DEFAULT_DESC = 'Welcome to our store. We believe in providing the best quality products for our customers.';
+const DEFAULT_PHONE = '';
+const DEFAULT_EMAIL = 'contact@example.com';
+const DEFAULT_ADDRESS = '';
+const DEFAULT_FB = '';
+const DEFAULT_IG = '';
 
 function VisaIcon() {
   return (

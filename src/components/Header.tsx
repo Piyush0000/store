@@ -22,7 +22,7 @@ const DEFAULT_NAV_LINKS = [
   { label: 'ALL PRODUCTS', path: '/catalogue' },
 ];
 
-const DEFAULT_LOGO = 'https://d1311wbk6unapo.cloudfront.net/NushopWebsiteAsset/tr:w-300,,f-webp,fo-auto/686907a872a04e21d2c32db3_brand_logo_HC7VFLYTI4_2026-03-02.jpg';
+const DEFAULT_LOGO = '';
 
 interface HeaderProps {
   initialCustomization?: any;
@@ -41,7 +41,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
     if (headerStyle && typeof headerStyle === 'string') {
       try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
     }
-    return initialCustomization?.logo || headerStyle?.logoUrl || initialCustomization?.headerConfig?.logoUrl || DEFAULT_LOGO;
+    return initialCustomization?.logo || headerStyle?.logoUrl || initialCustomization?.headerConfig?.logoUrl || '';
   };
 
   const getInitialStoreName = () => {
@@ -49,7 +49,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
     if (headerStyle && typeof headerStyle === 'string') {
       try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
     }
-    return headerStyle?.storeName || headerStyle?.logoText || initialCustomization?.headerConfig?.storeName || 'Swarajya Imperial';
+    return headerStyle?.storeName || headerStyle?.logoText || initialCustomization?.headerConfig?.storeName || 'Demo Store';
   };
 
   const getInitialNavLinks = () => {
@@ -88,13 +88,8 @@ export default function Header({ initialCustomization }: HeaderProps) {
           try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
         }
 
-        if (customization?.logo) {
-          setLogoUrl(customization.logo);
-        } else if (headerStyle?.logoUrl) {
-          setLogoUrl(headerStyle.logoUrl);
-        } else if (customization?.headerConfig?.logoUrl) {
-          setLogoUrl(customization.headerConfig.logoUrl);
-        }
+        const resolvedLogo = customization?.logo || headerStyle?.logoUrl || customization?.headerConfig?.logoUrl || '';
+        setLogoUrl(resolvedLogo);
 
         if (headerStyle?.storeName || headerStyle?.logoText) {
           setStoreName(headerStyle.storeName || headerStyle.logoText);
@@ -121,13 +116,8 @@ export default function Header({ initialCustomization }: HeaderProps) {
           try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
         }
 
-        if (cust?.logo) {
-          setLogoUrl(cust.logo);
-        } else if (headerStyle?.logoUrl) {
-          setLogoUrl(headerStyle.logoUrl);
-        } else if (cust?.headerConfig?.logoUrl) {
-          setLogoUrl(cust.headerConfig.logoUrl);
-        }
+        const resolvedLogo = cust?.logo || headerStyle?.logoUrl || cust?.headerConfig?.logoUrl || '';
+        setLogoUrl(resolvedLogo);
 
         if (headerStyle?.storeName || headerStyle?.logoText) {
           setStoreName(headerStyle.storeName || headerStyle.logoText);

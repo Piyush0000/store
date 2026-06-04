@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Heart, Trash2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import './wishlist.css';

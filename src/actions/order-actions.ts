@@ -3,6 +3,8 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { getServerSubdomain } from '@/lib/server-utils';
+import { fetchStorefront } from '@/lib/api';
 
 const addressSchema = z.object({
   type: z.string(),
@@ -47,7 +49,7 @@ const orderItemInputSchema = z.object({
 
 const orderInputSchema = z.object({
   userId: z.string(),
-  storeId: z.string(),
+  storeId: z.string().optional(),
   items: z.array(orderItemInputSchema),
   totalAmount: z.number(),
   subtotal: z.number().optional(),
@@ -101,10 +103,23 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
   try {
     const { shippingAddress, ...orderData } = data;
 
+    let storeId = orderData.storeId;
+    if (!storeId) {
+      const subdomain = await getServerSubdomain();
+      const storefront = await fetchStorefront(subdomain);
+      if (storefront.store?.id) {
+        storeId = storefront.store.id;
+      }
+    }
+
+    if (!storeId) {
+      return { success: false, message: 'Store not found or store ID could not be resolved' };
+    }
+
     const order = await prisma.order.create({
       data: {
         userId: orderData.userId,
-        storeId: orderData.storeId,
+        storeId: storeId,
         orderNumber: generateOrderNumber(),
         customerEmail: orderData.email,
         customerName: [orderData.firstName, orderData.lastName].filter(Boolean).join(' ') || 'Customer',
@@ -185,7 +200,14 @@ export async function createCodOrder(data: {
     pincode: string;
   };
 }) {
-  const storeId = data.storeId;
+  let storeId = data.storeId;
+  if (!storeId) {
+    const subdomain = await getServerSubdomain();
+    const storefront = await fetchStorefront(subdomain);
+    if (storefront.store?.id) {
+      storeId = storefront.store.id;
+    }
+  }
 
   if (!storeId) {
     return { success: false, message: 'STORE_ID is required to validate COD stock' };
@@ -269,7 +291,11 @@ export async function createCodOrder(data: {
   let externalSyncFailed = false;
   let responseBody = '';
   let responseStatus = 500;
-  try {
+  
+  if (storeId === 's-1') {
+    console.log('[COD] Bypassing external sync for demo store');
+  } else {
+    try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
     const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
@@ -290,10 +316,11 @@ export async function createCodOrder(data: {
     } else {
       console.log('[COD] External order sync succeeded:', response.status);
     }
-  } catch (err: any) {
-    console.warn('[COD] External API unreachable, creating local order (fallback):', err.message);
-    externalSyncFailed = true;
-    responseBody = err.message;
+    } catch (err: any) {
+      console.warn('[COD] External API unreachable, creating local order (fallback):', err.message);
+      externalSyncFailed = true;
+      responseBody = err.message;
+    }
   }
 
   // External sync MUST succeed - reject if it fails
@@ -395,6 +422,109 @@ export async function getOrdersByUser(userId: string) {
     });
     return { success: true, data: orders };
   } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, payuStatus?: string, payuResponse?: any) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+
+    if (!order) {
+      return { success: false, message: 'Order not found' };
+    }
+
+    // If order is already paid, just return it
+    if (order.paymentStatus === 'PAID') {
+      console.log(`[Sync] Order ${orderId} already marked PAID. Skipping backend sync.`);
+      return { success: true, data: order };
+    }
+
+    console.log(`[Sync] Confirming and syncing Order ${orderId} to backend...`);
+
+    // 1. Update local order status
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        paymentStatus: 'PAID',
+        status: 'CONFIRMED',
+        payuTxnId: txnId || undefined,
+        ...(payuStatus && { payuStatus }),
+        ...(payuResponse && { payuResponse: payuResponse as any }),
+      },
+      include: { items: true },
+    });
+
+    // 2. Sync to backend
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+    const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
+
+    const externalPayload = {
+      storeId: order.storeId,
+      userId: order.userId,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      shippingAddress: {
+        firstName: (order.shippingAddress as any).firstName || '',
+        lastName: (order.shippingAddress as any).lastName || '',
+        line1: (order.shippingAddress as any).street || '',
+        addressLine1: (order.shippingAddress as any).street || '',
+        city: (order.shippingAddress as any).city || '',
+        state: (order.shippingAddress as any).state || '',
+        zip: (order.shippingAddress as any).zipCode || '',
+        postalCode: (order.shippingAddress as any).zipCode || '',
+        zipCode: (order.shippingAddress as any).zipCode || '',
+        country: 'IN',
+        phone: (order.shippingAddress as any).phone || '',
+      },
+      billingAddress: {
+        firstName: (order.billingAddress as any).firstName || '',
+        lastName: (order.billingAddress as any).lastName || '',
+        line1: (order.billingAddress as any).street || '',
+        addressLine1: (order.billingAddress as any).street || '',
+        city: (order.billingAddress as any).city || '',
+        state: (order.billingAddress as any).state || '',
+        zip: (order.billingAddress as any).zipCode || '',
+        postalCode: (order.billingAddress as any).zipCode || '',
+        zipCode: (order.billingAddress as any).zipCode || '',
+        country: 'IN',
+        phone: (order.billingAddress as any).phone || '',
+      },
+      subtotal: order.subtotal,
+      total: order.total,
+      shipping: order.shipping,
+      tax: order.tax,
+      source: 'STOREFRONT',
+      paymentStatus: 'PAID',
+      status: 'CONFIRMED',
+      items: order.items.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: Number(item.price),
+        variantInfo: item.variantInfo || undefined,
+      })),
+    };
+
+    const response = await fetch(ordersApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(externalPayload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(`[Sync] Failed to sync order to backend:`, errorText);
+    } else {
+      console.log(`[Sync] Order ${orderId} successfully synced to backend.`);
+    }
+
+    return { success: true, data: updatedOrder };
+  } catch (error: any) {
+    console.error('[confirmAndSyncPayUOrder] Error:', error);
     return { success: false, message: error.message };
   }
 }
