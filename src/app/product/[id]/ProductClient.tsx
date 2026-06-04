@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Star, Heart, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
 import ProductCard from '@/components/ProductCard';
-import './Product.css';
+import './product.css';
 
 interface ProductClientProps {
   product: any;
