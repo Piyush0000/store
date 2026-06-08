@@ -1,4 +1,4 @@
-import { fetchStorefront, type Customization, type StorefrontData } from '@/lib/api';
+import { fetchStorefront, fetchTestimonials, fetchReels, type Customization, type StorefrontData } from '@/lib/api';
 import { getServerSubdomain } from '@/lib/server-utils';
 import HomeClient from './HomeClient';
 import './page.css';
@@ -12,6 +12,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   let customization: Customization | null = null;
   let categories: string[] = [];
   let bestSellers: any[] = [];
+  let testimonials: any[] = [];
+  let reels: any[] = [];
+  let testimonialsLayout: string = 'carousel';
 
   try {
     console.log('[PAGE:Home] Fetching storefront data...');
@@ -19,7 +22,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     const querySubdomain = params?.subdomain;
     const resolvedSubdomain = querySubdomain || (await getServerSubdomain());
     console.log('[PAGE:Home] Query subdomain:', querySubdomain, '| Resolved subdomain:', resolvedSubdomain);
-    const data: StorefrontData = await fetchStorefront(resolvedSubdomain);
+    
+    const [data, testimonialsRes, reelsRes] = await Promise.all([
+      fetchStorefront(resolvedSubdomain),
+      fetchTestimonials(resolvedSubdomain),
+      fetchReels(resolvedSubdomain)
+    ]);
+    
     console.log('[PAGE:Home] Storefront fetched successfully');
     console.log('[PAGE:Home] Store name:', data.store?.name);
     console.log('[PAGE:Home] Total products:', data.products?.length);
@@ -28,7 +37,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     customization = data.customization;
     categories = data.categories || [];
     bestSellers = data.products || [];
+    testimonials = testimonialsRes.success ? testimonialsRes.data : [];
+    reels = reelsRes.success ? reelsRes.data : [];
+    if (testimonialsRes.success && testimonialsRes.layout) {
+      testimonialsLayout = testimonialsRes.layout;
+    }
     console.log('[PAGE:Home] Products count:', bestSellers.length);
+    console.log('[PAGE:Home] Testimonials count:', testimonials.length);
+    console.log('[PAGE:Home] Reels count:', reels.length);
   } catch (error) {
     console.error('[PAGE:Home] Failed to fetch data:', error);
   }
@@ -39,5 +55,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     bestSellers={bestSellers}
     customization={customization}
     categories={categories}
+    testimonials={testimonials}
+    reels={reels}
+    testimonialsLayout={testimonialsLayout}
   />;
 }

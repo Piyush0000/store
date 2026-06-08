@@ -426,3 +426,29 @@ export function deleteCheckoutSession(): void {
     localStorage.removeItem(CHECKOUT_SESSION_KEY);
   }
 }
+
+export async function fetchTestimonials(subdomain?: string): Promise<{ success: boolean; data: any[]; visible: boolean; layout: string }> {
+  try {
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/storefront/public';
+    const sub = subdomain || '';
+    const apiUrl = `${API_BASE}/${sub}/testimonials`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    return { success: false, data: [], visible: false, layout: 'carousel' };
+  }
+}
+
+export async function fetchReels(subdomain?: string): Promise<{ success: boolean; data: any[]; visible: boolean }> {
+  try {
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/storefront/public';
+    const sub = subdomain || '';
+    const apiUrl = `${API_BASE}/${sub}/reels`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    return { success: false, data: [], visible: false };
+  }
+}

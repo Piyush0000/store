@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
+import ReelsSection from '@/components/ReelsSection';
+import TestimonialsSection from '@/components/TestimonialsSection';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import './page.css';
 
@@ -36,12 +38,19 @@ interface Customization {
   aboutSection?: { title: string; content: string; image: string };
   newsletter?: { heading: string; subtext: string };
   categoryImages?: Record<string, string>;
+  showReels?: boolean;
+  showTestimonials?: boolean;
+  showCollections?: boolean;
+  testimonialsSection?: { layout?: 'grid' | 'carousel' | 'auto-slide' };
 }
 
 interface HomeClientProps {
   bestSellers: Product[];
   customization: Customization | null;
   categories: string[];
+  testimonials?: any[];
+  reels?: any[];
+  testimonialsLayout?: string;
 }
 
 function buildHeroSlides(customization: any | null) {
@@ -75,36 +84,49 @@ function buildHeroSlides(customization: any | null) {
   }];
 }
 
-function buildCategories(categories: string[], customization: any | null, bestSellers: Product[]) {
-  if (categories && categories.length > 0) {
-    return categories.map((cat) => {
-      const catKey = cat.toLowerCase().trim();
-      let image = customization?.categoryImages?.[catKey];
-
-      // If no custom image, use first product image in this category as a fallback
-      if (!image && bestSellers && bestSellers.length > 0) {
-        const matchingProduct = bestSellers.find(
-          (p) => (p.category || '').toLowerCase().trim() === catKey
-        );
-        if (matchingProduct && matchingProduct.images && matchingProduct.images.length > 0) {
-          image = matchingProduct.images[0];
-        }
-      }
-
-      // Fallback placeholder
-      if (!image) {
-        image = 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80';
-      }
-
-      return {
-        name: cat.toUpperCase(),
-        path: `/catalogue?category=${encodeURIComponent(catKey)}`,
-        image,
-      };
-    });
+function buildCategories(customization: any | null, bestSellers: Product[]) {
+  if (!bestSellers || bestSellers.length === 0) {
+    return [];
   }
 
-  return [];
+  // Group products by category
+  const categoriesMap = bestSellers.reduce((acc, product) => {
+    const cat = product.category || 'Uncategorized';
+    if (!acc[cat]) {
+      acc[cat] = [];
+    }
+    acc[cat].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+  return Object.entries(categoriesMap).map(([categoryName, products]) => {
+    const catKey = categoryName.toLowerCase().trim();
+    let image = customization?.categoryImages?.[catKey];
+
+    // If no custom image, use first product image in this category as a fallback
+    if (!image && products && products.length > 0) {
+      const matchingProduct = products.find(
+        (p) => p.images && p.images.length > 0
+      );
+      if (matchingProduct) {
+        image = matchingProduct.images[0];
+      }
+    }
+
+    // Fallback placeholder
+    if (!image) {
+      image = 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80';
+    }
+
+    const catParam = categoryName.toLowerCase().replace(/\s+/g, '-');
+
+    return {
+      name: categoryName.toUpperCase(),
+      path: `/catalogue?category=${encodeURIComponent(catParam)}`,
+      image,
+      count: products.length,
+    };
+  });
 }
 
 function buildVideoUrl(customization: Customization | null) {
@@ -112,7 +134,7 @@ function buildVideoUrl(customization: Customization | null) {
     'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:q-50/686907a872a04e21d2c32db3/cat_vid/1755514917928_FM3UBAP14Z_2025-08-18_1.mp4';
 }
 
-export default function HomeClient({ bestSellers, customization, categories }: HomeClientProps) {
+export default function HomeClient({ bestSellers, customization, categories, testimonials = [], reels = [], testimonialsLayout = 'carousel' }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [customizationState, setCustomizationState] = useState(customization);
 
@@ -128,7 +150,7 @@ export default function HomeClient({ bestSellers, customization, categories }: H
   }, []);
 
   const heroSlides = buildHeroSlides(customizationState);
-  const brandCategories = buildCategories(categories, customizationState, bestSellers);
+  const brandCategories = buildCategories(customizationState, bestSellers);
   const videoUrl = buildVideoUrl(customizationState);
 
   const nextSlide = () => {
@@ -221,6 +243,9 @@ export default function HomeClient({ bestSellers, customization, categories }: H
                   <img src={cat.image} alt={cat.name} className="shop-category__image" />
                   <div className="shop-category__overlay">
                     <span className="shop-category__name">{cat.name}</span>
+                    <span className="shop-category__count" style={{ display: 'block', fontSize: '11px', color: '#e0e0e0', marginTop: '4px', textTransform: 'lowercase' }}>
+                      {cat.count} {cat.count === 1 ? 'item' : 'items'}
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -254,23 +279,88 @@ export default function HomeClient({ bestSellers, customization, categories }: H
         )
       )}
 
-      {(customizationState?.homePageConfig?.featuredEnabled !== false) && (
-        bestSellers.length > 0 ? (
-          <section className="featured-collection animate-slide-up delay-600">
-            <h2 className="section-title">ALL PRODUCTS</h2>
-            <div className="featured-collection__grid">
-              {bestSellers.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </section>
-        ) : (
-          <section className="featured-collection animate-slide-up delay-600">
-            <h2 className="section-title">ALL PRODUCTS</h2>
-            <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products available</p>
-          </section>
+      {customizationState?.productSections && customizationState.productSections.length > 0 ? (
+        customizationState.productSections.map((section: any) => {
+          // Filter products for this section
+          const sectionProducts = bestSellers.filter((product) => {
+            const filterCat = section.categoryFilter || section.category;
+            if (filterCat && filterCat.trim() !== '') {
+              const productCategory = (product.category || '').toLowerCase();
+              const filterCategory = filterCat.toLowerCase().trim();
+              if (!productCategory.includes(filterCategory)) {
+                return false;
+              }
+            }
+
+            // Apply type-based filters
+            if (section.type === 'featured') {
+              return product.isFeatured;
+            } else if (section.type === 'best_sellers' || section.type === 'bestsellers' || section.type === 'best-sellers') {
+              return product.isBestSeller;
+            } else if (section.type === 'new_arrivals' || section.type === 'new-arrival' || section.type === 'new_arrival') {
+              return product.isNewArrival;
+            }
+
+            return true;
+          }).slice(0, section.limit || 8);
+
+          return (
+            <section key={section.id || section.title} className="featured-collection animate-slide-up delay-600">
+              <h2 className="section-title">{section.title}</h2>
+              {sectionProducts.length > 0 ? (
+                <div className="featured-collection__grid">
+                  {sectionProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              ) : (
+                <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products found in this section</p>
+              )}
+            </section>
+          );
+        })
+      ) : (
+        (customizationState?.homePageConfig?.featuredEnabled !== false) && (
+          bestSellers.length > 0 ? (
+            <section className="featured-collection animate-slide-up delay-600">
+              <h2 className="section-title">ALL PRODUCTS</h2>
+              <div className="featured-collection__grid">
+                {bestSellers.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="featured-collection animate-slide-up delay-600">
+              <h2 className="section-title">ALL PRODUCTS</h2>
+              <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products available</p>
+            </section>
+          )
         )
       )}
+
+      {/* Testimonials Section */}
+      {(() => {
+        const activeTestimonials = (testimonials && testimonials.length > 0)
+          ? testimonials
+          : (customizationState?.testimonialsSection?.testimonials || []);
+        if (customizationState?.showTestimonials === false || activeTestimonials.length === 0) return null;
+        return (
+          <TestimonialsSection 
+            testimonials={activeTestimonials} 
+            layout={(customizationState?.testimonialsSection?.layout || testimonialsLayout || 'carousel') as any} 
+          />
+        );
+      })()}
+
+      {/* Reels Section */}
+      {(() => {
+        const activeReels = (reels && reels.length > 0)
+          ? reels
+          : (customizationState?.reelsSection?.reels || []);
+        if (customizationState?.showReels === false || activeReels.length === 0) return null;
+        return <ReelsSection reels={activeReels} />;
+      })()}
     </div>
   );
 }
