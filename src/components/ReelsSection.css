@@ -1,0 +1,238 @@
+/* Reels Section — store storefront */
+
+.store-reels {
+  padding: 48px 0 32px;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  user-select: none;
+}
+
+/* Track that holds all reel cards */
+.store-reels__track {
+  position: relative;
+  width: 100%;
+  max-width: 1280px;
+  height: min(500px, 65vh);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* Individual reel card */
+.store-reels__card {
+  position: absolute;
+  width: calc(100vw - 64px);
+  max-width: 320px;
+  aspect-ratio: 9 / 16;
+  height: auto;
+  max-height: 65vh;
+  border-radius: 32px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 400ms ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  background: #000;
+}
+
+@media (min-width: 768px) {
+  .store-reels__card {
+    max-height: 500px;
+  }
+}
+
+.store-reels__card--blur {
+  filter: blur(2px);
+}
+
+/* Video inside card */
+.store-reels__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Mute toggle button */
+.store-reels__mute {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.45);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  font-size: 18px;
+  backdrop-filter: blur(8px);
+  transition: background 200ms ease;
+}
+.store-reels__mute:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+/* Desktop nav arrows */
+.store-reels__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e5e5e5;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transition: background 200ms ease;
+  color: #1a1a1a;
+}
+.store-reels__nav:hover {
+  background: #fff;
+}
+.store-reels__nav--prev {
+  left: 32px;
+}
+.store-reels__nav--next {
+  right: 32px;
+}
+
+@media (min-width: 768px) {
+  .store-reels__nav {
+    display: flex;
+  }
+}
+
+/* Mobile controls row */
+.store-reels__mobile-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 0 24px;
+  width: 100%;
+  max-width: 320px;
+}
+
+@media (min-width: 768px) {
+  .store-reels__mobile-controls {
+    display: none;
+  }
+}
+
+.store-reels__arrow {
+  width: 44px;
+  height: 44px;
+  background: #f3f3f3;
+  border: none;
+  border-radius: 50%;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 200ms ease;
+}
+.store-reels__arrow:active {
+  background: #e5e5e5;
+}
+
+/* Dots */
+.store-reels__dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.store-reels__dots-desktop {
+  display: none;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+@media (min-width: 768px) {
+  .store-reels__dots-desktop {
+    display: flex;
+  }
+}
+
+.store-reels__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d1d1;
+  transition: all 250ms ease;
+}
+
+.store-reels__dot--active {
+  background: var(--color-gold, #c9a96e);
+  width: 20px;
+  border-radius: 4px;
+}
+
+/* Caption */
+.store-reels__caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+  padding: 0 16px;
+  text-align: center;
+}
+
+.store-reels__sub {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a96e);
+  margin-bottom: 6px;
+}
+
+.store-reels__title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+  max-width: 300px;
+}
+
+.store-reels__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-gold, #c9a96e);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 12px 24px;
+  border-radius: 100px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: opacity 200ms ease, transform 160ms ease;
+  min-height: 44px;
+}
+.store-reels__cta:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.store-reels__cta:active {
+  transform: scale(0.97);
+}

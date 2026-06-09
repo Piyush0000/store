@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
+import ReelsSection from '@/components/ReelsSection';
+import TestimonialsSection from '@/components/TestimonialsSection';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import './page.css';
 
@@ -36,6 +38,10 @@ interface Customization {
   aboutSection?: { title: string; content: string; image: string };
   newsletter?: { heading: string; subtext: string };
   categoryImages?: Record<string, string>;
+  reelsSection?: {
+    enabled?: boolean;
+    reels?: Array<{ id: string; title: string; sub: string; category: string; videoUrl: string; ctaLink?: string }>;
+  };
 }
 
 interface HomeClientProps {
@@ -197,6 +203,13 @@ export default function HomeClient({ bestSellers, customization, categories }: H
         </section>
       )}
 
+      {/* Reels Section — below hero */}
+      {customizationState?.reelsSection?.enabled !== false &&
+        customizationState?.reelsSection?.reels &&
+        customizationState.reelsSection.reels.length > 0 && (
+          <ReelsSection reels={customizationState.reelsSection.reels} />
+      )}
+
       {(customizationState?.homePageConfig?.categoriesEnabled !== false) && brandCategories.length > 0 && (
         <>
           <section className="brand-category animate-slide-up delay-300">
@@ -270,6 +283,15 @@ export default function HomeClient({ bestSellers, customization, categories }: H
             <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products available</p>
           </section>
         )
+      )}
+
+      {customizationState?.testimonialsSection?.enabled !== false &&
+        customizationState?.testimonialsSection?.testimonials &&
+        customizationState.testimonialsSection.testimonials.length > 0 && (
+          <TestimonialsSection 
+            testimonials={customizationState.testimonialsSection.testimonials} 
+            title={customizationState.testimonialsSection.title}
+          />
       )}
     </div>
   );
