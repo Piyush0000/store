@@ -1,0 +1,52 @@
+name: CI/CD Deploy Storefront to GCP Cloud Run
+
+on:
+  push:
+    branches:
+      - gcp-prod-master # Deploy on pushes to gcp-prod-master
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }} # Stored in GitHub secrets
+  REGION: us-central1
+  GAR_REPOSITORY: orbit-containers # Name of your GCP Artifact Registry repo
+
+jobs:
+  deploy:
+    name: Build & Deploy Storefront to Google Cloud Run
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }} # Stored in GitHub secrets
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker Login for GCP
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # --- Build and Deploy Storefront Frontend ---
+      - name: Build and Push Storefront Image
+        run: |
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/orbit-storefront:${{ github.sha }} .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/orbit-storefront:${{ github.sha }}
+
+      - name: Deploy Storefront to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: orbit-storefront
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/orbit-storefront:${{ github.sha }}
+          region: ${{ env.REGION }}
+          flags: |
+            --allow-unauthenticated
+            --min-instances=0
+            --max-instances=1
+            --cpu=1
+            --memory=1Gi
+            --set-env-vars=NODE_ENV=production,PORT=3000,NEXT_PUBLIC_API_URL=https://api.yourdomain.com
