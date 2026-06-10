@@ -49,4 +49,4 @@ jobs:
             --max-instances=1
             --cpu=1
             --memory=1Gi
-            --set-env-vars=NODE_ENV=production,PORT=3000,NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+            --set-env-vars=NODE_ENV=production,NEXT_PUBLIC_API_URL=https://api.yourdomain.com
