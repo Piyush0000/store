@@ -6,7 +6,7 @@ on:
       - gcp-prod-master # Deploy on pushes to gcp-prod-master
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }} # Stored in GitHub secrets
+  PROJECT_ID: project-0e8fdb27-6165-4eed-88a
   REGION: us-central1
   GAR_REPOSITORY: orbit-containers # Name of your GCP Artifact Registry repo
 
