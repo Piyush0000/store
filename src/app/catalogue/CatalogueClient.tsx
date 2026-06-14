@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useCallback } from 'react';
+import { Suspense, useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
 import { ProductGridSkeleton } from './Skeleton';
@@ -33,6 +33,12 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState('featured');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Synchronize category state when search parameters change via external navigation (e.g. navbar clicks)
+  useEffect(() => {
+    const category = searchParams.get('category') || 'all';
+    setSelectedCategory(category);
+  }, [searchParams]);
 
   const categoryList = categories.length > 0
     ? [{ id: 'all', label: 'All' }, ...categories.map(c => ({ id: c.toLowerCase().replace(/\s+/g, '-'), label: c }))]

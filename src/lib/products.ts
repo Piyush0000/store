@@ -77,7 +77,7 @@ function parseCategoryFilter(filter: string): string[] {
 
 // ─── Fetching ───────────────────────────────────────────────────────────────────
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
 
 export async function getProductsByCategory(
   subdomain: string,

@@ -46,6 +46,7 @@ export default function BottomNav() {
     const { wishlistCount, isHydrated: wishlistHydrated } = useWishlist();
 
     const isActive = (href: string, exact: boolean) => {
+        if (!pathname) return false;
         if (exact) return pathname === href;
         return pathname.startsWith(href);
     };

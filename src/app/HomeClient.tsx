@@ -44,6 +44,11 @@ interface Customization {
     enabled?: boolean;
     reels?: Array<{ id: string; title: string; sub: string; category: string; videoUrl: string; ctaLink?: string }>;
   };
+  testimonialsSection?: {
+    enabled?: boolean;
+    title?: string;
+    testimonials?: Array<{ id: string; name: string; description: string; image?: string; rating?: number; date?: string; ctaLink?: string }>;
+  };
 }
 
 interface HomeClientProps {
