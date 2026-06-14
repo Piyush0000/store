@@ -9,8 +9,8 @@ import './Header.css';
 
 const HomeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <polyline points="9 22 9 12 15 12 15 22"/>
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
   </svg>
 );
 
@@ -39,7 +39,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
   const getInitialLogo = () => {
     let headerStyle = initialCustomization?.headerStyle;
     if (headerStyle && typeof headerStyle === 'string') {
-      try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+      try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
     }
     return initialCustomization?.logo || headerStyle?.logoUrl || initialCustomization?.headerConfig?.logoUrl || '';
   };
@@ -47,7 +47,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
   const getInitialStoreName = () => {
     let headerStyle = initialCustomization?.headerStyle;
     if (headerStyle && typeof headerStyle === 'string') {
-      try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+      try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
     }
     return headerStyle?.storeName || headerStyle?.logoText || initialCustomization?.headerConfig?.storeName || 'Demo Store';
   };
@@ -85,7 +85,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
         const customization = data.customization;
         let headerStyle = customization?.headerStyle;
         if (headerStyle && typeof headerStyle === 'string') {
-          try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+          try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
         }
 
         const resolvedLogo = customization?.logo || headerStyle?.logoUrl || customization?.headerConfig?.logoUrl || '';
@@ -113,7 +113,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
         const cust = e.data.data;
         let headerStyle = cust?.headerStyle;
         if (headerStyle && typeof headerStyle === 'string') {
-          try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+          try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
         }
 
         const resolvedLogo = cust?.logo || headerStyle?.logoUrl || cust?.headerConfig?.logoUrl || '';
@@ -214,7 +214,64 @@ export default function Header({ initialCustomization }: HeaderProps) {
             </button>
           </div>
         </div>
+        <div className="header__main__mobile">
+          <div className="header__left">
 
+            <button
+              className="header__mobile-toggle"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Menu"
+            >
+              <Menu size={24} />
+            </button>
+            <Link href="/" className="header__logo">
+              {logoError || !logoUrl ? (
+                <span className="header__logo-text">{storeName.toUpperCase()}</span>
+              ) : (
+                <img
+                  src={logoUrl}
+                  alt={storeName}
+                  className="header__logo-img"
+                  onError={() => setLogoError(true)}
+                />
+              )}
+            </Link>
+          </div>
+
+
+
+          <div className="header__right">
+            <div className={`header__search ${searchOpen ? 'header__search--open' : ''}`}>
+              <button
+                className="header__icon-btn"
+                onClick={() => setSearchOpen(!searchOpen)}
+                aria-label="Search"
+              >
+                <Search size={20} strokeWidth={1.5} />
+              </button>
+              {searchOpen && (
+                <div className="header__search-dropdown">
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                    className="header__search-input"
+                  />
+                </div>
+              )}
+            </div>
+            <button
+              className="header__icon-btn header__cart-btn"
+              onClick={() => setIsCartOpen(true)}
+              aria-label="Cart"
+            >
+              <ShoppingBag size={20} strokeWidth={1.5} />
+              {isHydrated && cartCount > 0 && <span className="header__cart-count">{cartCount}</span>}
+            </button>
+          </div>
+        </div>
         <nav className="header__nav">
           <div className="header__nav-inner">
             {navLinks.map((link) => (

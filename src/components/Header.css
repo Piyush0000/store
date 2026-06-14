@@ -18,6 +18,10 @@
   padding: 0 24px;
 }
 
+.header__main__mobile {
+  display: none;
+}
+
 .header__left,
 .header__right {
   display: flex;
@@ -279,7 +283,15 @@
 /* Responsive */
 @media (max-width: 768px) {
   .header__main {
-    height: 60px;
+    display: none;
+    
+  }
+
+  .header__main__mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 82px;
     padding: 0 16px;
   }
 

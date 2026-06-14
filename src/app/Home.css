@@ -1,3 +1,5 @@
+
+
 .home {
   min-height: 100vh;
 }
@@ -181,7 +183,7 @@
 .brand-category__image {
   width: 160px;
   height: 160px;
-  border-radius: 50%;
+  /* border-radius: 8px; */
   overflow: hidden;
   border: 2px solid var(--border);
   transition: all var(--transition-base);

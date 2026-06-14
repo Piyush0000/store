@@ -4,6 +4,7 @@ import CartDrawer from "@/components/CartDrawer";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
 import Script from "next/script";
 import { Inter, Playfair_Display } from "next/font/google";
 import PageLoader from "@/components/PageLoader";
@@ -76,6 +77,7 @@ export default async function RootLayout({
           <Header initialCustomization={customization} />
           <main>{children}</main>
           <Footer initialCustomization={customization} />
+          <BottomNav />
         </CartProvider>
       </body>
     </html>

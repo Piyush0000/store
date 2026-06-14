@@ -213,7 +213,7 @@ export default function HomeClient({ bestSellers, customization, categories }: H
       {(customizationState?.homePageConfig?.categoriesEnabled !== false) && brandCategories.length > 0 && (
         <>
           <section className="brand-category animate-slide-up delay-300">
-            <h2 className="section-title">BRAND CATEGORY</h2>
+            <h2 className="section-title">SHOP BY COLLECTIONS</h2>
             <div className="brand-category__grid">
               {brandCategories.map((cat) => (
                 <Link key={cat.name} href={cat.path} className="brand-category__item">
