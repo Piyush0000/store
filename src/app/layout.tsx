@@ -39,10 +39,12 @@ export default async function RootLayout({
     : "https://jssdk.payu.in/bolt/bolt.min.js";
 
   let customization = null;
+  let storeName = "";
   try {
     const subdomain = await getServerSubdomain();
     const data = await fetchStorefront(subdomain);
     customization = data.customization;
+    storeName = data.store?.name || "";
   } catch (err) {
     console.error("[RootLayout] Failed to fetch storefront customization:", err);
   }
@@ -76,9 +78,9 @@ export default async function RootLayout({
           <CartProvider>
             <CartDrawer />
             <AnnouncementBar initialCustomization={customization} />
-            <Header initialCustomization={customization} />
+            <Header initialCustomization={customization} storeName={storeName} />
             <main>{children}</main>
-            <Footer initialCustomization={customization} />
+            <Footer initialCustomization={customization} storeName={storeName} />
             <BottomNav />
           </CartProvider>
         </WishlistProvider>

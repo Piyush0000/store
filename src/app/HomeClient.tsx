@@ -35,6 +35,7 @@ interface Customization {
     images?: string[];
     mediaType?: string;
     imageUrl?: string;
+    bannerOverlay?: boolean;
   };
   features?: { title: string; description: string; icon: string }[];
   aboutSection?: { title: string; content: string; image: string };
@@ -252,13 +253,13 @@ export default function HomeClient({ bestSellers, customization, categories, pro
 
       {customizationState?.homePageConfig?.mediaType === 'image' ? (
         customizationState?.homePageConfig?.imageUrl && (
-          <section className="brand-video animate-slide-up delay-500">
+          <section className={`brand-video animate-slide-up delay-500${customizationState.homePageConfig.bannerOverlay === false ? ' brand-video--fullbleed' : ''}`}>
             <div className="brand-video__wrapper">
               <img
                 src={customizationState.homePageConfig.imageUrl}
                 alt="Brand Banner"
                 className="brand-video__player"
-                style={{ width: '100%', height: 'auto', borderRadius: '8px', objectFit: 'cover' }}
+                style={{ width: '100%', height: 'auto', borderRadius: customizationState.homePageConfig.bannerOverlay === false ? '0' : '8px', objectFit: 'cover' }}
               />
             </div>
           </section>
@@ -276,7 +277,7 @@ export default function HomeClient({ bestSellers, customization, categories, pro
       )}
 
       {/* Dynamic product sections from CMS config */}
-      {productSections.length > 0 ? (
+      {productSections.length > 0 &&
         productSections.map((section) => (
           <ProductsSection
             key={section.id}
@@ -285,23 +286,24 @@ export default function HomeClient({ bestSellers, customization, categories, pro
             products={section.products}
           />
         ))
-      ) : (
-        (customizationState?.homePageConfig?.featuredEnabled !== false) && (
-          bestSellers.length > 0 ? (
-            <section className="featured-collection animate-slide-up delay-600">
-              <h2 className="section-title">ALL PRODUCTS</h2>
-              <div className="featured-collection__grid">
-                {bestSellers.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </section>
-          ) : (
-            <section className="featured-collection animate-slide-up delay-600">
-              <h2 className="section-title">ALL PRODUCTS</h2>
-              <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products available</p>
-            </section>
-          )
+      }
+
+      {/* Featured Collection / All Products */}
+      {(customizationState?.homePageConfig?.featuredEnabled !== false) && (
+        bestSellers.length > 0 ? (
+          <section className="featured-collection animate-slide-up delay-600">
+            <h2 className="section-title">ALL PRODUCTS</h2>
+            <div className="featured-collection__grid">
+              {bestSellers.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="featured-collection animate-slide-up delay-600">
+            <h2 className="section-title">ALL PRODUCTS</h2>
+            <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products available</p>
+          </section>
         )
       )}
 

@@ -26,9 +26,10 @@ const DEFAULT_LOGO = '';
 
 interface HeaderProps {
   initialCustomization?: any;
+  storeName?: string;
 }
 
-export default function Header({ initialCustomization }: HeaderProps) {
+export default function Header({ initialCustomization, storeName: propStoreName }: HeaderProps) {
   const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
   const [scrolled, setScrolled] = useState(false);
@@ -49,7 +50,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
     if (headerStyle && typeof headerStyle === 'string') {
       try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
     }
-    return headerStyle?.storeName || headerStyle?.logoText || initialCustomization?.headerConfig?.storeName || 'Demo Store';
+    return headerStyle?.storeName || headerStyle?.logoText || initialCustomization?.headerConfig?.storeName || propStoreName || 'Demo Store';
   };
 
   const getInitialNavLinks = () => {
@@ -71,6 +72,12 @@ export default function Header({ initialCustomization }: HeaderProps) {
   useEffect(() => {
     setLogoError(false);
   }, [logoUrl]);
+
+  useEffect(() => {
+    if (propStoreName) {
+      setStoreName(propStoreName);
+    }
+  }, [propStoreName]);
 
   useEffect(() => {
     if (initialCustomization) {
@@ -95,6 +102,8 @@ export default function Header({ initialCustomization }: HeaderProps) {
           setStoreName(headerStyle.storeName || headerStyle.logoText);
         } else if (customization?.headerConfig?.storeName) {
           setStoreName(customization.headerConfig.storeName);
+        } else if (data.store?.name) {
+          setStoreName(data.store.name);
         }
 
         if (customization?.navLinks && customization.navLinks.length > 0) {
@@ -105,7 +114,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
         }
       })
       .catch((err) => console.error('[Header] Failed to fetch config:', err));
-  }, [initialCustomization]);
+  }, [initialCustomization, propStoreName]);
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
@@ -185,7 +194,7 @@ export default function Header({ initialCustomization }: HeaderProps) {
           </div>
 
           <Link href="/" className="header__logo">
-            {logoError || !logoUrl ? (
+            {logoError || !logoUrl || !(logoUrl.startsWith('http://') || logoUrl.startsWith('https://') || logoUrl.startsWith('/')) ? (
               <span className="header__logo-text">{storeName.toUpperCase()}</span>
             ) : (
               <img

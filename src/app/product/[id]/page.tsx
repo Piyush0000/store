@@ -18,7 +18,7 @@ export default async function ProductPage({ params }: PageProps) {
     const subdomain = await getServerSubdomain();
     const data = await fetchStorefront(subdomain);
     products = data.products || [];
-    product = products.find((p: any) => p.id === id);
+    product = products.find((p: any) => p.id === id || p.slug === id);
   } catch (error) {
     console.error('Failed to fetch product:', error);
   }

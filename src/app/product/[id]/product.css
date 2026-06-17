@@ -392,6 +392,11 @@
   transform: scale(0.98);
 }
 
+.product-page__wishlist--active {
+  border-color: var(--gold-light) !important;
+  color: var(--gold-light) !important;
+}
+
 /* Benefits */
 .product-page__benefits {
   display: flex;

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Heart, Star, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
+import { useWishlist } from './WishlistProvider';
 import './ProductCard.css';
 
 interface Product {
@@ -22,9 +23,10 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const [liked, setLiked] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const liked = isInWishlist(product.id);
 
   const image = product.images?.[0] || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80';
   const originalPrice = product.compareAtPrice || null;
@@ -42,8 +44,15 @@ export default function ProductCard({ product }: ProductCardProps) {
     }, 1);
   };
 
-  const handleWishlistToggle = () => {
-    setLiked(!liked);
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      images: product.images,
+    });
   };
 
   return (

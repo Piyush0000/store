@@ -9,6 +9,26 @@ function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
+function getContrastColor(hexColor: string) {
+  if (!hexColor) return '#ffffff';
+  const hex = hexColor.replace('#', '');
+  if (hex.length !== 6 && hex.length !== 3) return '#ffffff';
+  
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 6) {
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+  } else {
+    r = parseInt(hex.charAt(0) + hex.charAt(0), 16);
+    g = parseInt(hex.charAt(1) + hex.charAt(1), 16);
+    b = parseInt(hex.charAt(2) + hex.charAt(2), 16);
+  }
+  
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#000000' : '#ffffff';
+}
+
 interface AnnouncementBarProps {
   initialCustomization?: any;
 }
@@ -29,6 +49,9 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
 
   const [announcements, setAnnouncements] = useState<any[]>(getInitialAnnouncements);
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 3, seconds: 0 });
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return initialCustomization?.announcementBar?.backgroundColor || '#000000';
+  });
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -66,6 +89,9 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
         } else {
           setAnnouncements([]);
         }
+        if (cust?.announcementBar?.backgroundColor) {
+          setBackgroundColor(cust.announcementBar.backgroundColor);
+        }
       }
     };
     window.addEventListener('message', handleMessage);
@@ -96,9 +122,11 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
 
   const displayList = announcements.length > 0 ? announcements : staticMessages;
 
-  const barStyle = initialCustomization?.announcementBar?.backgroundColor
-    ? { backgroundColor: initialCustomization.announcementBar.backgroundColor, color: initialCustomization.announcementBar.textColor || '#fff' }
-    : {};
+  const textColor = getContrastColor(backgroundColor);
+  const barStyle = {
+    backgroundColor: backgroundColor,
+    color: textColor,
+  };
 
   // Duplicate items to ensure smooth continuous infinite scrolling marquee
   const trackItems = [...displayList, ...displayList, ...displayList, ...displayList];

@@ -1,5 +1,5 @@
 // API base URL - subdomain determines which store's data is returned
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/storefront/public';
 
 // Extract subdomain from hostname (e.g., store.evoclabs.com -> store)
 export function getSubdomain(): string {

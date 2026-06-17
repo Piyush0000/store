@@ -106,11 +106,17 @@ export default function OrdersPage() {
           <div className="orders__empty-icon">
             <Package size={48} strokeWidth={1} />
           </div>
-          <h2>Sign in to view your orders</h2>
-          <p>Please verify your phone number to see your order history.</p>
-          <Link href="/checkout" className="orders__cta">
-            Sign In
-          </Link>
+          <h2>You haven't ordered yet</h2>
+          <p>Sign in to view your order history or start browsing our products.</p>
+          <div className="orders__empty-actions">
+            <Link href="/catalogue" className="orders__cta">
+              <ShoppingBag size={18} />
+              Start Shopping
+            </Link>
+            <Link href="/checkout" className="orders__cta orders__cta--secondary">
+              Sign In
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -128,8 +134,8 @@ export default function OrdersPage() {
           <div className="orders__empty-icon">
             <Package size={48} strokeWidth={1} />
           </div>
-          <h2>No orders yet</h2>
-          <p>When you place an order, it will appear here.</p>
+          <h2>You haven't ordered yet</h2>
+          <p>Browse our catalog to find the perfect case and start ordering.</p>
           <Link href="/catalogue" className="orders__cta">
             <ShoppingBag size={18} />
             Start Shopping

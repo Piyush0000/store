@@ -70,11 +70,32 @@ function ArrowUpIcon() {
   );
 }
 
-interface FooterProps {
-  initialCustomization?: any;
+function getContrastColor(hexColor: string) {
+  if (!hexColor) return '#ffffff';
+  const hex = hexColor.replace('#', '');
+  if (hex.length !== 6 && hex.length !== 3) return '#ffffff';
+  
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 6) {
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+  } else {
+    r = parseInt(hex.charAt(0) + hex.charAt(0), 16);
+    g = parseInt(hex.charAt(1) + hex.charAt(1), 16);
+    b = parseInt(hex.charAt(2) + hex.charAt(2), 16);
+  }
+  
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#000000' : '#ffffff';
 }
 
-export default function Footer({ initialCustomization }: FooterProps) {
+interface FooterProps {
+  initialCustomization?: any;
+  storeName?: string;
+}
+
+export default function Footer({ initialCustomization, storeName: propStoreName }: FooterProps) {
   const getInitialLogo = () => {
     let headerStyle = initialCustomization?.headerStyle;
     if (headerStyle && typeof headerStyle === 'string') {
@@ -83,14 +104,34 @@ export default function Footer({ initialCustomization }: FooterProps) {
     return initialCustomization?.logo || headerStyle?.logoUrl || initialCustomization?.headerConfig?.logoUrl || DEFAULT_LOGO;
   };
 
-  const [storeName, setStoreName] = useState(() => initialCustomization?.headerConfig?.storeName || DEFAULT_NAME);
+  const getInitialStoreName = () => {
+    let headerStyle = initialCustomization?.headerStyle;
+    if (headerStyle && typeof headerStyle === 'string') {
+      try { headerStyle = JSON.parse(headerStyle); } catch (err) {}
+    }
+    return headerStyle?.storeName || headerStyle?.logoText || initialCustomization?.headerConfig?.storeName || propStoreName || DEFAULT_NAME;
+  };
+
+  const [storeName, setStoreName] = useState(getInitialStoreName);
   const [logoUrl, setLogoUrl] = useState(getInitialLogo);
   const [logoError, setLogoError] = useState(false);
   const [brandDesc, setBrandDesc] = useState(() => initialCustomization?.aboutSection?.content || DEFAULT_DESC);
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
+    return fc?.backgroundColor || fs?.backgroundColor || '#0a0a0a';
+  });
 
   useEffect(() => {
     setLogoError(false);
   }, [logoUrl]);
+
+  useEffect(() => {
+    if (propStoreName) {
+      setStoreName(propStoreName);
+    }
+  }, [propStoreName]);
+
   const [contactInfo, setContactInfo] = useState(() => {
     // Support footerContent structure from admin panel
     const fc = initialCustomization?.footerContent;
@@ -164,6 +205,9 @@ export default function Footer({ initialCustomization }: FooterProps) {
         if (customization?.aboutSection?.content) {
           setBrandDesc(customization.aboutSection.content);
         }
+        const fcBg = customization?.footerContent?.backgroundColor;
+        const fsBg = customization?.footerStyle?.backgroundColor;
+        setBackgroundColor(fcBg || fsBg || '#0a0a0a');
       })
       .catch((err) => console.error('[Footer] Failed to fetch config:', err));
   }, [initialCustomization]);
@@ -183,6 +227,12 @@ export default function Footer({ initialCustomization }: FooterProps) {
           setLogoUrl(headerStyle.logoUrl);
         } else if (cust?.headerConfig?.logoUrl) {
           setLogoUrl(cust.headerConfig.logoUrl);
+        }
+
+        if (headerStyle?.storeName || headerStyle?.logoText) {
+          setStoreName(headerStyle.storeName || headerStyle.logoText);
+        } else if (cust?.headerConfig?.storeName) {
+          setStoreName(cust.headerConfig.storeName);
         }
 
         if (cust?.footerContent) {
@@ -212,6 +262,9 @@ export default function Footer({ initialCustomization }: FooterProps) {
         if (cust?.aboutSection?.content) {
           setBrandDesc(cust.aboutSection.content);
         }
+        const fcBg = cust?.footerContent?.backgroundColor;
+        const fsBg = cust?.footerStyle?.backgroundColor;
+        setBackgroundColor(fcBg || fsBg || '#0a0a0a');
       }
     };
     window.addEventListener('message', handleMessage);
@@ -220,12 +273,25 @@ export default function Footer({ initialCustomization }: FooterProps) {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  const txtColor = getContrastColor(backgroundColor);
+  const secondaryTxtColor = txtColor === '#000000' ? '#555555' : '#999999';
+  const borderColor = txtColor === '#000000' ? 'rgba(0, 0, 0, 0.15)' : '#222222';
+
   return (
-    <footer className="footer">
+    <footer 
+      className="footer"
+      style={{
+        backgroundColor: backgroundColor,
+        '--footer-bg': backgroundColor,
+        '--footer-text': txtColor,
+        '--footer-text-secondary': secondaryTxtColor,
+        '--footer-border': borderColor,
+      } as React.CSSProperties}
+    >
       <div className="footer__row1">
         <div className="footer__brand">
           <div className="footer__logo-wrap">
-            {logoError || !logoUrl ? (
+            {logoError || !logoUrl || !(logoUrl.startsWith('http://') || logoUrl.startsWith('https://') || logoUrl.startsWith('/')) ? (
               <span className="footer__logo-text">{storeName.toUpperCase()}</span>
             ) : (
               <img
@@ -291,13 +357,13 @@ export default function Footer({ initialCustomization }: FooterProps) {
         </button>
       </div>
 
-      <div className="footer__divider" />
-
-      <a href="https://evoclabs.com" target="_blank" rel="noopener noreferrer" className="footer__powered-by">
-        <span className="footer__powered-by-text">Powered by</span>
-        <img src="/evoc-logo.png" alt="EvocLabs" className="footer__evoc-logo" />
-        <span className="footer__powered-by-name">EvocLabs</span>
-      </a>
+      <div className="footer__powered-by-wrap">
+        <a href="https://evoclabs.com" target="_blank" rel="noopener noreferrer" className="footer__powered-by">
+          <span className="footer__powered-by-text">Powered by</span>
+          <img src="/evoc-logo.png" alt="EvocLabs" className="footer__evoc-logo" />
+          <span className="footer__powered-by-name">EvocLabs</span>
+        </a>
+      </div>
     </footer>
   );
 }

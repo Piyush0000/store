@@ -459,7 +459,7 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
     });
 
     // 2. Sync to backend
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/storefront/public';
     const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
 
     const externalPayload = {

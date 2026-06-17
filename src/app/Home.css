@@ -373,8 +373,8 @@
 
 @media (max-width: 768px) {
   .hero-carousel {
-    height: 50vh;
-    min-height: 300px;
+    height: 250px;
+    min-height: 200px;
   }
 
   .hero-carousel__content h1 {

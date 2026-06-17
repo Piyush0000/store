@@ -22,7 +22,7 @@ export async function initiatePayUPayment(data: {
     }
 
     const subdomain = await getServerSubdomain();
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/storefront/public';
     const hashUrl = `${apiBase}/${subdomain}/payment/payu-hash`;
 
     const res = await fetch(hashUrl, {

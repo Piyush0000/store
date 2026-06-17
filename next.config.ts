@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  allowedDevOrigins: [
+    "*.evoclabs.com",
+    "localhost:3000",
+  ],
   images: {
     remotePatterns: [
       {

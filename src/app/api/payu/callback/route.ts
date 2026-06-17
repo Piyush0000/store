@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify hash BEFORE any database operations on the backend
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/storefront/public';
     const verifyUrl = `${apiBase}/${subdomain}/payment/payu-verify`;
 
     const verifyRes = await fetch(verifyUrl, {

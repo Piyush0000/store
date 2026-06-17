@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Star, Heart, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
+import { useWishlist } from '@/components/WishlistProvider';
 import ProductCard from '@/components/ProductCard';
 import './product.css';
 
@@ -13,6 +14,8 @@ interface ProductClientProps {
 
 export default function ProductClient({ product, relatedProducts }: ProductClientProps) {
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const liked = isInWishlist(product.id);
   const [addedToCart, setAddedToCart] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
@@ -189,8 +192,17 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
               </button>
             </div>
 
-            <button className="product-page__wishlist">
-              <Heart size={16} /> Add to Wishlist
+            <button 
+              className={`product-page__wishlist ${liked ? 'product-page__wishlist--active' : ''}`}
+              onClick={() => toggleWishlist({
+                id: product.id,
+                name: product.name,
+                price: displayPrice,
+                images: product.images,
+              })}
+            >
+              <Heart size={16} fill={liked ? 'var(--gold-light, #c9a84c)' : 'none'} stroke={liked ? 'var(--gold-light, #c9a84c)' : 'currentColor'} />
+              {liked ? 'Remove from Wishlist' : 'Add to Wishlist'}
             </button>
 
             <div className="product-page__benefits">

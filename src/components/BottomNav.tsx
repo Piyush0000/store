@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Grid2X2, ShoppingBag, User, Heart } from 'lucide-react';
+import { Home, Grid2X2, ShoppingBag, Package, Heart } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
 import './BottomNav.css';
@@ -14,9 +14,9 @@ const NAV_ITEMS = [
         icon: Home,
         exact: true,
     }, {
-        label: 'Account',
+        label: 'Orders',
         href: '/orders',
-        icon: User,
+        icon: Package,
         exact: false,
     },
     {
