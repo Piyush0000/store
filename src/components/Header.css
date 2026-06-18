@@ -2,8 +2,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #fff;
-  border-bottom: 1px solid #eee;
+  background: #2f4156;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
@@ -37,7 +37,7 @@
   height: 44px;
   border-radius: 50%;
   transition: color 200ms var(--ease-out), background 200ms var(--ease-out);
-  color: #1a1a1a;
+  color: #fff;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -45,8 +45,8 @@
 }
 
 .header__icon-btn:hover {
-  color: var(--gold-light);
-  background: rgba(201, 168, 76, 0.05);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .header__icon-btn:active {
@@ -67,6 +67,7 @@
 .header__logo-img {
   height: 50px;
   width: auto;
+  filter: brightness(0) invert(1);
 }
 
 .header__logo-text {
@@ -74,16 +75,16 @@
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: var(--text-primary);
+  color: #fff;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 /* Row 3: Navigation */
 .header__nav {
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #eee;
-  background: #fff;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: #2f4156;
 }
 
 .header__nav-inner {
@@ -102,7 +103,7 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #1a1a1a;
+  color: #fff;
   position: relative;
   padding: 4px 0;
   text-decoration: none;
@@ -193,10 +194,16 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  color: #1a1a1a;
+  color: #fff;
   background: transparent;
   border: none;
   cursor: pointer;
+  border-radius: 50%;
+  transition: background 200ms var(--ease-out);
+}
+
+.header__mobile-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Mobile Overlay Menu */

@@ -11,9 +11,9 @@ export async function proxy(request: Request) {
   if (querySubdomain) {
     subdomain = querySubdomain;
   } else {
-    const isLocalhost = cleanHostname === 'localhost' || 
-                        cleanHostname === '127.0.0.1' || 
-                        cleanHostname.endsWith('.localhost');
+    const isLocalhost = cleanHostname === 'localhost' ||
+      cleanHostname === '127.0.0.1' ||
+      cleanHostname.endsWith('.localhost');
 
     if (isLocalhost) {
       if (cleanHostname === 'localhost' || cleanHostname === '127.0.0.1') {
@@ -59,7 +59,7 @@ export async function proxy(request: Request) {
   }
 
   try {
-    const apiBase = process.env.INTERNAL_API_BASE || 'http://localhost:5000/api/storefront/public';
+    const apiBase = (process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public').replace(/\/+$/, '');
     const apiUrl = `${apiBase}/${subdomain}/frontend`;
     let response;
     try {
@@ -88,7 +88,7 @@ export async function proxy(request: Request) {
     });
   } catch (error) {
     console.error('[PROXY] API call failed:', error);
-    
+
     // Set custom header on error fallback
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-subdomain', subdomain);
