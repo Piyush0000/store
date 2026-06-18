@@ -2,6 +2,28 @@
 
 ---
 
+### File: `editor/store/src/proxy.ts`
+*   Resolved git merge conflict. Updated default base fallback to use `INTERNAL_API_BASE` or `NEXT_PUBLIC_API_BASE` or `https://api.evoclabs.com/api/storefront/public`, with sanitized trailing slashes.
+
+```diff
+       if (!isEvoclabsSubdomain) {
+         // Non-localhost, non-evoclabs domain → resolve custom domain from API
+         try {
+-          const apiBase = process.env.INTERNAL_API_BASE || 'http://localhost:5000/api/storefront/public';
++          const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+           const resolveUrl = `${apiBase}/resolve?domain=${cleanHostname}`;
+           let resolveRes;
+           try {
+@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
+   }
+ 
+   try {
+-    const apiBase = process.env.INTERNAL_API_BASE || 'http://localhost:5000/api/storefront/public';
+-    const apiUrl = `${apiBase}/${subdomain}/frontend`;
++    const apiBase = (process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public').replace(/\/+$/, '');
++    const apiUrl = `${apiBase}/${subdomain}/frontend`;
+```
+
 ### File: `editor/store/src/app/layout.tsx`
 *   Updated `catch` block to rethrow `DYNAMIC_SERVER_USAGE` errors to prevent compilation console warnings during static page generation.
 
@@ -31,7 +53,7 @@
 ### File: `editor/store/src/actions/order-actions.ts`
 *   Removed unused `Prisma` import.
 *   Simplified `variantInfo` type definitions to bypass local Prisma client generation issues.
-*   Added explicit `: any` parameter type inside callback on line 502.
+*   Added explicit `: any` type annotation to the `item` parameter in the `order.items.map` callback on line 502 to resolve the implicit `any` type check error.
 *   Changed default local api base fallback to evoke production backend.
 
 ```diff
@@ -100,27 +122,6 @@
      const subdomain = await getServerSubdomain();
 -    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/storefront/public';
 +    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-```
-
-### File: `editor/store/src/proxy.ts`
-*   Updated both fallbacks.
-
-```diff
-       if (!isEvoclabsSubdomain) {
-         // Non-localhost, non-evoclabs domain → resolve custom domain from API
-         try {
--          const apiBase = process.env.INTERNAL_API_BASE || 'http://localhost:5000/api/storefront/public';
-+          const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-           const resolveUrl = `${apiBase}/resolve?domain=${cleanHostname}`;
-           let resolveRes;
-           try {
-@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
-   }
- 
-   try {
--    const apiBase = process.env.INTERNAL_API_BASE || 'http://localhost:5000/api/storefront/public';
-+    const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-     const apiUrl = `${apiBase}/${subdomain}/frontend`;
 ```
 
 ### File: `editor/store/src/lib/prisma.ts`

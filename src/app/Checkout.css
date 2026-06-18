@@ -27,6 +27,11 @@
   font-weight: 600;
   letter-spacing: 1px;
   margin-top: 20px;
+  transition: background-color 200ms ease;
+}
+
+.checkout__empty-btn:hover {
+  background-color: #8B6914;
 }
 
 /* Layout */
@@ -711,6 +716,7 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 200ms ease;
 }
 
 .checkout__btn-primary:hover:not(:disabled) {

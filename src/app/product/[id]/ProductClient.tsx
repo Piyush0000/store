@@ -103,14 +103,14 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
                 alt={product.name}
                 onLoad={() => setImageLoading(false)}
                 onError={() => setImageLoading(false)}
-                style={{ width: '100%', height: '500px', objectFit: 'cover', borderRadius: '4px' }}
+                style={{ width: '100%', height: '500px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff' }}
               />
             </div>
             {product.images.length > 1 && (
               <div className="product-page__thumbnails">
                 {product.images.map((img: string, index: number) => (
-                  <button 
-                    key={index} 
+                  <button
+                    key={index}
                     className={`product-page__thumb ${index === selectedImageIndex ? 'active' : ''}`}
                     onClick={() => {
                       setSelectedImageIndex(index);
@@ -192,7 +192,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
               </button>
             </div>
 
-            <button 
+            <button
               className={`product-page__wishlist ${liked ? 'product-page__wishlist--active' : ''}`}
               onClick={() => toggleWishlist({
                 id: product.id,
@@ -208,7 +208,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
             <div className="product-page__benefits">
               <div className="product-page__benefit"><Truck size={16} /><span>Free Delivery on orders ₹499+</span></div>
               <div className="product-page__benefit"><Shield size={16} /><span>100% Authentic</span></div>
-              <div className="product-page__benefit"><RotateCcw size={16} /><span>7-Day Easy Returns</span></div>
+              <div className="product-page__benefit"><RotateCcw size={16} /><span>Secure Checkout</span></div>
             </div>
 
             <p className="product-page__promo">Extra ₹650 off at checkout</p>

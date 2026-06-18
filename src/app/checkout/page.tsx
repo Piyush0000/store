@@ -83,10 +83,10 @@ export default function CheckoutPage() {
     form.method = 'POST';
 
     // Set destination URL: PayU sandbox or production
-    const isProduction = process.env.NODE_ENV === 'production';
-    form.action = isProduction 
-      ? 'https://secure.payu.in/_payment' 
-      : 'https://test.payu.in/_payment';
+    const isTestKey = payUData.key === 'IWqFlM' || process.env.NEXT_PUBLIC_PAYU_SANDBOX === 'true';
+    form.action = isTestKey 
+      ? 'https://test.payu.in/_payment' 
+      : 'https://secure.payu.in/_payment';
 
     // Append fields
     Object.entries(payUData).forEach(([key, val]) => {

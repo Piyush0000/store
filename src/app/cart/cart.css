@@ -47,12 +47,17 @@
 .cart__empty-btn {
   display: inline-block;
   padding: 14px 32px;
-  background: var(--gold);
+  background: var(--text-primary);
   color: #fff;
   text-decoration: none;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 1px;
+  transition: background-color 200ms ease;
+}
+
+.cart__empty-btn:hover {
+  background-color: var(--gold);
 }
 
 /* Layout */
@@ -525,7 +530,7 @@
     padding: 12px;
     font-size: 12px;
     margin-top: 10px;
-        margin-bottom: 10px;
+    margin-bottom: 10px;
 
   }
 
