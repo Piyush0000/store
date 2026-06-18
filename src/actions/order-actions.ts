@@ -1,7 +1,6 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { getServerSubdomain } from '@/lib/server-utils';
 import { fetchStorefront } from '@/lib/api';
@@ -156,13 +155,13 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
         payuTxnId: orderData.payuTxnId,
         items: {
           create: orderData.items.map(item => {
-            let variantInfo: Prisma.InputJsonValue | undefined = undefined;
+            let variantInfo: any = undefined;
             if (item.variantId) {
-              variantInfo = { variantId: item.variantId, variant: item.variant, image: item.image } as Prisma.InputJsonValue;
+              variantInfo = { variantId: item.variantId, variant: item.variant, image: item.image };
             } else if (item.variant) {
-              variantInfo = { variant: item.variant, image: item.image } as Prisma.InputJsonValue;
+              variantInfo = { variant: item.variant, image: item.image };
             } else if (item.image) {
-              variantInfo = { image: item.image } as Prisma.InputJsonValue;
+              variantInfo = { image: item.image };
             }
             return {
               productId: item.productId,
@@ -458,8 +457,7 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
       include: { items: true },
     });
 
-    // 2. Sync to backend
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/storefront/public';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
     const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
 
     const externalPayload = {
@@ -500,7 +498,7 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
       source: 'STOREFRONT',
       paymentStatus: 'PAID',
       status: 'CONFIRMED',
-      items: order.items.map((item) => ({
+      items: order.items.map((item: any) => ({
         productId: item.productId,
         name: item.name,
         quantity: item.quantity,

@@ -45,7 +45,10 @@ export default async function RootLayout({
     const data = await fetchStorefront(subdomain);
     customization = data.customization;
     storeName = data.store?.name || "";
-  } catch (err) {
+  } catch (err: any) {
+    if (err && (err.digest === 'DYNAMIC_SERVER_USAGE' || String(err.message).includes('Dynamic server usage'))) {
+      throw err;
+    }
     console.error("[RootLayout] Failed to fetch storefront customization:", err);
   }
 

@@ -28,7 +28,7 @@ export async function proxy(request: Request) {
       if (!isEvoclabsSubdomain) {
         // Non-localhost, non-evoclabs domain → resolve custom domain from API
         try {
-          const apiBase = process.env.INTERNAL_API_BASE || 'http://localhost:5000/api/storefront/public';
+          const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
           const resolveUrl = `${apiBase}/resolve?domain=${cleanHostname}`;
           let resolveRes;
           try {
@@ -59,7 +59,7 @@ export async function proxy(request: Request) {
   }
 
   try {
-    const apiBase = process.env.INTERNAL_API_BASE || 'http://localhost:5000/api/storefront/public';
+    const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
     const apiUrl = `${apiBase}/${subdomain}/frontend`;
     let response;
     try {

@@ -30,7 +30,10 @@ export async function getServerSubdomain(): Promise<string> {
         return parts[0];
       }
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error && (error.digest === 'DYNAMIC_SERVER_USAGE' || String(error.message).includes('Dynamic server usage'))) {
+      throw error;
+    }
     console.warn('[server-utils] Failed to get host header:', error);
   }
   return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
