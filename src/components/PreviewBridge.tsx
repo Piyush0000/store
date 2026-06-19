@@ -47,6 +47,14 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
     const accentColor = customization?.brandColors?.accent;
     const secondaryColor = customization?.brandColors?.secondary;
 
+    let headerStyle = customization?.headerStyle;
+    if (headerStyle && typeof headerStyle === 'string') {
+      try {
+        headerStyle = JSON.parse(headerStyle);
+      } catch (err) {}
+    }
+    const headerBg = headerStyle?.backgroundColor;
+
     return `
       :root {
         ${primaryColor ? `
@@ -71,11 +79,17 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
           --font-heading: "${headingFont}", var(--font-playfair), serif !important;
         ` : ''}
       }
+      ${headerBg ? `
+        .header, .header__nav {
+          background: ${headerBg} !important;
+        }
+      ` : ''}
     `;
   }, [
     customization?.brandColors?.primary,
     customization?.brandColors?.accent,
     customization?.brandColors?.secondary,
+    customization?.headerStyle,
     bodyFont,
     headingFont
   ]);

@@ -63,19 +63,10 @@ export default function Header({ initialCustomization, storeName: propStoreName 
     return DEFAULT_NAV_LINKS;
   };
 
-  const getInitialBgColor = () => {
-    let headerStyle = initialCustomization?.headerStyle;
-    if (headerStyle && typeof headerStyle === 'string') {
-      try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
-    }
-    return headerStyle?.backgroundColor || '';
-  };
-
   const [logoUrl, setLogoUrl] = useState(getInitialLogo);
   const [logoError, setLogoError] = useState(false);
   const [storeName, setStoreName] = useState(getInitialStoreName);
   const [navLinks, setNavLinks] = useState<{ label: string; path: string }[]>(getInitialNavLinks);
-  const [bgColor, setBgColor] = useState(getInitialBgColor);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -121,8 +112,6 @@ export default function Header({ initialCustomization, storeName: propStoreName 
             path: link.href,
           })));
         }
-
-        setBgColor(headerStyle?.backgroundColor || '');
       })
       .catch((err) => console.error('[Header] Failed to fetch config:', err));
   }, [initialCustomization, propStoreName]);
@@ -151,8 +140,6 @@ export default function Header({ initialCustomization, storeName: propStoreName 
             path: link.href,
           })));
         }
-
-        setBgColor(headerStyle?.backgroundColor || '');
       }
     };
     window.addEventListener('message', handleMessage);
@@ -172,10 +159,7 @@ export default function Header({ initialCustomization, storeName: propStoreName 
 
   return (
     <>
-      <header 
-        className={`header ${scrolled ? 'header--scrolled' : ''}`}
-        style={bgColor ? { backgroundColor: bgColor } : undefined}
-      >
+      <header className={`header ${scrolled ? 'header--scrolled' : ''}`}>
         <div className="header__main">
           <div className="header__left">
             <div className={`header__search ${searchOpen ? 'header__search--open' : ''}`}>
@@ -297,10 +281,7 @@ export default function Header({ initialCustomization, storeName: propStoreName 
             </button>
           </div>
         </div>
-        <nav 
-          className="header__nav"
-          style={bgColor ? { backgroundColor: bgColor } : undefined}
-        >
+        <nav className="header__nav">
           <div className="header__nav-inner">
             {navLinks.map((link) => (
               <Link
