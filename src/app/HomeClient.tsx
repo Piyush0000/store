@@ -221,20 +221,6 @@ export default function HomeClient({ bestSellers, customization, categories, pro
 
       {(customizationState?.homePageConfig?.categoriesEnabled !== false) && brandCategories.length > 0 && (
         <>
-          <section className="brand-category animate-slide-up delay-300">
-            <h2 className="section-title">SHOP BY COLLECTIONS</h2>
-            <div className="brand-category__grid">
-              {brandCategories.map((cat) => (
-                <Link key={cat.name} href={cat.path} className="brand-category__item">
-                  <div className="brand-category__image">
-                    <img src={cat.image} alt={cat.name} />
-                  </div>
-                  <span className="brand-category__name">{cat.name}</span>
-                </Link>
-              ))}
-            </div>
-          </section>
-
           <section className="shop-category animate-slide-up delay-400">
             <h2 className="section-title">SHOP BY CATEGORY</h2>
             <div className="shop-category__grid">

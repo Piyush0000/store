@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Loader2, Phone, CheckCircle2, Truck, ChevronRight, Banknote, CreditCard, ShoppingBag, Lock, RefreshCw } from 'lucide-react';
+import { Loader2, Phone, CheckCircle2, Truck, ChevronRight, Banknote, CreditCard, ShoppingBag, Lock, RefreshCw, ShieldCheck, PhoneCall, ArrowRight, ChevronDown } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
 import {
   sendOtp,
@@ -14,6 +14,17 @@ import { getUserByPhone, createOrUpdateUser } from '@/actions/user-actions';
 import { createAddress, createOrder, createCodOrder, getStorefrontCodFee } from '@/actions/order-actions';
 import { initiatePayUPayment } from '@/actions/payment-actions';
 import './checkout.css';
+
+const IndiaFlag = () => (
+  <svg width="20" height="14" viewBox="0 0 30 20" className="checkout__flag">
+    <rect width="30" height="20" fill="#FFF" />
+    <rect width="30" height="6.67" fill="#FF9933" />
+    <rect y="13.33" width="30" height="6.67" fill="#138808" />
+    <circle cx="15" cy="10" r="2" fill="#000080" />
+    <circle cx="15" cy="10" r="2" fill="none" stroke="#000080" strokeWidth="0.5" />
+    <circle cx="15" cy="10" r="0.4" fill="#000080" />
+  </svg>
+);
 
 type Step = 'identify' | 'verify' | 'details' | 'payment' | 'success';
 
@@ -584,17 +595,17 @@ export default function CheckoutPage() {
       <div className="checkout__steps">
         <div className={`checkout__step ${isStepActive('identify') ? 'active' : ''}`}>
           <span className="checkout__step-num">1</span>
-          <span>Login</span>
+          <span className="checkout__step-label">Login</span>
         </div>
-        <div className="checkout__step-line" />
+        <div className={`checkout__step-line ${isStepActive('details') ? 'active' : isStepActive('identify') ? 'half-active' : ''}`} />
         <div className={`checkout__step ${isStepActive('details') ? 'active' : ''}`}>
           <span className="checkout__step-num">2</span>
-          <span>Details</span>
+          <span className="checkout__step-label">Details</span>
         </div>
-        <div className="checkout__step-line" />
+        <div className={`checkout__step-line ${isStepActive('payment') ? 'active' : isStepActive('details') ? 'half-active' : ''}`} />
         <div className={`checkout__step ${isStepActive('payment') ? 'active' : ''}`}>
           <span className="checkout__step-num">3</span>
-          <span>Payment</span>
+          <span className="checkout__step-label">Payment</span>
         </div>
       </div>
 
@@ -618,28 +629,69 @@ export default function CheckoutPage() {
 
           {step === 'identify' && (
             <section className="checkout__section checkout__section--sticky">
-              <div className="checkout__step-header">
-                <Phone size={24} />
-                <h2>VERIFY PHONE NUMBER</h2>
+              <div className="checkout__illustration-container">
+                <img src="/otp-illustration.png" alt="Verify Phone" className="checkout__illustration" />
+              </div>
+              <h3 className="checkout__verification-title">Verify Your Phone Number</h3>
+              <p className="checkout__verification-desc">
+                Secure checkout requires phone verification.<br />
+                We'll send a one-time OTP to continue.
+              </p>
+
+              <div className="checkout__verification-badges">
+                <div className="checkout__badge-item">
+                  <div className="checkout__badge-icon-wrapper">
+                    <ShieldCheck size={16} className="checkout__badge-icon" />
+                  </div>
+                  <div className="checkout__badge-text">
+                    <span>Secure</span>
+                    <span>Verification</span>
+                  </div>
+                </div>
+                <div className="checkout__badge-divider" />
+                <div className="checkout__badge-item">
+                  <div className="checkout__badge-icon-wrapper">
+                    <PhoneCall size={16} className="checkout__badge-icon" />
+                  </div>
+                  <div className="checkout__badge-text">
+                    <span>No Spam</span>
+                    <span>Calls</span>
+                  </div>
+                </div>
+                <div className="checkout__badge-divider" />
+                <div className="checkout__badge-item">
+                  <div className="checkout__badge-icon-wrapper">
+                    <Lock size={16} className="checkout__badge-icon" />
+                  </div>
+                  <div className="checkout__badge-text">
+                    <span>OTP Required for</span>
+                    <span>Delivery Updates</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="checkout__field">
-                <label>Phone Number *</label>
+              <div className="checkout__phone-input-container">
+                <div className="checkout__country-selector">
+                  <IndiaFlag />
+                  <span className="checkout__country-code">+91</span>
+                  <ChevronDown size={14} className="checkout__caret" />
+                </div>
+                <div className="checkout__phone-divider" />
                 <input
                   type="tel"
-                  value={phone}
+                  value={phone.length > 5 ? `${phone.slice(0, 5)} ${phone.slice(5)}` : phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="9876543210"
-                  maxLength={10}
-                  className={error ? 'error' : ''}
+                  placeholder="98765 43210"
+                  maxLength={11}
+                  className="checkout__phone-field"
                 />
-                {error && <span className="checkout__error">{error}</span>}
               </div>
+              {error && <span className="checkout__error" style={{ marginTop: '-16px', marginBottom: '16px' }}>{error}</span>}
 
-              <button className="checkout__continue-btn" onClick={handleSendOtp} disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'SEND OTP'} <ChevronRight size={18} />
+              <button className="checkout__send-otp-btn" onClick={handleSendOtp} disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'SEND OTP'} <ArrowRight size={18} />
               </button>
-              <div className="checkout__powered-by-wrapper">
+              <div className="checkout__powered-by-wrapper" style={{ marginTop: '20px' }}>
                 <div className="checkout__powered-by">
                   <span className="checkout__powered-by-text">Powered by</span>
                   <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
@@ -650,40 +702,44 @@ export default function CheckoutPage() {
 
           {step === 'verify' && (
             <section className="checkout__section checkout__section--sticky">
-              <div className="checkout__step-header">
-                <Phone size={24} />
-                <h2>ENTER OTP</h2>
+              <div className="checkout__illustration-container">
+                <img src="/otp-illustration.png" alt="Verify Phone" className="checkout__illustration" />
               </div>
-              <p className="checkout__step-desc">We&apos;ve sent a code to +91 {phone}</p>
+              <h3 className="checkout__verification-title">Verify Your Phone Number</h3>
+              <p className="checkout__verification-desc">
+                We&apos;ve sent a 4-digit code to +91 {phone.slice(0, 5)} {phone.slice(5)}
+              </p>
 
-              <div className="checkout__otp-inputs">
+              <div className="checkout__otp-inputs" style={{ margin: '24px 0 12px' }}>
                 {[0, 1, 2, 3].map((index) => (
-                  <input
-                    key={index}
-                    ref={(el) => {
-                      if (el) otpRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={otp[index] || ''}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    onFocus={(e) => e.target.select()}
-                    className={`checkout__otp-digit ${error ? 'error' : ''}`}
-                  />
+                   <input
+                     key={index}
+                     ref={(el) => {
+                       if (el) otpRefs.current[index] = el;
+                     }}
+                     type="text"
+                     inputMode="numeric"
+                     maxLength={1}
+                     value={otp[index] || ''}
+                     onChange={(e) => handleOtpChange(index, e.target.value)}
+                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                     onFocus={(e) => e.target.select()}
+                     className={`checkout__otp-digit ${error ? 'error' : ''}`}
+                   />
                 ))}
               </div>
-              {error && <span className="checkout__error">{error}</span>}
+              {error && <span className="checkout__error" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>{error}</span>}
 
-              <button className="checkout__resend" onClick={handleSendOtp} disabled={resendTimer > 0 || isLoading}>
-                {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+                <button className="checkout__resend" onClick={handleSendOtp} disabled={resendTimer > 0 || isLoading}>
+                  {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+                </button>
+              </div>
 
-              <button className="checkout__continue-btn" onClick={handleVerifyOtp} disabled={isLoading || otp.join('').length !== 4}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'VERIFY & CONTINUE'} <ChevronRight size={18} />
+              <button className="checkout__send-otp-btn" onClick={handleVerifyOtp} disabled={isLoading || otp.join('').length !== 4}>
+                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'VERIFY & CONTINUE'} <ArrowRight size={18} />
               </button>
-              <div className="checkout__powered-by-wrapper">
+              <div className="checkout__powered-by-wrapper" style={{ marginTop: '20px' }}>
                 <div className="checkout__powered-by">
                   <span className="checkout__powered-by-text">Powered by</span>
                   <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
@@ -961,6 +1017,12 @@ export default function CheckoutPage() {
             <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
           </div>
 
+          {/* Free Shipping Banner */}
+          <div className="checkout__free-shipping-banner">
+            <Truck size={16} className="checkout__free-shipping-icon" />
+            <span>Yay! You get FREE shipping 🥳</span>
+          </div>
+
           <div className="checkout__summary-divider" />
           <div className="checkout__summary-row checkout__summary-row--total">
             <span>Total</span>
@@ -968,9 +1030,20 @@ export default function CheckoutPage() {
           </div>
 
           <div className="checkout__summary-badges">
-            <span><Lock size={14} /> Secure Payment</span>
-            <span><CheckCircle2 size={14} /> 100% Authentic</span>
-            <span><RefreshCw size={14} /> Easy Returns</span>
+            <div className="checkout__summary-badge">
+              <Lock size={14} />
+              <span>Secure Payment</span>
+            </div>
+            <div className="checkout__summary-badge-divider" />
+            <div className="checkout__summary-badge">
+              <ShieldCheck size={14} />
+              <span>100% Authentic</span>
+            </div>
+            <div className="checkout__summary-badge-divider" />
+            <div className="checkout__summary-badge">
+              <RefreshCw size={14} />
+              <span>Easy Returns</span>
+            </div>
           </div>
 
           <div className="checkout__powered-by-wrapper">
