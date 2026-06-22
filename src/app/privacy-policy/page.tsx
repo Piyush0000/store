@@ -1,29 +1,41 @@
 export const dynamic = "force-dynamic";
 
-import { fetchLegal } from '@/lib/api';
+import { fetchPageBySlug } from '@/lib/api';
 import { getServerSubdomain } from '@/lib/server-utils';
 import '@/app/policy.css';
 
+const formatContent = (text: string) => {
+  if (!text) return '';
+  if (/<[a-z][\s\S]*>/i.test(text)) {
+    return text;
+  }
+  return text
+    .split(/\n\s*\n/)
+    .map(p => `<p>${p.replace(/\n/g, '<br />')}</p>`)
+    .join('');
+};
+
 export default async function PrivacyPolicyPage() {
   let content = '';
+  let title = 'Privacy Policy';
 
   try {
     const subdomain = await getServerSubdomain();
-    const legalPages = await fetchLegal(subdomain);
-    const privacy = legalPages.find(p => p.type === 'PRIVACY_POLICY');
-    content = privacy?.content || '';
+    const page = await fetchPageBySlug('privacy-policy', subdomain);
+    content = page?.content || '';
+    title = page?.title || title;
   } catch (error) {
-    console.error('Failed to fetch legal pages:', error);
+    console.error('Failed to fetch privacy-policy page:', error);
   }
 
   return (
-    <div className="policy">
-      <div className="policy__header">
-        <h1>Privacy Policy</h1>
+    <div className="policy-page">
+      <div className="policy-page__header">
+        <h1>{title}</h1>
       </div>
-      <div className="policy__content">
+      <div className="policy-content">
         {content ? (
-          <div dangerouslySetInnerHTML={{ __html: content }} />
+          <div dangerouslySetInnerHTML={{ __html: formatContent(content) }} />
         ) : (
           <p>Privacy policy content coming soon.</p>
         )}

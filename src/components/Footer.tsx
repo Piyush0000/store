@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { fetchStorefront } from '@/lib/api';
+import { fetchStorefront, fetchPages } from '@/lib/api';
 import './Footer.css';
+
+const DEFAULT_SLUGS = ['about', 'privacy-policy', 'refund-policy', 'shipping-policy', 'terms-of-service'];
 
 const quickLinks = [
   { label: 'About Us', path: '/about' },
@@ -115,12 +117,18 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
   const [storeName, setStoreName] = useState(getInitialStoreName);
   const [logoUrl, setLogoUrl] = useState(getInitialLogo);
   const [logoError, setLogoError] = useState(false);
-  const [brandDesc, setBrandDesc] = useState(() => initialCustomization?.aboutSection?.content || DEFAULT_DESC);
+  const [brandDesc, setBrandDesc] = useState(() => {
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
+    return fc?.bio || fc?.description || fs?.bio || initialCustomization?.aboutSection?.content || DEFAULT_DESC;
+  });
   const [backgroundColor, setBackgroundColor] = useState(() => {
     const fc = initialCustomization?.footerContent;
     const fs = initialCustomization?.footerStyle;
     return fc?.backgroundColor || fs?.backgroundColor || '#0a0a0a';
   });
+
+  const [links, setLinks] = useState<{ label: string; path: string }[]>(quickLinks);
 
   useEffect(() => {
     setLogoError(false);
@@ -149,6 +157,31 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
     };
   });
   const hasFetched = useRef(false);
+
+  useEffect(() => {
+    fetchPages()
+      .then((pages) => {
+        const updatedLinks = quickLinks.map((ql) => {
+          const slug = ql.path.replace('/', '');
+          const match = pages.find((p) => p.slug === slug);
+          if (match) {
+            return { label: match.title, path: ql.path };
+          }
+          return ql;
+        });
+
+        const customPages = pages.filter((p) => !DEFAULT_SLUGS.includes(p.slug) && p.isActive);
+        const finalLinks = [
+          ...updatedLinks,
+          ...customPages.map((cp) => ({
+            label: cp.title,
+            path: `/pages/${cp.slug}`
+          }))
+        ];
+        setLinks(finalLinks);
+      })
+      .catch((err) => console.error('[Footer] Failed to fetch pages:', err));
+  }, []);
 
   useEffect(() => {
     if (initialCustomization) {
@@ -202,7 +235,9 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
             instagram: customization.socialLinks.instagram || DEFAULT_IG,
           });
         }
-        if (customization?.aboutSection?.content) {
+        if (customization?.footerContent?.bio || customization?.footerContent?.description || customization?.footerStyle?.bio) {
+          setBrandDesc(customization.footerContent?.bio || customization.footerContent?.description || customization.footerStyle?.bio);
+        } else if (customization?.aboutSection?.content) {
           setBrandDesc(customization.aboutSection.content);
         }
         const fcBg = customization?.footerContent?.backgroundColor;
@@ -259,7 +294,9 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
             instagram: cust.socialLinks.instagram || DEFAULT_IG,
           });
         }
-        if (cust?.aboutSection?.content) {
+        if (cust?.footerContent?.bio || cust?.footerContent?.description || cust?.footerStyle?.bio) {
+          setBrandDesc(cust.footerContent?.bio || cust.footerContent?.description || cust.footerStyle?.bio);
+        } else if (cust?.aboutSection?.content) {
           setBrandDesc(cust.aboutSection.content);
         }
         const fcBg = cust?.footerContent?.backgroundColor;
@@ -334,7 +371,7 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
 
       <div className="footer__row2">
         <div className="footer__quick-links">
-          {quickLinks.map((link) => (
+          {links.map((link) => (
             <Link key={link.path} href={link.path} className="footer__quick-link">
               {link.label}
             </Link>

@@ -118,3 +118,17 @@ model CheckoutSession {
   @@index([phone, deviceId])
   @@index([expiresAt])
 }
+
+model Page {
+  id        String   @id @default(uuid())
+  storeId   String
+  title     String
+  slug      String
+  content   String   @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+}

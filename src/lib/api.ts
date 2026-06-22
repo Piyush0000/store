@@ -102,6 +102,17 @@ export interface LegalPage {
   content: string;
 }
 
+export interface StorePage {
+  id: string;
+  storeId: string;
+  title: string;
+  slug: string;
+  content: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Store {
   id: string;
   name: string;
@@ -232,6 +243,26 @@ export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
 
   if (!data.success) throw new Error(data.message || 'Failed to fetch legal pages');
   return data.legalPages || [];
+}
+
+export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
+  const apiUrl = `${getApiUrl(subdomain)}/pages`;
+
+  const res = await fetch(apiUrl, { cache: 'no-store' });
+  const data = await res.json();
+
+  if (!data.success) throw new Error(data.message || 'Failed to fetch pages');
+  return data.pages || [];
+}
+
+export async function fetchPageBySlug(slug: string, subdomain?: string): Promise<StorePage> {
+  const apiUrl = `${getApiUrl(subdomain)}/pages/${slug}`;
+
+  const res = await fetch(apiUrl, { cache: 'no-store' });
+  const data = await res.json();
+
+  if (!data.success) throw new Error(data.message || `Failed to fetch page ${slug}`);
+  return data.page;
 }
 
 export async function submitReview(review: {

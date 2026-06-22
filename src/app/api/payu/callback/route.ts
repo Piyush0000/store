@@ -3,6 +3,14 @@ import { prisma } from '@/lib/prisma';
 import { confirmAndSyncPayUOrder } from '@/actions/order-actions';
 
 export async function POST(request: NextRequest) {
+  // Dynamically build the base URL based on headers to preserve correct protocol and host in proxied environments
+  let host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  if (host.includes(',')) {
+    host = host.split(',')[0].trim();
+  }
+  const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+  const baseUrl = host ? `${protocol}://${host}` : new URL(request.url).origin;
+
   try {
     const body = await request.formData();
 
@@ -62,18 +70,17 @@ export async function POST(request: NextRequest) {
 
     if (!verifyResult.success) {
       console.error("PayU callback: Hash verification failed on backend!");
-      return NextResponse.redirect(new URL(`/checkout/failure?reason=hash_mismatch`, request.url));
+      return NextResponse.redirect(new URL(`/checkout/failure?reason=hash_mismatch`, baseUrl));
     }
 
     // Validate status value to prevent enum confusion
     const normalizedStatus = status?.toLowerCase();
     if (normalizedStatus !== 'success' && normalizedStatus !== 'failure') {
       console.error("PayU callback: Invalid status value:", status);
-      return NextResponse.redirect(new URL(`/checkout/failure?reason=invalid_status`, request.url));
+      return NextResponse.redirect(new URL(`/checkout/failure?reason=invalid_status`, baseUrl));
     }
 
     const isSuccess = normalizedStatus === 'success';
-    const baseUrl = new URL(request.url).origin;
 
     // Find order - PayU txnid is derived from order UUID's last 12 chars
     const order = await prisma.order.findFirst({
@@ -137,6 +144,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error("PayU callback error:", error);
-    return NextResponse.redirect(new URL(`/checkout/failure?reason=error`, request.url));
+    return NextResponse.redirect(new URL(`/checkout/failure?reason=error`, baseUrl));
   }
 }

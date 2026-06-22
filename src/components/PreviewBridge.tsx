@@ -6,6 +6,43 @@ interface PreviewBridgeProps {
   initialCustomization: any;
 }
 
+function isLightColor(colorStr: string): boolean {
+  if (!colorStr) return false;
+  const cleanColor = colorStr.trim().toLowerCase();
+
+  // Hex format
+  if (cleanColor.startsWith('#')) {
+    const hex = cleanColor.slice(1);
+    let r = 0, g = 0, b = 0;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+    }
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness >= 180;
+  }
+
+  // RGB/RGBA format
+  if (cleanColor.startsWith('rgb')) {
+    const matches = cleanColor.match(/\d+/g);
+    if (matches && matches.length >= 3) {
+      const r = parseInt(matches[0], 10);
+      const g = parseInt(matches[1], 10);
+      const b = parseInt(matches[2], 10);
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      return brightness >= 180;
+    }
+  }
+
+  const lightColors = ['white', 'yellow', 'lightgray', 'lightgrey', 'beige', 'ivory', 'lightblue', 'lightgreen'];
+  return lightColors.includes(cleanColor);
+}
+
 export default function PreviewBridge({ initialCustomization }: PreviewBridgeProps) {
   const [customization, setCustomization] = useState(initialCustomization);
 
@@ -54,6 +91,7 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
       } catch (err) {}
     }
     const headerBg = headerStyle?.backgroundColor;
+    const isLight = headerBg ? isLightColor(headerBg) : false;
 
     return `
       :root {
@@ -83,6 +121,51 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
         .header, .header__nav {
           background: ${headerBg} !important;
         }
+        ${isLight ? `
+          /* Light header styles: turn text, links and icons to gray */
+          .header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+          }
+          .header__nav {
+            border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+          }
+          .header__icon-btn, .header__logo-text, .header__nav-link, .header__mobile-toggle {
+            color: #4b5563 !important;
+          }
+          .header__logo-img {
+            filter: none !important;
+          }
+          .header__icon-btn:hover, .header__mobile-toggle:hover {
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: #1f2937 !important;
+          }
+          .header__nav-link:hover, .header__nav-link--active {
+            color: var(--gold-light) !important;
+          }
+        ` : `
+          /* Dark / other header styles: keep text, links and icons white */
+          .header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+          }
+          .header__nav {
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+          }
+          .header__icon-btn, .header__logo-text, .header__nav-link, .header__mobile-toggle {
+            color: #ffffff !important;
+          }
+          .header__logo-img {
+            filter: brightness(0) invert(1) !important;
+          }
+          .header__icon-btn:hover, .header__mobile-toggle:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+          }
+          .header__nav-link:hover, .header__nav-link--active {
+            color: var(--gold-light) !important;
+          }
+        `}
       ` : ''}
     `;
   }, [

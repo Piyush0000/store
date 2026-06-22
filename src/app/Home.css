@@ -298,6 +298,25 @@
   border-radius: 8px;
 }
 
+/* No-borders variant — transparent background, fits natural size of media */
+.brand-video--no-borders {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.brand-video--no-borders .brand-video__wrapper {
+  max-width: 100% !important;
+  padding: 0 !important;
+  max-height: none !important;
+}
+
+.brand-video--no-borders .brand-video__player {
+  background: transparent !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  object-fit: contain !important;
+}
+
 .brand-video__fade {
   position: absolute;
   left: 0;

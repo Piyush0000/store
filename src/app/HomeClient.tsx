@@ -36,6 +36,7 @@ interface Customization {
     mediaType?: string;
     imageUrl?: string;
     bannerOverlay?: boolean;
+    showBorders?: boolean;
   };
   features?: { title: string; description: string; icon: string }[];
   aboutSection?: { title: string; content: string; image: string };
@@ -62,6 +63,17 @@ interface HomeClientProps {
 function buildHeroSlides(customization: any | null) {
   const hero = customization?.heroSection;
   if (hero) {
+    if (Array.isArray(hero.slides) && hero.slides.length > 0) {
+      return hero.slides.map((slide: any, idx: number) => ({
+        id: slide.id || idx + 1,
+        image: slide.backgroundImage || slide.image || slide.imageUrl || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80',
+        title: slide.title || slide.headline || '',
+        subtitle: slide.subtitle || slide.subheadline || slide.description || '',
+        cta: slide.ctaText || slide.buttonText || '',
+        link: slide.ctaLink || slide.link || '',
+      }));
+    }
+
     const title = hero.title || hero.headline || '';
     const subtitle = hero.subtitle || hero.subheadline || hero.description || '';
     const cta = hero.ctaText || hero.buttonText || '';
@@ -145,6 +157,7 @@ export default function HomeClient({ bestSellers, customization, categories, pro
   const heroSlides = buildHeroSlides(customizationState);
   const brandCategories = buildCategories(categories, customizationState, bestSellers);
   const videoUrl = buildVideoUrl(customizationState);
+  const categoryShape = customizationState?.categoryImages?.shape || "rounded-rect";
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -170,16 +183,29 @@ export default function HomeClient({ bestSellers, customization, categories, pro
       {(customizationState?.homePageConfig?.heroEnabled !== false) && (
         <section className="hero-carousel animate-slide-up delay-200">
           <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-            {heroSlides.map((slide, index) => (
+            {heroSlides.map((slide: any, index: number) => (
               <div key={slide.id} className="hero-carousel__slide">
-                <img
-                  src={slide.image}
-                  alt={slide.title || 'Hero Banner'}
-                  className="hero-carousel__image"
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                  {...(index === 0 ? { fetchPriority: 'high' } : {})}
-                  decoding="async"
-                />
+                {slide.link ? (
+                  <Link href={slide.link} className="hero-carousel__image-link">
+                    <img
+                      src={slide.image}
+                      alt={slide.title || 'Hero Banner'}
+                      className="hero-carousel__image"
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      {...(index === 0 ? { fetchPriority: 'high' } : {})}
+                      decoding="async"
+                    />
+                  </Link>
+                ) : (
+                  <img
+                    src={slide.image}
+                    alt={slide.title || 'Hero Banner'}
+                    className="hero-carousel__image"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    {...(index === 0 ? { fetchPriority: 'high' } : {})}
+                    decoding="async"
+                  />
+                )}
                 <div className="hero-carousel__content">
                   {slide.title && <h1>{slide.title}</h1>}
                   {slide.subtitle && <p>{slide.subtitle}</p>}
@@ -199,7 +225,7 @@ export default function HomeClient({ bestSellers, customization, categories, pro
                 <ChevronRight size={24} />
               </button>
               <div className="hero-carousel__dots">
-                {heroSlides.map((_, index) => (
+                {heroSlides.map((_: any, index: number) => (
                   <button
                     key={index}
                     className={`hero-carousel__dot ${index === currentSlide ? 'active' : ''}`}
@@ -223,9 +249,9 @@ export default function HomeClient({ bestSellers, customization, categories, pro
         <>
           <section className="shop-category animate-slide-up delay-400">
             <h2 className="section-title">SHOP BY CATEGORY</h2>
-            <div className="shop-category__grid">
+            <div className={`shop-category__grid shop-category__grid--${categoryShape}`}>
               {brandCategories.map((cat) => (
-                <Link key={`shop-${cat.name}`} href={cat.path} className="shop-category__card">
+                <Link key={`shop-${cat.name}`} href={cat.path} className={`shop-category__card shop-category__card--${categoryShape}`}>
                   <img src={cat.image} alt={cat.name} className="shop-category__image" />
                   <div className="shop-category__overlay">
                     <span className="shop-category__name">{cat.name}</span>
@@ -239,20 +265,25 @@ export default function HomeClient({ bestSellers, customization, categories, pro
 
       {customizationState?.homePageConfig?.mediaType === 'image' ? (
         customizationState?.homePageConfig?.imageUrl && (
-          <section className={`brand-video animate-slide-up delay-500${customizationState.homePageConfig.bannerOverlay === false ? ' brand-video--fullbleed' : ''}`}>
+          <section className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.bannerOverlay === false ? ' brand-video--fullbleed' : ''}${customizationState?.homePageConfig?.showBorders === false ? ' brand-video--no-borders' : ''}`}>
             <div className="brand-video__wrapper">
               <img
                 src={customizationState.homePageConfig.imageUrl}
                 alt="Brand Banner"
                 className="brand-video__player"
-                style={{ width: '100%', height: 'auto', borderRadius: customizationState.homePageConfig.bannerOverlay === false ? '0' : '8px', objectFit: 'cover' }}
+                style={{ 
+                  width: '100%', 
+                  height: 'auto', 
+                  borderRadius: customizationState?.homePageConfig?.bannerOverlay === false ? '0' : '8px', 
+                  objectFit: customizationState?.homePageConfig?.showBorders === false ? 'contain' : 'cover' 
+                }}
               />
             </div>
           </section>
         )
       ) : (
         videoUrl && (
-          <section className="brand-video animate-slide-up delay-500">
+          <section className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.showBorders === false ? ' brand-video--no-borders' : ''}`}>
             <div className="brand-video__wrapper">
               <video autoPlay muted loop playsInline className="brand-video__player" key={videoUrl}>
                 <source src={videoUrl} type="video/mp4" />

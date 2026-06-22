@@ -75,6 +75,7 @@ const orderInputSchema = z.object({
   payuTxnId: z.string().optional(),
   couponCode: z.string().optional(),
   discountAmount: z.number().optional(),
+  orderNumber: z.string().optional(),
 });
 
 function getCodFailureMessage(responseBody: string, status: number): string {
@@ -125,7 +126,7 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
       data: {
         userId: orderData.userId,
         storeId: storeId,
-        orderNumber: generateOrderNumber(),
+        orderNumber: orderData.orderNumber || generateOrderNumber(),
         customerEmail: orderData.email,
         customerName: [orderData.firstName, orderData.lastName].filter(Boolean).join(' ') || 'Customer',
         shippingAddress: {
@@ -241,9 +242,12 @@ export async function createCodOrder(data: {
 
   const customerName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Customer';
 
+  const localOrderNumber = generateOrderNumber();
+
   // Try external sync first (for stock validation)
   const externalPayload = {
     storeId,
+    orderNumber: localOrderNumber,
     customerName,
     customerEmail: data.email || '',
     shippingAddress: {
@@ -338,6 +342,7 @@ export async function createCodOrder(data: {
   const orderResult = await createOrder({
     userId: data.userId,
     storeId,
+    orderNumber: localOrderNumber,
     items: data.items.map(item => ({
       productId: item.productId || item.name,
       name: item.name,
@@ -469,6 +474,7 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
     const externalPayload = {
       storeId: order.storeId,
       userId: order.userId,
+      orderNumber: order.orderNumber,
       customerName: order.customerName,
       customerEmail: order.customerEmail,
       shippingAddress: {

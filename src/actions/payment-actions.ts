@@ -1,5 +1,6 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { PAYU_CALLBACK_URL } from '@/lib/env';
 import { getServerSubdomain } from '@/lib/server-utils';
 
@@ -15,10 +16,28 @@ export async function initiatePayUPayment(data: {
     const { orderId, amount, firstName, email, phone, productinfo } = data;
     const txnid = orderId.slice(-12).toUpperCase();
 
-    // Enforce production callback URL - localhost fallback is a security risk
-    const callbackUrl = PAYU_CALLBACK_URL;
+    // Dynamically build the callback URL based on request headers to support multiple domains
+    const headersList = await headers();
+    console.log("=== INITIATING PAYMENT SIGNATURE ===");
+    console.log("Headers keys:", Array.from(headersList.keys()));
+    console.log("Header Host:", headersList.get('host'));
+    console.log("Header X-Forwarded-Host:", headersList.get('x-forwarded-host'));
+    console.log("Header X-Forwarded-Proto:", headersList.get('x-forwarded-proto'));
+    
+    let host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
+    if (host.includes(',')) {
+      host = host.split(',')[0].trim();
+    }
+    const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+    const callbackUrl = host ? `${protocol}://${host}/api/payu/callback` : PAYU_CALLBACK_URL;
+    
+    console.log("Resolved host:", host);
+    console.log("Resolved protocol:", protocol);
+    console.log("Resolved callbackUrl:", callbackUrl);
+    console.log("=====================================");
+
     if (!callbackUrl) {
-      return { success: false, message: 'PAYU_CALLBACK_URL environment variable is required' };
+      return { success: false, message: 'PAYU_CALLBACK_URL is required' };
     }
 
     const subdomain = await getServerSubdomain();

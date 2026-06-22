@@ -258,6 +258,96 @@
   transform: scale(1.05);
 }
 
+/* Premium Shape Modifiers */
+
+/* 1. Rounded Rectangle */
+.shop-category__card--rounded-rect {
+  aspect-ratio: 16/10;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.shop-category__card--rounded-rect img {
+  object-fit: cover;
+}
+.shop-category__card--rounded-rect:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.18);
+}
+
+/* 2. Perfect Circle */
+.shop-category__card--circle {
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12);
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 280px;
+  margin: 0 auto;
+  width: 100%;
+}
+.shop-category__card--circle img {
+  object-fit: cover;
+}
+.shop-category__card--circle:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.18);
+}
+.shop-category__grid--circle {
+  align-items: center;
+}
+
+/* 3. Organic Squircle */
+.shop-category__card--squircle {
+  aspect-ratio: 1/1;
+  border-radius: 40px 16px 40px 16px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12);
+  transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1), border-radius 450ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 450ms cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 280px;
+  margin: 0 auto;
+  width: 100%;
+}
+.shop-category__card--squircle img {
+  object-fit: cover;
+}
+.shop-category__card--squircle:hover {
+  transform: translateY(-4px);
+  border-radius: 16px 40px 16px 40px;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.18);
+}
+.shop-category__grid--squircle {
+  align-items: center;
+}
+
+/* 4. Elegant Arch */
+.shop-category__card--arch {
+  aspect-ratio: 3/4;
+  border-top-left-radius: 999px;
+  border-top-right-radius: 999px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12);
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 260px;
+  margin: 0 auto;
+  width: 100%;
+}
+.shop-category__card--arch img {
+  object-fit: cover;
+}
+.shop-category__card--arch:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.18);
+}
+.shop-category__grid--arch {
+  align-items: center;
+}
+
+.hero-carousel__image-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .shop-category__overlay {
   position: absolute;
   inset: 0;
@@ -325,6 +415,25 @@
   border-radius: 0;
   background: transparent;
   object-fit: cover;
+}
+
+/* No-borders variant — transparent background, fits natural size of media */
+.brand-video--no-borders {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.brand-video--no-borders .brand-video__wrapper {
+  max-width: 100% !important;
+  padding: 0 !important;
+  max-height: none !important;
+}
+
+.brand-video--no-borders .brand-video__player {
+  background: transparent !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  object-fit: contain !important;
 }
 
 /* Featured Collection */
