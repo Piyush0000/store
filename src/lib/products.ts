@@ -23,6 +23,7 @@ export interface HydratedSection {
   subtitle?: string;
   categoryFilter?: string;
   limit?: number;
+  sliderMode?: boolean;
   products: NormalizedProduct[];
 }
 
@@ -112,6 +113,7 @@ export async function buildSectionData(
     categoryFilter?: string;
     limit?: number;
     type?: string;
+    sliderMode?: boolean;
   }> | undefined,
   subdomain: string
 ): Promise<HydratedSection[]> {
@@ -150,6 +152,7 @@ export async function buildSectionData(
         subtitle: section.subtitle,
         categoryFilter: section.categoryFilter,
         limit,
+        sliderMode: Boolean(section.sliderMode),
         products: sorted.slice(0, limit),
       } satisfies HydratedSection;
     })

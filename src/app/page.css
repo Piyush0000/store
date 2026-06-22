@@ -232,9 +232,17 @@
 }
 
 .shop-category__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  overflow-x: auto;
   gap: 24px;
+  padding: 12px 4px 24px 4px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x mandatory;
+}
+.shop-category__grid::-webkit-scrollbar {
+  display: none;
 }
 
 .shop-category__card {
@@ -262,10 +270,12 @@
 
 /* 1. Rounded Rectangle */
 .shop-category__card--rounded-rect {
+  flex: 0 0 340px;
   aspect-ratio: 16/10;
   border-radius: 24px;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.02);
   transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  scroll-snap-align: start;
 }
 .shop-category__card--rounded-rect img {
   object-fit: cover;
@@ -277,13 +287,12 @@
 
 /* 2. Perfect Circle */
 .shop-category__card--circle {
+  flex: 0 0 240px;
   aspect-ratio: 1/1;
   border-radius: 50%;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12);
   transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 280px;
-  margin: 0 auto;
-  width: 100%;
+  scroll-snap-align: start;
 }
 .shop-category__card--circle img {
   object-fit: cover;
@@ -298,13 +307,12 @@
 
 /* 3. Organic Squircle */
 .shop-category__card--squircle {
+  flex: 0 0 240px;
   aspect-ratio: 1/1;
   border-radius: 40px 16px 40px 16px;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12);
   transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1), border-radius 450ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 450ms cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 280px;
-  margin: 0 auto;
-  width: 100%;
+  scroll-snap-align: start;
 }
 .shop-category__card--squircle img {
   object-fit: cover;
@@ -320,6 +328,7 @@
 
 /* 4. Elegant Arch */
 .shop-category__card--arch {
+  flex: 0 0 220px;
   aspect-ratio: 3/4;
   border-top-left-radius: 999px;
   border-top-right-radius: 999px;
@@ -327,9 +336,7 @@
   border-bottom-right-radius: 16px;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12);
   transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 260px;
-  margin: 0 auto;
-  width: 100%;
+  scroll-snap-align: start;
 }
 .shop-category__card--arch img {
   object-fit: cover;
@@ -365,6 +372,45 @@
   letter-spacing: 0.1em;
   color: #fff;
   text-transform: uppercase;
+}
+
+/* Category Slider Navigation */
+.shop-category__slider-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.category-slider__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 200ms ease;
+  color: #333;
+}
+
+.category-slider__nav:hover {
+  background-color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.category-slider__nav--prev {
+  left: -20px;
+}
+
+.category-slider__nav--next {
+  right: -20px;
 }
 
 /* Brand Video Section */
@@ -519,8 +565,24 @@
   }
 
   .shop-category__grid {
-    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+  }
+
+  .category-slider__nav {
+    display: none;
+  }
+
+  .shop-category__card--rounded-rect {
+    flex: 0 0 240px;
+  }
+  .shop-category__card--circle {
+    flex: 0 0 160px;
+  }
+  .shop-category__card--squircle {
+    flex: 0 0 160px;
+  }
+  .shop-category__card--arch {
+    flex: 0 0 150px;
   }
 
   .featured-collection {

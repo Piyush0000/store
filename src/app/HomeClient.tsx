@@ -178,6 +178,14 @@ export default function HomeClient({ bestSellers, customization, categories, pro
     };
   }, [heroSlides.length]);
 
+  const scrollGrid = (direction: 'left' | 'right') => {
+    const grid = document.getElementById('category-grid');
+    if (grid) {
+      const scrollAmount = direction === 'left' ? -340 : 340;
+      grid.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="home">
       {(customizationState?.homePageConfig?.heroEnabled !== false) && (
@@ -249,15 +257,38 @@ export default function HomeClient({ bestSellers, customization, categories, pro
         <>
           <section className="shop-category animate-slide-up delay-400">
             <h2 className="section-title">SHOP BY CATEGORY</h2>
-            <div className={`shop-category__grid shop-category__grid--${categoryShape}`}>
-              {brandCategories.map((cat) => (
-                <Link key={`shop-${cat.name}`} href={cat.path} className={`shop-category__card shop-category__card--${categoryShape}`}>
-                  <img src={cat.image} alt={cat.name} className="shop-category__image" />
-                  <div className="shop-category__overlay">
-                    <span className="shop-category__name">{cat.name}</span>
-                  </div>
-                </Link>
-              ))}
+            <div className="shop-category__slider-wrapper" style={{ position: 'relative' }}>
+              <div 
+                id="category-grid"
+                className={`shop-category__grid shop-category__grid--${categoryShape}`}
+              >
+                {brandCategories.map((cat) => (
+                  <Link key={`shop-${cat.name}`} href={cat.path} className={`shop-category__card shop-category__card--${categoryShape}`}>
+                    <img src={cat.image} alt={cat.name} className="shop-category__image" />
+                    <div className="shop-category__overlay">
+                      <span className="shop-category__name">{cat.name}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              {brandCategories.length > 3 && (
+                <>
+                  <button 
+                    className="category-slider__nav category-slider__nav--prev" 
+                    onClick={() => scrollGrid('left')}
+                    aria-label="Previous categories"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button 
+                    className="category-slider__nav category-slider__nav--next" 
+                    onClick={() => scrollGrid('right')}
+                    aria-label="Next categories"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
             </div>
           </section>
         </>
@@ -301,6 +332,7 @@ export default function HomeClient({ bestSellers, customization, categories, pro
             title={section.title}
             subtitle={section.subtitle}
             products={section.products}
+            sliderMode={section.sliderMode}
           />
         ))
       }
