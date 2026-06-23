@@ -226,43 +226,55 @@ export async function fetchProduct(id: string, subdomain?: string): Promise<Prod
 }
 
 export async function fetchAnnouncements(subdomain?: string): Promise<Announcement[]> {
-  const apiUrl = `${getApiUrl(subdomain)}/announcements`;
-
-  const res = await fetch(apiUrl, { cache: 'no-store' });
-  const data = await res.json();
-
-  if (!data.success) throw new Error(data.message || 'Failed to fetch announcements');
-  return data.announcements || [];
+  try {
+    const apiUrl = `${getApiUrl(subdomain)}/announcements`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Failed to fetch announcements');
+    return data.announcements || [];
+  } catch (error) {
+    console.warn('Error fetching announcements:', error);
+    return [];
+  }
 }
 
 export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
-  const apiUrl = `${getApiUrl(subdomain)}/legal`;
-
-  const res = await fetch(apiUrl, { cache: 'no-store' });
-  const data = await res.json();
-
-  if (!data.success) throw new Error(data.message || 'Failed to fetch legal pages');
-  return data.legalPages || [];
+  try {
+    const apiUrl = `${getApiUrl(subdomain)}/legal`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Failed to fetch legal pages');
+    return data.legalPages || [];
+  } catch (error) {
+    console.warn('Error fetching legal pages:', error);
+    return [];
+  }
 }
 
 export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
-  const apiUrl = `${getApiUrl(subdomain)}/pages`;
-
-  const res = await fetch(apiUrl, { cache: 'no-store' });
-  const data = await res.json();
-
-  if (!data.success) throw new Error(data.message || 'Failed to fetch pages');
-  return data.pages || [];
+  try {
+    const apiUrl = `${getApiUrl(subdomain)}/pages`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Failed to fetch pages');
+    return data.pages || [];
+  } catch (error) {
+    console.warn('Error fetching pages:', error);
+    return [];
+  }
 }
 
-export async function fetchPageBySlug(slug: string, subdomain?: string): Promise<StorePage> {
-  const apiUrl = `${getApiUrl(subdomain)}/pages/${slug}`;
-
-  const res = await fetch(apiUrl, { cache: 'no-store' });
-  const data = await res.json();
-
-  if (!data.success) throw new Error(data.message || `Failed to fetch page ${slug}`);
-  return data.page;
+export async function fetchPageBySlug(slug: string, subdomain?: string): Promise<StorePage | null> {
+  try {
+    const apiUrl = `${getApiUrl(subdomain)}/pages/${slug}`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || `Failed to fetch page ${slug}`);
+    return data.page;
+  } catch (error) {
+    console.warn(`Error fetching page ${slug}:`, error);
+    return null;
+  }
 }
 
 export async function submitReview(review: {

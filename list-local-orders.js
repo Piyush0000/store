@@ -1,8 +1,9 @@
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
 
-const connectionString = "postgresql://zack:zack_secure_pass_123@localhost:5432/evoc_storefront";
+const connectionString = process.env.DATABASE_URL || "postgresql://zack:zack_secure_pass_123@localhost:5432/evoc_storefront";
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });

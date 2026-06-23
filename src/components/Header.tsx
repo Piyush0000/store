@@ -113,7 +113,7 @@ export default function Header({ initialCustomization, storeName: propStoreName 
           })));
         }
       })
-      .catch((err) => console.error('[Header] Failed to fetch config:', err));
+      .catch((err) => console.warn('[Header] Failed to fetch config:', err));
   }, [initialCustomization, propStoreName]);
 
   useEffect(() => {
