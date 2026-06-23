@@ -426,7 +426,7 @@ export default function CheckoutPage() {
       const result = await createCodOrder({
         userId: userId || `temp_${phone}`,
         items: orderItems,
-        totalAmount: calculatedSubtotal + codFee,
+        totalAmount: calculatedSubtotal,
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
@@ -914,7 +914,7 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <p className="checkout__payment-title">Cash on Delivery</p>
-                        <p className="checkout__payment-note">+ Rs. {codFee} fee</p>
+                        <p className="checkout__payment-note">Pay on delivery</p>
                       </div>
                     </div>
                   </div>
@@ -938,7 +938,6 @@ export default function CheckoutPage() {
                   <div className="checkout__payment-confirm">
                     <div className="checkout__cod-info">
                       <p>Pay with cash when your order arrives.</p>
-                      <p className="checkout__cod-fee">A fee of Rs. {codFee} applies.</p>
                     </div>
                     {error && <span className="checkout__error">{error}</span>}
                     {error && (error.includes('Unable to verify') || error.includes('stock')) ? (
@@ -954,7 +953,7 @@ export default function CheckoutPage() {
                       <div className="checkout__payment-actions">
                         <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
                         <button className="checkout__place-order-btn" onClick={handleCreateCodOrder} disabled={isLoading}>
-                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${(subtotal + codFee).toLocaleString()}`}
+                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${subtotal.toLocaleString()}`}
                         </button>
                       </div>
                     )}
@@ -1013,7 +1012,7 @@ export default function CheckoutPage() {
 
           <div className="checkout__summary-rows">
             <div className="checkout__summary-row"><span>Subtotal</span><span>₹{(orderSummary?.subtotal ?? subtotal).toLocaleString('en-IN')}</span></div>
-            {(orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{codFee}</span></div>}
+            {/* No COD fee row */}
             <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
           </div>
 
@@ -1026,7 +1025,7 @@ export default function CheckoutPage() {
           <div className="checkout__summary-divider" />
           <div className="checkout__summary-row checkout__summary-row--total">
             <span>Total</span>
-            <span className="checkout__summary-total-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0)).toLocaleString('en-IN')}</span>
+            <span className="checkout__summary-total-price">₹{(orderSummary?.subtotal ?? subtotal).toLocaleString('en-IN')}</span>
           </div>
 
           <div className="checkout__summary-badges">

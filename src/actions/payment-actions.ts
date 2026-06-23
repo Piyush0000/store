@@ -49,7 +49,7 @@ export async function initiatePayUPayment(data: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         txnid,
-        amount: Number(amount.toFixed(2)),
+        amount: amount.toFixed(2),
         productinfo,
         firstname: firstName,
         email,
