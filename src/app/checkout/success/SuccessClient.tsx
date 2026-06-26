@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { CheckCircle2, Truck, ArrowRight, Loader2, Package } from 'lucide-react';
 import { getOrderById, confirmAndSyncPayUOrder } from '@/actions/order-actions';
 import { useCart } from '@/components/CartProvider';
+import { trackPurchase } from '@/lib/pixel';
 import '../checkout.css';
 
 export default function SuccessClient() {
@@ -29,6 +30,12 @@ export default function SuccessClient() {
     }
     clearCart();
   }, [orderId, txnId, clearCart]);
+
+  useEffect(() => {
+    if (order) {
+      trackPurchase(order.id, order.total);
+    }
+  }, [order]);
 
   if (loading) {
     return (

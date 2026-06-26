@@ -298,12 +298,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 82px;
+    height: 64px;
     padding: 0 16px;
   }
 
   .header__logo-img {
-    height: 40px;
+    height: 30px;
   }
 
   .header__nav {

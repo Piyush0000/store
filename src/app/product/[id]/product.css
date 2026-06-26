@@ -472,6 +472,7 @@
 
 .product-page__description p {
   margin: 0 0 16px;
+  white-space: pre-wrap;
 }
 
 .product-page__no-reviews {

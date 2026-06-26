@@ -11,6 +11,8 @@ import { Inter, Playfair_Display } from "next/font/google";
 import PageLoader from "@/components/PageLoader";
 
 import { fetchStorefront } from "@/lib/api";
+import { extractPixelId } from "@/lib/pixel";
+import MetaPixel from "@/components/MetaPixel";
 import { getServerSubdomain } from "@/lib/server-utils";
 import PreviewBridge from "@/components/PreviewBridge";
 
@@ -58,6 +60,7 @@ export default async function RootLayout({
   }
 
   const faviconUrl = customization?.favicon || headerStyle?.faviconUrl || "/favicon.svg";
+  const pixelId = customization?.metaPixel ? extractPixelId(customization.metaPixel) : null;
 
   return (
     <html lang="en">
@@ -68,9 +71,21 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://d1311wbk6unapo.cloudfront.net" />
         <link rel="dns-prefetch" href="https://d1311wbk6unapo.cloudfront.net" />
         <link rel="preload" as="image" href="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80" />
+        {pixelId && (
+          <noscript>
+            <img 
+              height="1" 
+              width="1" 
+              style={{ display: 'none' }} 
+              src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`} 
+              alt=""
+            />
+          </noscript>
+        )}
       </head>
       <body className={`${inter.variable} ${playfair.variable}`}>
         <PageLoader />
+        {pixelId && <MetaPixel pixelId={pixelId} />}
         <PreviewBridge initialCustomization={customization} />
         <Script
           src={payuScriptUrl}

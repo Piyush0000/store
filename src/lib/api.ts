@@ -33,6 +33,7 @@ export interface Customization {
   announcementBar: { text: string };
   metaTitle: string;
   metaDescription: string;
+  metaPixel?: string;
   headerStyle?: any;
   footerStyle?: any;
   footerContent?: any;

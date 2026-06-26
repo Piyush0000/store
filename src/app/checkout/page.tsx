@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Loader2, Phone, CheckCircle2, Truck, ChevronRight, Banknote, CreditCard, ShoppingBag, Lock, RefreshCw, ShieldCheck, PhoneCall, ArrowRight, ChevronDown } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
+import { trackInitiateCheckout, trackPurchase } from '@/lib/pixel';
 import {
   sendOtp,
   verifyOtp,
@@ -83,6 +84,12 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     getStorefrontCodFee().then(fee => setCodFee(fee));
+  }, []);
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      trackInitiateCheckout(subtotal, cartItems.length);
+    }
   }, []);
 
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
@@ -456,6 +463,9 @@ export default function CheckoutPage() {
 
         // Clear cart AFTER setting orderSummary
         clearCart();
+
+        // Track Purchase event for Meta Pixel
+        trackPurchase(result.orderId, capturedSubtotal);
 
         // Change step last
         setStep('success');

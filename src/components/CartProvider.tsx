@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { trackAddToCart } from '@/lib/pixel';
 
 export interface CartItem {
   id: string;
@@ -76,6 +77,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prev, { ...product, quantity, variants }];
     });
     setIsCartOpen(true);
+    trackAddToCart(product.name, product.id, product.price);
   };
 
   const removeFromCart = (productId: string, variants = {}) => {
