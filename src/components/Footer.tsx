@@ -180,7 +180,7 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
         ];
         setLinks(finalLinks);
       })
-      .catch((err) => console.error('[Footer] Failed to fetch pages:', err));
+      .catch((err) => console.warn('[Footer] Failed to fetch pages:', err));
   }, []);
 
   useEffect(() => {
@@ -244,7 +244,7 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
         const fsBg = customization?.footerStyle?.backgroundColor;
         setBackgroundColor(fcBg || fsBg || '#0a0a0a');
       })
-      .catch((err) => console.error('[Footer] Failed to fetch config:', err));
+      .catch((err) => console.warn('[Footer] Failed to fetch config:', err));
   }, [initialCustomization]);
 
   useEffect(() => {

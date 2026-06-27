@@ -109,7 +109,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
                 alt={product.name}
                 onLoad={() => setImageLoading(false)}
                 onError={() => setImageLoading(false)}
-                style={{ width: '100%', height: '500px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff' }}
+                style={{ borderRadius: '4px', backgroundColor: '#fff' }}
               />
             </div>
             {product.images.length > 1 && (

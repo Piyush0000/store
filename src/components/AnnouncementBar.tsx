@@ -71,7 +71,7 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
         })));
       })
       .catch((err) => {
-        console.error('[ANNOUNCEMENT] Failed to fetch:', err);
+        console.warn('[ANNOUNCEMENT] Failed to fetch:', err);
       });
   }, [initialCustomization]);
 
