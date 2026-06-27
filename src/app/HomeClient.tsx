@@ -6,6 +6,7 @@ import ProductCard from '@/components/ProductCard';
 import ProductsSection from '@/components/ProductsSection';
 import ReelsSection from '@/components/ReelsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
+import BannersSection from '@/components/BannersSection';
 import type { HydratedSection } from '@/lib/products';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import './page.css';
@@ -50,6 +51,19 @@ interface Customization {
     enabled?: boolean;
     title?: string;
     testimonials?: Array<{ id: string; name: string; description: string; image?: string; rating?: number; date?: string; ctaLink?: string }>;
+  };
+  bannersSection?: {
+    enabled?: boolean;
+    title?: string;
+    banners?: Array<{
+      id: string;
+      image?: string;
+      link?: string;
+      title?: string;
+      subtitle?: string;
+      buttonText?: string;
+      openInNewTab?: boolean;
+    }>;
   };
 }
 
@@ -322,6 +336,16 @@ export default function HomeClient({ bestSellers, customization, categories, pro
             </div>
           </section>
         )
+      )}
+
+      {/* Banners Section */}
+      {customizationState?.bannersSection?.enabled !== false &&
+        customizationState?.bannersSection?.banners &&
+        customizationState.bannersSection.banners.length > 0 && (
+          <BannersSection 
+            banners={customizationState.bannersSection.banners} 
+            title={customizationState.bannersSection.title}
+          />
       )}
 
       {/* Dynamic product sections from CMS config */}

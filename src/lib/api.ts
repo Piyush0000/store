@@ -47,6 +47,19 @@ export interface Customization {
     title?: string;
     testimonials?: Array<{ id: string; name: string; description: string; image?: string; rating?: number; date?: string; ctaLink?: string }>;
   };
+  bannersSection?: {
+    enabled?: boolean;
+    title?: string;
+    banners?: Array<{
+      id: string;
+      image?: string;
+      link?: string;
+      title?: string;
+      subtitle?: string;
+      buttonText?: string;
+      openInNewTab?: boolean;
+    }>;
+  };
 }
 
 export interface ProductVariant {
