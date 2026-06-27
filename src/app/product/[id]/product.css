@@ -103,6 +103,7 @@
 .product-page__thumbnails {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .product-page__thumb {
@@ -639,6 +640,7 @@
     padding-bottom: 4px;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    flex-wrap: nowrap;
   }
 
   .product-page__thumbnails::-webkit-scrollbar {
