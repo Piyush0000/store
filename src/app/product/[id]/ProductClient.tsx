@@ -5,6 +5,7 @@ import { Star, Heart, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react
 import { useCart } from '@/components/CartProvider';
 import { useWishlist } from '@/components/WishlistProvider';
 import ProductCard from '@/components/ProductCard';
+import { trackViewContent } from '@/lib/pixel';
 import './product.css';
 
 interface ProductClientProps {
@@ -34,6 +35,9 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
   useEffect(() => {
     if (product.variants?.length > 0) {
       setSelectedVariant(product.variants[0]);
+    }
+    if (product) {
+      trackViewContent(product.name, product.id, product.price);
     }
   }, [product]);
 
@@ -105,7 +109,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
                 alt={product.name}
                 onLoad={() => setImageLoading(false)}
                 onError={() => setImageLoading(false)}
-                style={{ width: '100%', height: '500px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff' }}
+                style={{ borderRadius: '4px', backgroundColor: '#fff' }}
               />
             </div>
             {product.images.length > 1 && (
@@ -212,8 +216,6 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
               <div className="product-page__benefit"><Shield size={16} /><span>100% Authentic</span></div>
               <div className="product-page__benefit"><RotateCcw size={16} /><span>Secure Checkout</span></div>
             </div>
-
-            <p className="product-page__promo">Extra ₹650 off at checkout</p>
           </div>
         </div>
 

@@ -180,7 +180,7 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
         ];
         setLinks(finalLinks);
       })
-      .catch((err) => console.error('[Footer] Failed to fetch pages:', err));
+      .catch((err) => console.warn('[Footer] Failed to fetch pages:', err));
   }, []);
 
   useEffect(() => {
@@ -244,7 +244,7 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
         const fsBg = customization?.footerStyle?.backgroundColor;
         setBackgroundColor(fcBg || fsBg || '#0a0a0a');
       })
-      .catch((err) => console.error('[Footer] Failed to fetch config:', err));
+      .catch((err) => console.warn('[Footer] Failed to fetch config:', err));
   }, [initialCustomization]);
 
   useEffect(() => {
@@ -358,11 +358,11 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
         <div className="footer__contact">
           <h4 className="footer__contact-heading">Contact Us</h4>
           <ul className="footer__contact-list">
-            <li>Call: {contactInfo.phone}</li>
-            <li>WhatsApp: {contactInfo.phone}</li>
+            {contactInfo.phone && <li>Call: {contactInfo.phone}</li>}
+            {contactInfo.phone && <li>WhatsApp: {contactInfo.phone}</li>}
             <li>Customer Support Time: 24/7</li>
-            <li>Email: <a href={`mailto:${contactInfo.email}`}>{contactInfo.email}</a></li>
-            <li>Address: {contactInfo.address}</li>
+            {contactInfo.email && <li>Email: <a href={`mailto:${contactInfo.email}`}>{contactInfo.email}</a></li>}
+            {contactInfo.address && <li>Address: {contactInfo.address}</li>}
           </ul>
         </div>
       </div>

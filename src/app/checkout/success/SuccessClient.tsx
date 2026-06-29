@@ -46,6 +46,8 @@ export default function SuccessClient() {
     clearCart();
   }, [orderId, txnId, clearCart, track]);
 
+
+
   if (loading) {
     return (
       <div className="checkout__success-wrapper">

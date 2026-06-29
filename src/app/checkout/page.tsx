@@ -43,7 +43,9 @@ export default function CheckoutPage() {
   const { track } = useAnalytics();
   const { cartItems, clearCart, cartTotal } = useCart();
   const [codFee, setCodFee] = useState(40);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [step, setStep] = useState<Step>('identify');
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -86,6 +88,8 @@ export default function CheckoutPage() {
   useEffect(() => {
     getStorefrontCodFee().then(fee => setCodFee(fee));
   }, []);
+
+
 
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
@@ -142,19 +146,28 @@ export default function CheckoutPage() {
       if (sessionResult.valid && sessionResult.phone) {
         setPhone(sessionResult.phone);
         const userResult = await getUserByPhone(sessionResult.phone);
+        let isRecurring = false;
         if (userResult.success && userResult.data) {
           setUser(userResult.data);
           setUserId(userResult.data.id);
-          setSavedAddresses(userResult.data.addresses || []);
+          const addresses = userResult.data.addresses || [];
+          setSavedAddresses(addresses);
           if (userResult.data.firstName) setCustomerFirstName(userResult.data.firstName);
           if (userResult.data.lastName) setCustomerLastName(userResult.data.lastName);
           if (userResult.data.email) setCustomerEmail(userResult.data.email);
-          if (userResult.data.addresses?.length > 0) {
-            const defaultAddr = userResult.data.addresses.find((a: any) => a.isDefault) || userResult.data.addresses[0];
+          if (addresses.length > 0) {
+            const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
             setSelectedAddress(defaultAddr);
+            if (userResult.data.firstName && userResult.data.lastName && userResult.data.email) {
+              isRecurring = true;
+            }
           }
         }
-        setStep('details');
+        if (isRecurring) {
+          setStep('payment');
+        } else {
+          setStep('details');
+        }
       } else {
         setStep('identify');
       }
@@ -240,16 +253,21 @@ export default function CheckoutPage() {
 
         // Get or create user
         const userResult = await getUserByPhone(phone);
+        let isRecurring = false;
         if (userResult.success && userResult.data) {
           setUser(userResult.data);
           setUserId(userResult.data.id);
-          setSavedAddresses(userResult.data.addresses || []);
+          const addresses = userResult.data.addresses || [];
+          setSavedAddresses(addresses);
           if (userResult.data.firstName) setCustomerFirstName(userResult.data.firstName);
           if (userResult.data.lastName) setCustomerLastName(userResult.data.lastName);
           if (userResult.data.email) setCustomerEmail(userResult.data.email);
-          if (userResult.data.addresses?.length > 0) {
-            const defaultAddr = userResult.data.addresses.find((a: any) => a.isDefault) || userResult.data.addresses[0];
+          if (addresses.length > 0) {
+            const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
             setSelectedAddress(defaultAddr);
+            if (userResult.data.firstName && userResult.data.lastName && userResult.data.email) {
+              isRecurring = true;
+            }
           }
         } else {
           const newUserResult = await createOrUpdateUser({ phone });
@@ -258,7 +276,11 @@ export default function CheckoutPage() {
             setUserId(newUserResult.data.id);
           }
         }
-        setStep('details');
+        if (isRecurring) {
+          setStep('payment');
+        } else {
+          setStep('details');
+        }
       } else {
         throw new Error(result.message);
       }
@@ -386,8 +408,12 @@ export default function CheckoutPage() {
         throw new Error('Failed to create user');
       }
 
-      setPaymentMethod(null); // Reset payment method when entering payment step
-      setStep('payment');
+      if (step === 'payment') {
+        setIsEditingDetails(false);
+      } else {
+        setPaymentMethod(null); // Reset payment method when entering payment step
+        setStep('payment');
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -470,6 +496,9 @@ export default function CheckoutPage() {
 
         // Clear cart AFTER setting orderSummary
         clearCart();
+
+        // Track Purchase event for Meta Pixel
+        trackPurchase(result.orderId, capturedSubtotal);
 
         // Change step last
         setStep('success');
@@ -581,6 +610,199 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const renderDetailsForm = () => {
+    const isStepPayment = step === 'payment';
+    return (
+      <section className="checkout__section">
+        <div className="checkout__step-header">
+          <CheckCircle2 size={24} />
+          <h2>YOUR DETAILS</h2>
+          <span className="checkout__verified-badge">✓ Verified</span>
+        </div>
+        <p className="checkout__step-desc">We&apos;ll use this to contact you about your order</p>
+
+        <div className="checkout__row">
+          <div className="checkout__field">
+            <label>First Name *</label>
+            <input
+              type="text"
+              value={customerFirstName}
+              onChange={(e) => {
+                setCustomerFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, ''));
+                setFieldErrors((prev) => ({ ...prev, firstName: '' }));
+              }}
+              className={fieldErrors.firstName ? 'error' : ''}
+            />
+            {fieldErrors.firstName && <span className="checkout__error">{fieldErrors.firstName}</span>}
+          </div>
+          <div className="checkout__field">
+            <label>Last Name *</label>
+            <input
+              type="text"
+              value={customerLastName}
+              onChange={(e) => {
+                setCustomerLastName(e.target.value.replace(/[^a-zA-Z\s]/g, ''));
+                setFieldErrors((prev) => ({ ...prev, lastName: '' }));
+              }}
+              className={fieldErrors.lastName ? 'error' : ''}
+            />
+            {fieldErrors.lastName && <span className="checkout__error">{fieldErrors.lastName}</span>}
+          </div>
+        </div>
+
+        <div className="checkout__field">
+          <label>Email *</label>
+          <input
+            type="email"
+            value={customerEmail}
+            onChange={(e) => {
+              setCustomerEmail(e.target.value);
+              setFieldErrors((prev) => ({ ...prev, email: '' }));
+            }}
+            className={fieldErrors.email ? 'error' : ''}
+          />
+          {fieldErrors.email && <span className="checkout__error">{fieldErrors.email}</span>}
+        </div>
+
+        <div className="checkout__address-section">
+          <h3 className="checkout__address-title">DELIVERY ADDRESS</h3>
+
+          {!showAddressForm && (
+            <button className="checkout__add-address-btn" onClick={() => setShowAddressForm(true)}>
+              + Add New Address
+            </button>
+          )}
+
+          {showAddressForm && (
+            <div className="checkout__address-form">
+              <div className="checkout__address-type-btns">
+                {['HOME', 'WORK', 'OTHER'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setAddressForm({ ...addressForm, type })}
+                    className={`checkout__address-type-btn ${addressForm.type === type ? 'active' : ''}`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+
+              <div className="checkout__field">
+                <label>House/Flat/Building *</label>
+                <input type="text" value={addressForm.flatHouse} onChange={(e) => setAddressForm({ ...addressForm, flatHouse: e.target.value })} />
+              </div>
+
+              <div className="checkout__field">
+                <label>Street/Area/Landmark *</label>
+                <input type="text" value={addressForm.areaStreet} onChange={(e) => setAddressForm({ ...addressForm, areaStreet: e.target.value })} />
+              </div>
+
+              <div className="checkout__row checkout__row--3">
+                <div className="checkout__field">
+                  <label>City *</label>
+                  <input type="text" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value.replace(/[^a-zA-Z\s]/g, '') })} />
+                </div>
+                <div className="checkout__field">
+                  <label>State *</label>
+                  <select value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}>
+                    <option value="">Select</option>
+                    {indianStates.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="checkout__field">
+                  <label>PIN Code *</label>
+                  <input type="text" value={addressForm.pincode} onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })} maxLength={6} />
+                </div>
+              </div>
+
+              <div className="checkout__address-form-actions">
+                <button className="checkout__btn-secondary" onClick={() => setShowAddressForm(false)}>Cancel</button>
+                <button className="checkout__btn-primary" onClick={handleSaveAddress} disabled={isLoading}>
+                  {isLoading ? <Loader2 className="animate-spin" size={16} /> : 'Save Address'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {savedAddresses.length > 0 && (
+            <div className="checkout__saved-addresses">
+              {savedAddresses.map((addr) => (
+                <div
+                  key={addr.id}
+                  className={`checkout__address-card ${selectedAddress?.id === addr.id ? 'selected' : ''}`}
+                  onClick={() => { setSelectedAddress(addr); setShowAddressForm(false); }}
+                >
+                  <div className="checkout__address-card-header">
+                    <span className="checkout__address-type">{addr.type}</span>
+                    {addr.isDefault && <span className="checkout__address-default">Default</span>}
+                    {selectedAddress?.id === addr.id && <CheckCircle2 size={14} className="checkout__address-check" />}
+                  </div>
+                  <p className="checkout__address-detail">{addr.flatHouse}</p>
+                  <p className="checkout__address-detail">{addr.areaStreet}, {addr.city}, {addr.state} - {addr.pincode}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {error && <span className="checkout__error">{error}</span>}
+
+        <div className="checkout__mobile-sticky-bottom">
+          <button className="checkout__continue-btn" onClick={handleContinueToPayment} disabled={isLoading || !selectedAddress}>
+            {isLoading ? <Loader2 className="animate-spin" size={18} /> : isStepPayment ? 'CONFIRM DETAILS' : 'CONTINUE TO PAYMENT'} <ChevronRight size={18} />
+          </button>
+
+          <div className="checkout__powered-by-wrapper">
+            <div className="checkout__powered-by">
+              <span>Powered by</span>
+              <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  const renderDeliveryCapsule = () => {
+    if (!selectedAddress) return null;
+    const tagLabel = selectedAddress.type || 'HOME';
+
+    return (
+      <div className="checkout__delivery-capsule">
+        <div className="checkout__delivery-capsule-header">
+          <span className="checkout__delivery-capsule-title">Delivery details</span>
+          <button
+            type="button"
+            className="checkout__delivery-capsule-change"
+            onClick={() => setIsEditingDetails(true)}
+          >
+            Change
+          </button>
+        </div>
+        <div className="checkout__delivery-capsule-content">
+          <div className="checkout__delivery-capsule-name-row">
+            <span className="checkout__delivery-capsule-name">
+              {customerFirstName} {customerLastName}
+            </span>
+            <span className="checkout__delivery-capsule-tag">
+              {tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1).toLowerCase()}
+            </span>
+          </div>
+          <p className="checkout__delivery-capsule-address">
+            {selectedAddress.flatHouse}, {selectedAddress.areaStreet}, {selectedAddress.city}, {selectedAddress.state}
+          </p>
+          <p className="checkout__delivery-capsule-pincode">
+            {selectedAddress.pincode}
+          </p>
+          <div className="checkout__delivery-capsule-phone">
+            <Phone size={14} className="checkout__delivery-capsule-phone-icon" />
+            <span>{phone}</span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (cartItems.length === 0 && step !== 'success') {
@@ -762,186 +984,51 @@ export default function CheckoutPage() {
             </section>
           )}
 
-          {step === 'details' && (
-            <section className="checkout__section">
-              <div className="checkout__step-header">
-                <CheckCircle2 size={24} />
-                <h2>YOUR DETAILS</h2>
-                <span className="checkout__verified-badge">✓ Verified</span>
-              </div>
-              <p className="checkout__step-desc">We&apos;ll use this to contact you about your order</p>
-
-              <div className="checkout__row">
-                <div className="checkout__field">
-                  <label>First Name *</label>
-                  <input
-                    type="text"
-                    value={customerFirstName}
-                    onChange={(e) => {
-                      setCustomerFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, ''));
-                      setFieldErrors((prev) => ({ ...prev, firstName: '' }));
-                    }}
-                    className={fieldErrors.firstName ? 'error' : ''}
-                  />
-                  {fieldErrors.firstName && <span className="checkout__error">{fieldErrors.firstName}</span>}
-                </div>
-                <div className="checkout__field">
-                  <label>Last Name *</label>
-                  <input
-                    type="text"
-                    value={customerLastName}
-                    onChange={(e) => {
-                      setCustomerLastName(e.target.value.replace(/[^a-zA-Z\s]/g, ''));
-                      setFieldErrors((prev) => ({ ...prev, lastName: '' }));
-                    }}
-                    className={fieldErrors.lastName ? 'error' : ''}
-                  />
-                  {fieldErrors.lastName && <span className="checkout__error">{fieldErrors.lastName}</span>}
-                </div>
-              </div>
-
-              <div className="checkout__field">
-                <label>Email *</label>
-                <input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => {
-                    setCustomerEmail(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, email: '' }));
-                  }}
-                  className={fieldErrors.email ? 'error' : ''}
-                />
-                {fieldErrors.email && <span className="checkout__error">{fieldErrors.email}</span>}
-              </div>
-
-              <div className="checkout__address-section">
-                <h3 className="checkout__address-title">DELIVERY ADDRESS</h3>
-
-                {!showAddressForm && (
-                  <button className="checkout__add-address-btn" onClick={() => setShowAddressForm(true)}>
-                    + Add New Address
-                  </button>
-                )}
-
-                {showAddressForm && (
-                  <div className="checkout__address-form">
-                    <div className="checkout__address-type-btns">
-                      {['HOME', 'WORK', 'OTHER'].map((type) => (
-                        <button
-                          key={type}
-                          onClick={() => setAddressForm({ ...addressForm, type })}
-                          className={`checkout__address-type-btn ${addressForm.type === type ? 'active' : ''}`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="checkout__field">
-                      <label>House/Flat/Building *</label>
-                      <input type="text" value={addressForm.flatHouse} onChange={(e) => setAddressForm({ ...addressForm, flatHouse: e.target.value })} />
-                    </div>
-
-                    <div className="checkout__field">
-                      <label>Street/Area/Landmark *</label>
-                      <input type="text" value={addressForm.areaStreet} onChange={(e) => setAddressForm({ ...addressForm, areaStreet: e.target.value })} />
-                    </div>
-
-                    <div className="checkout__row checkout__row--3">
-                      <div className="checkout__field">
-                        <label>City *</label>
-                        <input type="text" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value.replace(/[^a-zA-Z\s]/g, '') })} />
-                      </div>
-                      <div className="checkout__field">
-                        <label>State *</label>
-                        <select value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}>
-                          <option value="">Select</option>
-                          {indianStates.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </div>
-                      <div className="checkout__field">
-                        <label>PIN Code *</label>
-                        <input type="text" value={addressForm.pincode} onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })} maxLength={6} />
-                      </div>
-                    </div>
-
-                    <div className="checkout__address-form-actions">
-                      <button className="checkout__btn-secondary" onClick={() => setShowAddressForm(false)}>Cancel</button>
-                      <button className="checkout__btn-primary" onClick={handleSaveAddress} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="animate-spin" size={16} /> : 'Save Address'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {savedAddresses.length > 0 && (
-                  <div className="checkout__saved-addresses">
-                    {savedAddresses.map((addr) => (
-                      <div
-                        key={addr.id}
-                        className={`checkout__address-card ${selectedAddress?.id === addr.id ? 'selected' : ''}`}
-                        onClick={() => { setSelectedAddress(addr); setShowAddressForm(false); }}
-                      >
-                        <div className="checkout__address-card-header">
-                          <span className="checkout__address-type">{addr.type}</span>
-                          {addr.isDefault && <span className="checkout__address-default">Default</span>}
-                          {selectedAddress?.id === addr.id && <CheckCircle2 size={14} className="checkout__address-check" />}
-                        </div>
-                        <p className="checkout__address-detail">{addr.flatHouse}</p>
-                        <p className="checkout__address-detail">{addr.areaStreet}, {addr.city}, {addr.state} - {addr.pincode}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {error && <span className="checkout__error">{error}</span>}
-
-              <div className="checkout__mobile-sticky-bottom">
-                <button className="checkout__continue-btn" onClick={handleContinueToPayment} disabled={isLoading || !selectedAddress}>
-                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'CONTINUE TO PAYMENT'} <ChevronRight size={18} />
-                </button>
-
-                <div className="checkout__powered-by-wrapper">
-                  <div className="checkout__powered-by">
-                    <span>Powered by</span>
-                    <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
+          {step === 'details' && renderDetailsForm()}
 
           {step === 'payment' && (
-            <section className="checkout__section">
-              <div className="checkout__step-header">
-                <h2>PAYMENT METHOD</h2>
-              </div>
-              <p className="checkout__step-desc">Select your preferred way to pay</p>
+            <>
+              {isEditingDetails ? renderDetailsForm() : renderDeliveryCapsule()}
+
+              <section className="checkout__section" style={{ marginTop: isEditingDetails ? '24px' : '0' }}>
+                <div className="checkout__step-header">
+                  <h2>PAYMENT METHOD</h2>
+                </div>
+                <p className="checkout__step-desc">Select your preferred way to pay</p>
 
               {paymentMethod === null && (
                 <div className="checkout__payment-options">
                   <div className="checkout__payment-card" onClick={() => setPaymentMethod('COD')}>
                     <div className="checkout__payment-header">
-                      <div className="checkout__payment-icon">
-                        <Banknote size={24} />
+                      <div className="checkout__payment-info-left">
+                        <div className="checkout__payment-icon">
+                          <Banknote size={24} />
+                        </div>
+                        <div>
+                          <p className="checkout__payment-title">Cash on Delivery</p>
+                          <p className="checkout__payment-note">+ Rs. {codFee} fee</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="checkout__payment-title">Cash on Delivery</p>
-                        <p className="checkout__payment-note">Pay on delivery</p>
-                      </div>
+                      <button className="checkout__payment-select-btn" type="button">
+                        Select <ChevronRight size={16} />
+                      </button>
                     </div>
                   </div>
 
                   <div className="checkout__payment-card" onClick={() => setPaymentMethod('PAYU')}>
                     <div className="checkout__payment-header">
-                      <div className="checkout__payment-icon">
-                        <CreditCard size={24} />
+                      <div className="checkout__payment-info-left">
+                        <div className="checkout__payment-icon">
+                          <CreditCard size={24} />
+                        </div>
+                        <div>
+                          <p className="checkout__payment-title">Online Payment</p>
+                          <p className="checkout__payment-note">Cards, UPI, Net Banking</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="checkout__payment-title">Online Payment</p>
-                        <p className="checkout__payment-note">Cards, UPI, Net Banking</p>
-                      </div>
+                      <button className="checkout__payment-select-btn" type="button">
+                        Select <ChevronRight size={16} />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1004,65 +1091,76 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
-            </section>
+              </section>
+            </>
           )}
         </div>
 
-        <div className="checkout__summary">
-          <h2 className="checkout__summary-title">ORDER SUMMARY</h2>
+        <div className={`checkout__summary ${isSummaryOpen ? 'open' : ''}`}>
+          <div className="checkout__summary-header" onClick={() => setIsSummaryOpen(!isSummaryOpen)}>
+            <h2 className="checkout__summary-title">ORDER SUMMARY</h2>
+            <div className="checkout__summary-toggle">
+              <span className="checkout__summary-toggle-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0)).toLocaleString('en-IN')}</span>
+              <ChevronDown size={20} className="checkout__summary-toggle-icon" />
+            </div>
+          </div>
 
-          <div className="checkout__summary-items">
-            {(orderSummary?.items || cartItems).map((item) => (
-              <div key={`${item.id}-${JSON.stringify(item.variants || {})}`} className="checkout__summary-item">
-                <img src={item.images?.[0] || 'https://via.placeholder.com/60'} alt={item.name} />
-                <div className="checkout__summary-item-info">
-                  <span className="checkout__summary-item-name">{item.name}</span>
-                  <span className="checkout__summary-item-qty">Qty: {item.quantity}</span>
-                </div>
-                <span className="checkout__summary-item-price">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+          <div className="checkout__summary-content-wrapper">
+            <div className="checkout__summary-content">
+              <div className="checkout__summary-items">
+                {(orderSummary?.items || cartItems).map((item) => (
+                  <div key={`${item.id}-${JSON.stringify(item.variants || {})}`} className="checkout__summary-item">
+                    <img src={item.images?.[0] || 'https://via.placeholder.com/60'} alt={item.name} />
+                    <div className="checkout__summary-item-info">
+                      <span className="checkout__summary-item-name">{item.name}</span>
+                      <span className="checkout__summary-item-qty">Qty: {item.quantity}</span>
+                    </div>
+                    <span className="checkout__summary-item-price">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="checkout__summary-rows">
-            <div className="checkout__summary-row"><span>Subtotal</span><span>₹{(orderSummary?.subtotal ?? subtotal).toLocaleString('en-IN')}</span></div>
-            {/* No COD fee row */}
-            <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
-          </div>
+              <div className="checkout__summary-rows">
+                <div className="checkout__summary-row"><span>Subtotal</span><span>₹{(orderSummary?.subtotal ?? subtotal).toLocaleString('en-IN')}</span></div>
+                {(orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{codFee}</span></div>}
+                <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
+              </div>
 
-          {/* Free Shipping Banner */}
-          <div className="checkout__free-shipping-banner">
-            <Truck size={16} className="checkout__free-shipping-icon" />
-            <span>Yay! You get FREE shipping 🥳</span>
-          </div>
+              {/* Free Shipping Banner */}
+              <div className="checkout__free-shipping-banner">
+                <Truck size={16} className="checkout__free-shipping-icon" />
+                <span>Yay! You get FREE shipping 🥳</span>
+              </div>
 
-          <div className="checkout__summary-divider" />
-          <div className="checkout__summary-row checkout__summary-row--total">
-            <span>Total</span>
-            <span className="checkout__summary-total-price">₹{(orderSummary?.subtotal ?? subtotal).toLocaleString('en-IN')}</span>
-          </div>
+              <div className="checkout__summary-divider" />
+              <div className="checkout__summary-row checkout__summary-row--total">
+                <span>Total</span>
+                <span className="checkout__summary-total-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0)).toLocaleString('en-IN')}</span>
+              </div>
 
-          <div className="checkout__summary-badges">
-            <div className="checkout__summary-badge">
-              <Lock size={14} />
-              <span>Secure Payment</span>
-            </div>
-            <div className="checkout__summary-badge-divider" />
-            <div className="checkout__summary-badge">
-              <ShieldCheck size={14} />
-              <span>100% Authentic</span>
-            </div>
-            <div className="checkout__summary-badge-divider" />
-            <div className="checkout__summary-badge">
-              <RefreshCw size={14} />
-              <span>Easy Returns</span>
-            </div>
-          </div>
+              <div className="checkout__summary-badges">
+                <div className="checkout__summary-badge">
+                  <Lock size={14} />
+                  <span>Secure Payment</span>
+                </div>
+                <div className="checkout__summary-badge-divider" />
+                <div className="checkout__summary-badge">
+                  <ShieldCheck size={14} />
+                  <span>100% Authentic</span>
+                </div>
+                <div className="checkout__summary-badge-divider" />
+                <div className="checkout__summary-badge">
+                  <RefreshCw size={14} />
+                  <span>Easy Returns</span>
+                </div>
+              </div>
 
-          <div className="checkout__powered-by-wrapper">
-            <div className="checkout__powered-by">
-              <span>Powered by</span>
-              <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+              <div className="checkout__powered-by-wrapper">
+                <div className="checkout__powered-by">
+                  <span>Powered by</span>
+                  <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+                </div>
+              </div>
             </div>
           </div>
         </div>

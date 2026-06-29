@@ -71,7 +71,7 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
         })));
       })
       .catch((err) => {
-        console.error('[ANNOUNCEMENT] Failed to fetch:', err);
+        console.warn('[ANNOUNCEMENT] Failed to fetch:', err);
       });
   }, [initialCustomization]);
 
@@ -113,7 +113,6 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
   }, []);
 
   const staticMessages = [
-    { text: 'Extra discounts of Rs.650 at checkout', link: '' },
     { text: 'Hurry Up, Shop Now!', link: '' },
     { text: '50% Off', link: '' },
     { text: `Limited Time: ${pad(timeLeft.hours)}H:${pad(timeLeft.minutes)}M:${pad(timeLeft.seconds)}S`, link: '' },
