@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Loader2, Phone, CheckCircle2, Truck, ChevronRight, Banknote, CreditCard, ShoppingBag, Lock, RefreshCw, ShieldCheck, PhoneCall, ArrowRight, ChevronDown } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
+import { useAnalytics } from '@/components/AnalyticsProvider';
 import {
   sendOtp,
   verifyOtp,
@@ -39,6 +40,7 @@ const indianStates = [
 ];
 
 export default function CheckoutPage() {
+  const { track } = useAnalytics();
   const { cartItems, clearCart, cartTotal } = useCart();
   const [codFee, setCodFee] = useState(40);
   const [step, setStep] = useState<Step>('identify');
@@ -158,6 +160,18 @@ export default function CheckoutPage() {
       }
     };
     checkSession();
+
+    // Track InitiateCheckout event
+    try {
+      track('InitiateCheckout', {
+        content_ids: cartItems.map(item => item.id),
+        num_items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+        value: cartTotal,
+        currency: 'INR'
+      });
+    } catch (e) {
+      console.warn('[Analytics] Failed to track InitiateCheckout:', e);
+    }
   }, []);
 
   useEffect(() => {

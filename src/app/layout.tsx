@@ -13,6 +13,7 @@ import PageLoader from "@/components/PageLoader";
 import { fetchStorefront } from "@/lib/api";
 import { getServerSubdomain } from "@/lib/server-utils";
 import PreviewBridge from "@/components/PreviewBridge";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,11 +41,13 @@ export default async function RootLayout({
 
   let customization = null;
   let storeName = "";
+  let storeSubdomain = "";
   try {
     const subdomain = await getServerSubdomain();
     const data = await fetchStorefront(subdomain);
     customization = data.customization;
     storeName = data.store?.name || "";
+    storeSubdomain = data.store?.subdomain || subdomain;
   } catch (err: any) {
     if (err && (err.digest === 'DYNAMIC_SERVER_USAGE' || String(err.message).includes('Dynamic server usage'))) {
       throw err;
@@ -78,14 +81,16 @@ export default async function RootLayout({
           id="payu-bolt"
         />
         <WishlistProvider>
-          <CartProvider>
-            <CartDrawer />
-            <AnnouncementBar initialCustomization={customization} />
-            <Header initialCustomization={customization} storeName={storeName} />
-            <main>{children}</main>
-            <Footer initialCustomization={customization} storeName={storeName} />
-            <BottomNav />
-          </CartProvider>
+          <AnalyticsProvider customization={customization} storeSubdomain={storeSubdomain}>
+            <CartProvider>
+              <CartDrawer />
+              <AnnouncementBar initialCustomization={customization} />
+              <Header initialCustomization={customization} storeName={storeName} />
+              <main>{children}</main>
+              <Footer initialCustomization={customization} storeName={storeName} />
+              <BottomNav />
+            </CartProvider>
+          </AnalyticsProvider>
         </WishlistProvider>
       </body>
     </html>

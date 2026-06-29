@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { useAnalytics } from './AnalyticsProvider';
 
 export interface CartItem {
   id: string;
@@ -37,6 +38,7 @@ export function useCart() {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { track } = useAnalytics();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -75,6 +77,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       return [...prev, { ...product, quantity, variants }];
     });
+
+    // Track AddToCart event
+    try {
+      track('AddToCart', {
+        content_ids: [product.id],
+        content_name: product.name,
+        content_type: 'product',
+        value: product.price,
+        currency: 'INR'
+      });
+    } catch (e) {
+      console.warn('[Analytics] Failed to track AddToCart:', e);
+    }
+
     setIsCartOpen(true);
   };
 
