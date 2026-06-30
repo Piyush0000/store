@@ -227,39 +227,83 @@
   justify-content: center;
   align-items: center;
   margin-top: 40px;
+  padding: 32px 0;
+  border-top: 1px solid var(--footer-border);
 }
 
 .footer__powered-by {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 24px 0 24px;
+  gap: 12px;
+  padding: 10px 24px;
   font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: #1A6FBF;
   text-decoration: none;
-  transition: filter 0.2s;
+  
+  /* Glassmorphism Capsule */
+  background: rgba(26, 111, 191, 0.05);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(26, 111, 191, 0.15);
+  border-radius: 9999px;
+  
+  /* Drop shadow & Inner highlight */
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.3), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .footer__powered-by:hover {
-  filter: brightness(1.15);
+  background: rgba(26, 111, 191, 0.1);
+  border-color: rgba(26, 111, 191, 0.35);
+  box-shadow: 
+    0 8px 30px rgba(26, 111, 191, 0.2), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.footer__powered-by:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 4px 15px rgba(26, 111, 191, 0.1), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 .footer__evoc-logo {
-  height: 36px;
+  height: 22px;
   width: auto;
+  transition: transform 0.3s ease;
 }
 
-.footer__powered-by-name {
-  font-weight: 700;
-  font-size: 16px;
-  color: #1A6FBF;
+.footer__powered-by:hover .footer__evoc-logo {
+  transform: scale(1.08);
 }
 
 .footer__powered-by-text {
-  font-size: 15px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.footer__powered-by:hover .footer__powered-by-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.footer__powered-by-name {
+  font-size: 14px;
+  font-weight: 700;
   color: #1A6FBF;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.footer__powered-by:hover .footer__powered-by-name {
+  color: #3b9dfa;
+  text-shadow: 0 0 10px rgba(59, 157, 250, 0.4);
 }
 
 /* ── Brand Video Section ─────────────────────────────────────── */
@@ -314,6 +358,7 @@
   .footer__powered-by-wrap {
     margin-left: -40px;
     margin-right: -40px;
+    padding: 24px 0;
   }
 
   .footer__row1 {
@@ -345,7 +390,8 @@
   .footer__powered-by-wrap {
     margin-left: -20px;
     margin-right: -20px;
-    padding-bottom: 80px; /* extra space for mobile bottom nav bar */
+    padding-top: 24px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 
   .footer__row1 {
@@ -389,18 +435,20 @@
   }
 
   .footer__powered-by {
-    padding-top: 20px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
-    font-size: 14px;
-    gap: 12px;
+    padding: 8px 20px;
+    gap: 10px;
   }
 
   .footer__evoc-logo {
-    height: 30px;
+    height: 18px;
+  }
+
+  .footer__powered-by-text {
+    font-size: 12px;
   }
 
   .footer__powered-by-name {
-    font-size: 15px;
+    font-size: 13px;
   }
 
   .brand-video__wrapper {
