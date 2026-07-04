@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 
 export async function proxy(request: Request) {
   const hostname = request.headers.get('host') || '';
-  const cleanHostname = hostname.split(':')[0].toLowerCase();
+  let cleanHostname = hostname.split(':')[0].toLowerCase();
+  if (cleanHostname.startsWith('www.')) {
+    cleanHostname = cleanHostname.substring(4);
+  }
 
   let subdomain = '';
   const requestUrl = new URL(request.url);

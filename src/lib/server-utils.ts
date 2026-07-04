@@ -20,7 +20,11 @@ export async function getServerSubdomain(): Promise<string> {
     }
     if (host) {
       // Strip port if exists
-      const hostname = host.split(':')[0];
+      let hostname = host.split(':')[0].toLowerCase();
+      // Strip www prefix if present
+      if (hostname.startsWith('www.')) {
+        hostname = hostname.substring(4);
+      }
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         console.log('[server-utils] Localhost detected. process.env.NEXT_PUBLIC_SUBDOMAIN:', process.env.NEXT_PUBLIC_SUBDOMAIN);
         return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
