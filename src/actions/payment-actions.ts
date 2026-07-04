@@ -77,7 +77,8 @@ export async function initiatePayUPayment(data: {
         surl: callbackUrl,
         furl: callbackUrl,
         udf1: subdomain,
-        isSandbox: hashData.isSandbox ?? false,
+        // isSandbox is set by backend; fallback to key-based detection for old deployments
+        isSandbox: hashData.isSandbox ?? ['IWqFlM', 'gtKFFx', 'oZ7oo7'].includes(hashData.key),
       },
     };
   } catch (error: any) {
