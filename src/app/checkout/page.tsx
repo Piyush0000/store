@@ -102,23 +102,17 @@ export default function CheckoutPage() {
     const form = document.createElement('form');
     form.method = 'POST';
 
-    // Set destination URL: PayU sandbox or production
-    const isTestKey = 
-      payUData.key === 'IWqFlM' || 
-      payUData.key === 'gtKFFx' || 
-      process.env.NEXT_PUBLIC_PAYU_SANDBOX === 'true' ||
-      process.env.NODE_ENV === 'development' ||
-      (typeof window !== 'undefined' && (
-        window.location.hostname === 'localhost' || 
-        window.location.hostname === '127.0.0.1' || 
-        window.location.hostname.endsWith('.localhost')
-      ));
-    form.action = isTestKey 
+    // Use isSandbox flag from backend (based on PayU key) — reliable for all environments
+    const isSandbox = payUData.isSandbox === true;
+    form.action = isSandbox
       ? 'https://test.payu.in/_payment' 
       : 'https://secure.payu.in/_payment';
 
-    // Append fields
-    Object.entries(payUData).forEach(([key, val]) => {
+    // Remove isSandbox from the fields we POST to PayU (PayU doesn't accept it)
+    const { isSandbox: _ignored, ...payUFields } = payUData;
+
+    // Append fields (excluding isSandbox which is internal-only)
+    Object.entries(payUFields).forEach(([key, val]) => {
       const input = document.createElement('input');
       input.type = 'hidden';
       input.name = key;

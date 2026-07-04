@@ -77,6 +77,7 @@ export async function initiatePayUPayment(data: {
         surl: callbackUrl,
         furl: callbackUrl,
         udf1: subdomain,
+        isSandbox: hashData.isSandbox ?? false,
       },
     };
   } catch (error: any) {
