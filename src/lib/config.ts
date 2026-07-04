@@ -17,7 +17,10 @@ export function getSubdomain(): string {
       return storedSub;
     }
 
-    const hostname = window.location.hostname;
+    let hostname = window.location.hostname.toLowerCase();
+    if (hostname.startsWith('www.')) {
+      hostname = hostname.substring(4);
+    }
     // Local development: use environment variable fallback
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
