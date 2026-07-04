@@ -103,7 +103,16 @@ export default function CheckoutPage() {
     form.method = 'POST';
 
     // Set destination URL: PayU sandbox or production
-    const isTestKey = payUData.key === 'IWqFlM' || process.env.NEXT_PUBLIC_PAYU_SANDBOX === 'true';
+    const isTestKey = 
+      payUData.key === 'IWqFlM' || 
+      payUData.key === 'gtKFFx' || 
+      process.env.NEXT_PUBLIC_PAYU_SANDBOX === 'true' ||
+      process.env.NODE_ENV === 'development' ||
+      (typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' || 
+        window.location.hostname === '127.0.0.1' || 
+        window.location.hostname.endsWith('.localhost')
+      ));
     form.action = isTestKey 
       ? 'https://test.payu.in/_payment' 
       : 'https://secure.payu.in/_payment';
@@ -498,7 +507,17 @@ export default function CheckoutPage() {
         clearCart();
 
         // Track Purchase event for Meta Pixel
-        trackPurchase(result.orderId, capturedSubtotal);
+        try {
+          track('Purchase', {
+            content_ids: capturedItems.map(item => item.id),
+            value: capturedSubtotal,
+            currency: 'INR',
+            transaction_id: result.orderId,
+            payment_method: 'COD'
+          });
+        } catch (e) {
+          console.warn('[Analytics] Failed to track Purchase:', e);
+        }
 
         // Change step last
         setStep('success');
