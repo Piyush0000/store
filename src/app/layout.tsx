@@ -99,10 +99,10 @@ export default async function RootLayout({
           <AnalyticsProvider customization={customization} storeSubdomain={storeSubdomain}>
             <CartProvider>
               <CartDrawer />
-              <AnnouncementBar initialCustomization={customization} />
-              <Header initialCustomization={customization} storeName={storeName} />
+              <AnnouncementBar initialCustomization={customization} storeSubdomain={storeSubdomain} />
+              <Header initialCustomization={customization} storeName={storeName} storeSubdomain={storeSubdomain} />
               <main>{children}</main>
-              <Footer initialCustomization={customization} storeName={storeName} />
+              <Footer initialCustomization={customization} storeName={storeName} storeSubdomain={storeSubdomain} />
               <BottomNav />
             </CartProvider>
           </AnalyticsProvider>

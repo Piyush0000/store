@@ -65,8 +65,13 @@ export function AnalyticsProvider({
         sessionStorage.setItem('orbit_session_id', currentSessionId);
       }
       sessionIdRef.current = currentSessionId;
+      
+      // Store the database-resolved subdomain in localStorage so client-side API fetches resolve correctly on custom domains
+      if (storeSubdomain) {
+        localStorage.setItem('detected_subdomain', storeSubdomain);
+      }
     }
-  }, []);
+  }, [storeSubdomain]);
 
   // Initialize fbq tracking array
   useEffect(() => {

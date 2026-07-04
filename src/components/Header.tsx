@@ -27,9 +27,10 @@ const DEFAULT_LOGO = '';
 interface HeaderProps {
   initialCustomization?: any;
   storeName?: string;
+  storeSubdomain?: string;
 }
 
-export default function Header({ initialCustomization, storeName: propStoreName }: HeaderProps) {
+export default function Header({ initialCustomization, storeName: propStoreName, storeSubdomain }: HeaderProps) {
   const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
   const [scrolled, setScrolled] = useState(false);
@@ -87,7 +88,7 @@ export default function Header({ initialCustomization, storeName: propStoreName 
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    fetchStorefront()
+    fetchStorefront(storeSubdomain)
       .then((data) => {
         const customization = data.customization;
         let headerStyle = customization?.headerStyle;

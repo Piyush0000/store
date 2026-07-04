@@ -31,9 +31,10 @@ function getContrastColor(hexColor: string) {
 
 interface AnnouncementBarProps {
   initialCustomization?: any;
+  storeSubdomain?: string;
 }
 
-export default function AnnouncementBar({ initialCustomization }: AnnouncementBarProps) {
+export default function AnnouncementBar({ initialCustomization, storeSubdomain }: AnnouncementBarProps) {
   const getInitialAnnouncements = () => {
     if (initialCustomization?.announcementBar?.announcements) {
       return initialCustomization.announcementBar.announcements;
@@ -61,7 +62,7 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
     hasFetched.current = true;
 
     console.log('[ANNOUNCEMENT] Fetching announcements from API');
-    fetchAnnouncements()
+    fetchAnnouncements(storeSubdomain)
       .then((data) => {
         console.log('[ANNOUNCEMENT] Announcements fetched:', data.length);
         // Map database structure (message/link) to unified list format (text/link)

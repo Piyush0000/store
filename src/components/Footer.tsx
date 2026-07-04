@@ -95,9 +95,10 @@ function getContrastColor(hexColor: string) {
 interface FooterProps {
   initialCustomization?: any;
   storeName?: string;
+  storeSubdomain?: string;
 }
 
-export default function Footer({ initialCustomization, storeName: propStoreName }: FooterProps) {
+export default function Footer({ initialCustomization, storeName: propStoreName, storeSubdomain }: FooterProps) {
   const getInitialLogo = () => {
     let headerStyle = initialCustomization?.headerStyle;
     if (headerStyle && typeof headerStyle === 'string') {
@@ -159,7 +160,7 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
   const hasFetched = useRef(false);
 
   useEffect(() => {
-    fetchPages()
+    fetchPages(storeSubdomain)
       .then((pages) => {
         const updatedLinks = quickLinks.map((ql) => {
           const slug = ql.path.replace('/', '');
@@ -191,7 +192,7 @@ export default function Footer({ initialCustomization, storeName: propStoreName 
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    fetchStorefront()
+    fetchStorefront(storeSubdomain)
       .then((data) => {
         const { customization, store } = data;
 
