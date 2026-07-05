@@ -80,6 +80,18 @@ export async function proxy(request: Request) {
       );
     }
 
+    // Redirect to custom domain if configured and the current request is on the default evoclabs subdomain
+    const isEvoclabsSubdomain = cleanHostname.endsWith('.evoclabs.com');
+    const isLocalhost = cleanHostname === 'localhost' ||
+      cleanHostname === '127.0.0.1' ||
+      cleanHostname.endsWith('.localhost');
+
+    if (!isLocalhost && isEvoclabsSubdomain && data.store?.customDomain) {
+      const customUrl = new URL(request.url);
+      customUrl.hostname = `www.${data.store.customDomain}`;
+      return NextResponse.redirect(customUrl, 301);
+    }
+
     // Set custom header with the resolved subdomain to pass down to Server Components
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-subdomain', subdomain);
