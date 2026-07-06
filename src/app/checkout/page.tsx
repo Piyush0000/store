@@ -138,7 +138,9 @@ export default function CheckoutPage() {
     // Get or create device ID
     let storedDeviceId = localStorage.getItem('checkout_device_id');
     if (!storedDeviceId) {
-      storedDeviceId = crypto.randomUUID();
+      storedDeviceId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2) + Date.now().toString(36);
       localStorage.setItem('checkout_device_id', storedDeviceId);
     }
     setDeviceId(storedDeviceId);
