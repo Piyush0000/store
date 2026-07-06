@@ -19,7 +19,7 @@ const addressSchema = z.object({
 export async function getStorefrontCodFee(): Promise<number> {
   const subdomain = await getServerSubdomain();
   const storefront = await fetchStorefront(subdomain);
-  return storefront.settings?.codFee ?? 40;
+  return storefront.settings?.codFee ?? 0;
 }
 
 export async function createAddress(userId: string, data: z.infer<typeof addressSchema>) {
@@ -206,14 +206,9 @@ export async function createCodOrder(data: {
     pincode: string;
   };
 }) {
-  let storeId = data.storeId;
-  if (!storeId) {
-    const subdomain = await getServerSubdomain();
-    const storefront = await fetchStorefront(subdomain);
-    if (storefront.store?.id) {
-      storeId = storefront.store.id;
-    }
-  }
+  const subdomain = await getServerSubdomain();
+  const storefront = await fetchStorefront(subdomain);
+  const storeId = data.storeId || storefront.store?.id;
 
   if (!storeId) {
     return { success: false, message: 'STORE_ID is required to validate COD stock' };
@@ -233,8 +228,8 @@ export async function createCodOrder(data: {
     return { success: false, message: 'Invalid cart total. Please refresh the page and try again.' };
   }
 
-  // Validate total matches items + COD fee (COD_FEE = 40 on frontend)
-  const COD_FEE = 40;
+  // Validate total matches items + COD fee
+  const COD_FEE = storefront.settings?.codFee ?? 0;
   const expectedTotal = itemSubtotal + COD_FEE;
   if (Math.abs(data.totalAmount - expectedTotal) > 1) {
     console.warn('[COD] Total mismatch:', { passed: data.totalAmount, calculated: expectedTotal, itemSubtotal });

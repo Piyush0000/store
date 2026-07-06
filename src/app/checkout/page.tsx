@@ -42,7 +42,7 @@ const indianStates = [
 export default function CheckoutPage() {
   const { track } = useAnalytics();
   const { cartItems, clearCart, cartTotal } = useCart();
-  const [codFee, setCodFee] = useState(40);
+  const [codFee, setCodFee] = useState(0);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [step, setStep] = useState<Step>('identify');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
