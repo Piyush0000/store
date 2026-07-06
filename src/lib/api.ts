@@ -60,6 +60,7 @@ export interface Customization {
       openInNewTab?: boolean;
     }>;
   };
+  homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number }>;
 }
 
 export interface ProductVariant {

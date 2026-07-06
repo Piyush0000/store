@@ -65,6 +65,7 @@ interface Customization {
       openInNewTab?: boolean;
     }>;
   };
+  homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number }>;
 }
 
 interface HomeClientProps {
@@ -200,25 +201,15 @@ export default function HomeClient({ bestSellers, customization, categories, pro
     }
   };
 
-  return (
-    <div className="home">
-      {(customizationState?.homePageConfig?.heroEnabled !== false) && (
-        <section className="hero-carousel animate-slide-up delay-200">
-          <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-            {heroSlides.map((slide: any, index: number) => (
-              <div key={slide.id} className="hero-carousel__slide">
-                {slide.link ? (
-                  <Link href={slide.link} className="hero-carousel__image-link">
-                    <img
-                      src={slide.image}
-                      alt={slide.title || 'Hero Banner'}
-                      className="hero-carousel__image"
-                      loading={index === 0 ? 'eager' : 'lazy'}
-                      {...(index === 0 ? { fetchPriority: 'high' } : {})}
-                      decoding="async"
-                    />
-                  </Link>
-                ) : (
+  const renderHero = () => {
+    if (customizationState?.homePageConfig?.heroEnabled === false || heroSlides.length === 0) return null;
+    return (
+      <section className="hero-carousel animate-slide-up delay-200">
+        <div className="hero-carousel__track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
+          {heroSlides.map((slide: any, index: number) => (
+            <div key={slide.id} className="hero-carousel__slide">
+              {slide.link ? (
+                <Link href={slide.link} className="hero-carousel__image-link">
                   <img
                     src={slide.image}
                     alt={slide.title || 'Hero Banner'}
@@ -227,167 +218,253 @@ export default function HomeClient({ bestSellers, customization, categories, pro
                     {...(index === 0 ? { fetchPriority: 'high' } : {})}
                     decoding="async"
                   />
-                )}
-                <div className="hero-carousel__content">
-                  {slide.title && <h1>{slide.title}</h1>}
-                  {slide.subtitle && <p>{slide.subtitle}</p>}
-                  {slide.cta && (
-                    <Link href={slide.link} className="hero-carousel__cta">{slide.cta}</Link>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          {heroSlides.length > 1 && (
-            <>
-              <button className="hero-carousel__nav hero-carousel__nav--prev" onClick={prevSlide}>
-                <ChevronLeft size={24} />
-              </button>
-              <button className="hero-carousel__nav hero-carousel__nav--next" onClick={nextSlide}>
-                <ChevronRight size={24} />
-              </button>
-              <div className="hero-carousel__dots">
-                {heroSlides.map((_: any, index: number) => (
-                  <button
-                    key={index}
-                    className={`hero-carousel__dot ${index === currentSlide ? 'active' : ''}`}
-                    onClick={() => setCurrentSlide(index)}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </section>
-      )}
-
-      {/* Reels Section — below hero */}
-      {customizationState?.reelsSection?.enabled !== false &&
-        customizationState?.reelsSection?.reels &&
-        customizationState.reelsSection.reels.length > 0 && (
-          <ReelsSection reels={customizationState.reelsSection.reels} />
-      )}
-
-      {(customizationState?.homePageConfig?.categoriesEnabled !== false) && brandCategories.length > 0 && (
-        <>
-          <section className="shop-category animate-slide-up delay-400">
-            <h2 className="section-title">SHOP BY CATEGORY</h2>
-            <div className="shop-category__slider-wrapper" style={{ position: 'relative' }}>
-              <div 
-                id="category-grid"
-                className={`shop-category__grid shop-category__grid--${categoryShape}`}
-              >
-                {brandCategories.map((cat) => (
-                  <Link key={`shop-${cat.name}`} href={cat.path} className={`shop-category__card shop-category__card--${categoryShape}`}>
-                    <img src={cat.image} alt={cat.name} className="shop-category__image" />
-                    <div className="shop-category__overlay">
-                      <span className="shop-category__name">{cat.name}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-              {brandCategories.length > 3 && (
-                <>
-                  <button 
-                    className="category-slider__nav category-slider__nav--prev" 
-                    onClick={() => scrollGrid('left')}
-                    aria-label="Previous categories"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <button 
-                    className="category-slider__nav category-slider__nav--next" 
-                    onClick={() => scrollGrid('right')}
-                    aria-label="Next categories"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </>
+                </Link>
+              ) : (
+                <img
+                  src={slide.image}
+                  alt={slide.title || 'Hero Banner'}
+                  className="hero-carousel__image"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  {...(index === 0 ? { fetchPriority: 'high' } : {})}
+                  decoding="async"
+                />
               )}
+              <div className="hero-carousel__content">
+                {slide.title && <h1>{slide.title}</h1>}
+                {slide.subtitle && <p>{slide.subtitle}</p>}
+                {slide.cta && (
+                  <Link href={slide.link} className="hero-carousel__cta">{slide.cta}</Link>
+                )}
+              </div>
             </div>
-          </section>
-        </>
-      )}
-
-      {customizationState?.homePageConfig?.mediaType === 'image' ? (
-        customizationState?.homePageConfig?.imageUrl && (
-          <section className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.bannerOverlay === false ? ' brand-video--fullbleed' : ''}${customizationState?.homePageConfig?.showBorders === false ? ' brand-video--no-borders' : ''}`}>
-            <div className="brand-video__wrapper">
-              <img
-                src={customizationState.homePageConfig.imageUrl}
-                alt="Brand Banner"
-                className="brand-video__player"
-                style={{ 
-                  width: '100%', 
-                  height: 'auto', 
-                  borderRadius: customizationState?.homePageConfig?.bannerOverlay === false ? '0' : '8px', 
-                  objectFit: customizationState?.homePageConfig?.showBorders === false ? 'contain' : 'cover' 
-                }}
-              />
-            </div>
-          </section>
-        )
-      ) : (
-        videoUrl && (
-          <section className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.showBorders === false ? ' brand-video--no-borders' : ''}`}>
-            <div className="brand-video__wrapper">
-              <video autoPlay muted loop playsInline className="brand-video__player" key={videoUrl}>
-                <source src={videoUrl} type="video/mp4" />
-              </video>
-            </div>
-          </section>
-        )
-      )}
-
-      {/* Banners Section */}
-      {customizationState?.bannersSection?.enabled !== false &&
-        customizationState?.bannersSection?.banners &&
-        customizationState.bannersSection.banners.length > 0 && (
-          <BannersSection 
-            banners={customizationState.bannersSection.banners} 
-            title={customizationState.bannersSection.title}
-          />
-      )}
-
-      {/* Dynamic product sections from CMS config */}
-      {productSections.length > 0 &&
-        productSections.map((section) => (
-          <ProductsSection
-            key={section.id}
-            title={section.title}
-            subtitle={section.subtitle}
-            products={section.products}
-            sliderMode={section.sliderMode}
-          />
-        ))
-      }
-
-      {/* Featured Collection / All Products */}
-      {(customizationState?.homePageConfig?.featuredEnabled !== false) && (
-        bestSellers.length > 0 ? (
-          <section className="featured-collection animate-slide-up delay-600">
-            <h2 className="section-title">ALL PRODUCTS</h2>
-            <div className="featured-collection__grid">
-              {bestSellers.map((product) => (
-                <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+        {heroSlides.length > 1 && (
+          <>
+            <button className="hero-carousel__nav hero-carousel__nav--prev" onClick={prevSlide}>
+              <ChevronLeft size={24} />
+            </button>
+            <button className="hero-carousel__nav hero-carousel__nav--next" onClick={nextSlide}>
+              <ChevronRight size={24} />
+            </button>
+            <div className="hero-carousel__dots">
+              {heroSlides.map((_: any, index: number) => (
+                <button
+                  key={index}
+                  className={`hero-carousel__dot ${index === currentSlide ? 'active' : ''}`}
+                  onClick={() => setCurrentSlide(index)}
+                />
               ))}
             </div>
-          </section>
-        ) : (
-          <section className="featured-collection animate-slide-up delay-600">
-            <h2 className="section-title">ALL PRODUCTS</h2>
-            <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products available</p>
-          </section>
-        )
-      )}
+          </>
+        )}
+      </section>
+    );
+  };
 
-      {customizationState?.testimonialsSection?.enabled !== false &&
-        customizationState?.testimonialsSection?.testimonials &&
-        customizationState.testimonialsSection.testimonials.length > 0 && (
-          <TestimonialsSection 
-            testimonials={customizationState.testimonialsSection.testimonials} 
-            title={customizationState.testimonialsSection.title}
-          />
-      )}
+  const renderReels = () => {
+    if (
+      customizationState?.reelsSection?.enabled === false ||
+      !customizationState?.reelsSection?.reels ||
+      customizationState.reelsSection.reels.length === 0
+    ) return null;
+    return <ReelsSection reels={customizationState.reelsSection.reels} />;
+  };
+
+  const renderCategories = () => {
+    if (customizationState?.homePageConfig?.categoriesEnabled === false || brandCategories.length === 0) return null;
+    return (
+      <section className="shop-category animate-slide-up delay-400">
+        <h2 className="section-title">SHOP BY CATEGORY</h2>
+        <div className="shop-category__slider-wrapper" style={{ position: 'relative' }}>
+          <div 
+            id="category-grid"
+            className={`shop-category__grid shop-category__grid--${categoryShape}`}
+          >
+            {brandCategories.map((cat) => (
+              <Link key={`shop-${cat.name}`} href={cat.path} className={`shop-category__card shop-category__card--${categoryShape}`}>
+                <img src={cat.image} alt={cat.name} className="shop-category__image" />
+                <div className="shop-category__overlay">
+                  <span className="shop-category__name">{cat.name}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+          {brandCategories.length > 3 && (
+            <>
+              <button 
+                className="category-slider__nav category-slider__nav--prev" 
+                onClick={() => scrollGrid('left')}
+                aria-label="Previous categories"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button 
+                className="category-slider__nav category-slider__nav--next" 
+                onClick={() => scrollGrid('right')}
+                aria-label="Next categories"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+    );
+  };
+
+  const renderBrandVideo = () => {
+    if (customizationState?.homePageConfig?.mediaType === 'image') {
+      if (!customizationState?.homePageConfig?.imageUrl) return null;
+      return (
+        <section className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.bannerOverlay === false ? ' brand-video--fullbleed' : ''}${customizationState?.homePageConfig?.showBorders === false ? ' brand-video--no-borders' : ''}`}>
+          <div className="brand-video__wrapper">
+            <img
+              src={customizationState.homePageConfig.imageUrl}
+              alt="Brand Banner"
+              className="brand-video__player"
+              style={{ 
+                width: '100%', 
+                height: 'auto', 
+                borderRadius: customizationState?.homePageConfig?.bannerOverlay === false ? '0' : '8px', 
+                objectFit: customizationState?.homePageConfig?.showBorders === false ? 'contain' : 'cover' 
+              }}
+            />
+          </div>
+        </section>
+      );
+    } else {
+      if (!videoUrl) return null;
+      return (
+        <section className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.showBorders === false ? ' brand-video--no-borders' : ''}`}>
+          <div className="brand-video__wrapper">
+            <video autoPlay muted loop playsInline className="brand-video__player" key={videoUrl}>
+              <source src={videoUrl} type="video/mp4" />
+            </video>
+          </div>
+        </section>
+      );
+    }
+  };
+
+  const renderBanners = () => {
+    if (
+      customizationState?.bannersSection?.enabled === false ||
+      !customizationState?.bannersSection?.banners ||
+      customizationState.bannersSection.banners.length === 0
+    ) return null;
+    return (
+      <BannersSection 
+        banners={customizationState.bannersSection.banners} 
+        title={customizationState.bannersSection.title}
+      />
+    );
+  };
+
+  const renderProductSection = (sectionId: string, index?: number) => {
+    let section = null;
+    if (sectionId) {
+      section = productSections.find(s => s.id === sectionId);
+    }
+    if (!section && typeof index === 'number') {
+      section = productSections[index];
+    }
+    if (!section) return null;
+    return (
+      <ProductsSection
+        key={section.id}
+        title={section.title}
+        subtitle={section.subtitle}
+        products={section.products}
+        sliderMode={section.sliderMode}
+      />
+    );
+  };
+
+  const renderFeatured = () => {
+    if (customizationState?.homePageConfig?.featuredEnabled === false) return null;
+    if (bestSellers.length > 0) {
+      return (
+        <section className="featured-collection animate-slide-up delay-600">
+          <h2 className="section-title">ALL PRODUCTS</h2>
+          <div className="featured-collection__grid">
+            {bestSellers.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      );
+    } else {
+      return (
+        <section className="featured-collection animate-slide-up delay-600">
+          <h2 className="section-title">ALL PRODUCTS</h2>
+          <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No products available</p>
+        </section>
+      );
+    }
+  };
+
+  const renderTestimonials = () => {
+    if (
+      customizationState?.testimonialsSection?.enabled === false ||
+      !customizationState?.testimonialsSection?.testimonials ||
+      customizationState.testimonialsSection.testimonials.length === 0
+    ) return null;
+    return (
+      <TestimonialsSection 
+        testimonials={customizationState.testimonialsSection.testimonials} 
+        title={customizationState.testimonialsSection.title}
+      />
+    );
+  };
+
+  // Determine active section order (either from customization DB or fallback to default layout order)
+  const defaultSections = [
+    { id: 'hero-carousel', type: 'heroSection', name: 'Hero Banner', enabled: true },
+    { id: 'reels-stories', type: 'reelsSection', name: 'Reels / Video Stories', enabled: true },
+    { id: 'categories-grid', type: 'categoryImages', name: 'Category Images', enabled: true },
+    { id: 'brand-video', type: 'brandVideo', name: 'Brand Video / Banner', enabled: true },
+    { id: 'banners-section', type: 'bannersSection', name: 'Banner Section', enabled: true },
+    ...productSections.map((sec, idx) => ({ id: sec.id || `prod-sec-${idx}`, type: 'productSections', name: `Product Section: ${sec.title || 'Untitled'}`, enabled: true, refIndex: idx })),
+    { id: 'featured-collection', type: 'featuredProducts', name: 'All Products', enabled: true },
+    { id: 'testimonials-section', type: 'testimonialsSection', name: 'Testimonials', enabled: true }
+  ];
+
+  const homepageSections = customizationState?.homepageSections || defaultSections;
+
+  // In case of dynamic sync updates where new productSections are added/removed but homepageSections is not yet saved,
+  // ensure we dynamically include any productSections not present in homepageSections at the bottom
+  const syncedSections = [...homepageSections];
+  productSections.forEach((sec, idx) => {
+    const exists = syncedSections.some((s: any) => s.type === 'productSections' && (s.id === sec.id || s.refIndex === idx));
+    if (!exists) {
+      syncedSections.push({
+        id: sec.id || `prod-sec-${idx}`,
+        type: 'productSections',
+        name: `Product Section: ${sec.title || 'Untitled'}`,
+        enabled: true,
+        refIndex: idx
+      });
+    }
+  });
+
+  return (
+    <div className="home">
+      {syncedSections
+        .filter((sec: any) => sec.enabled !== false)
+        .map((sec: any) => {
+          switch (sec.type) {
+            case 'heroSection': return <div key={sec.id}>{renderHero()}</div>;
+            case 'reelsSection': return <div key={sec.id}>{renderReels()}</div>;
+            case 'categoryImages': return <div key={sec.id}>{renderCategories()}</div>;
+            case 'brandVideo': return <div key={sec.id}>{renderBrandVideo()}</div>;
+            case 'bannersSection': return <div key={sec.id}>{renderBanners()}</div>;
+            case 'productSections': return <div key={sec.id}>{renderProductSection(sec.id, sec.refIndex)}</div>;
+            case 'featuredProducts': return <div key={sec.id}>{renderFeatured()}</div>;
+            case 'testimonialsSection': return <div key={sec.id}>{renderTestimonials()}</div>;
+            default: return null;
+          }
+        })}
     </div>
   );
 }
