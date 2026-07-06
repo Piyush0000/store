@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+// In-memory cache for custom domain resolutions to avoid hitting API on every request
+const domainCache = new Map<string, { subdomain: string; expiry: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // Cache for 5 minutes
+
 export async function proxy(request: Request) {
   const hostname = request.headers.get('host') || '';
   let cleanHostname = hostname.split(':')[0].toLowerCase();
@@ -29,29 +33,39 @@ export async function proxy(request: Request) {
       const isEvoclabsSubdomain = cleanHostname.endsWith('.evoclabs.com');
 
       if (!isEvoclabsSubdomain) {
-        // Non-localhost, non-evoclabs domain → resolve custom domain from API
-        try {
-          const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-          const resolveUrl = `${apiBase}/resolve?domain=${cleanHostname}`;
-          let resolveRes;
+        const now = Date.now();
+        const cached = domainCache.get(cleanHostname);
+        if (cached && cached.expiry > now) {
+          subdomain = cached.subdomain;
+        } else {
+          // Non-localhost, non-evoclabs domain → resolve custom domain from API
           try {
-            resolveRes = await fetch(resolveUrl, { next: { revalidate: 0 } });
-          } catch (localErr) {
-            console.warn('[PROXY] Local domain resolve failed, trying public fallback:', localErr);
-            const publicApiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-            resolveRes = await fetch(`${publicApiBase}/resolve?domain=${cleanHostname}`, { next: { revalidate: 0 } });
+            const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+            const resolveUrl = `${apiBase}/resolve?domain=${cleanHostname}`;
+            let resolveRes;
+            try {
+              resolveRes = await fetch(resolveUrl, { next: { revalidate: 0 } });
+            } catch (localErr) {
+              console.warn('[PROXY] Local domain resolve failed, trying public fallback:', localErr);
+              const publicApiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+              resolveRes = await fetch(`${publicApiBase}/resolve?domain=${cleanHostname}`, { next: { revalidate: 0 } });
+            }
+            const resolveData = await resolveRes.json();
+            if (resolveData.success && resolveData.store) {
+              subdomain = resolveData.store.subdomain;
+              domainCache.set(cleanHostname, {
+                subdomain,
+                expiry: now + CACHE_TTL_MS
+              });
+            } else {
+              return NextResponse.redirect(
+                new URL(`/store-error?reason=${encodeURIComponent(resolveData.message || 'Invalid store domain')}`, request.url)
+              );
+            }
+          } catch (err) {
+            console.error('[PROXY] Custom domain resolve failed:', err);
+            return NextResponse.redirect(new URL('/store-error?reason=Resolution+failed', request.url));
           }
-          const resolveData = await resolveRes.json();
-          if (resolveData.success && resolveData.store) {
-            subdomain = resolveData.store.subdomain;
-          } else {
-            return NextResponse.redirect(
-              new URL(`/store-error?reason=${encodeURIComponent(resolveData.message || 'Invalid store domain')}`, request.url)
-            );
-          }
-        } catch (err) {
-          console.error('[PROXY] Custom domain resolve failed:', err);
-          return NextResponse.redirect(new URL('/store-error?reason=Resolution+failed', request.url));
         }
       } else {
         // Valid subdomain pattern: *.evoclabs.com → validate via API
