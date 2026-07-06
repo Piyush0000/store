@@ -100,7 +100,9 @@ export async function proxy(request: Request) {
       cleanHostname === '127.0.0.1' ||
       cleanHostname.endsWith('.localhost');
 
-    if (!isLocalhost && isEvoclabsSubdomain && data.store?.customDomain) {
+    const isEditor = requestUrl.searchParams.get('isEditor') === 'true';
+
+    if (!isLocalhost && isEvoclabsSubdomain && data.store?.customDomain && !isEditor) {
       const customUrl = new URL(request.url);
       customUrl.hostname = `www.${data.store.customDomain}`;
       return NextResponse.redirect(customUrl, 301);
