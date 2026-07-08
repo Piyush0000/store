@@ -87,7 +87,7 @@ export async function getProductsByCategory(
   if (!API_BASE || !subdomain) return [];
   try {
     const url = `${API_BASE}/${subdomain}/products?category=${encodeURIComponent(category)}`;
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     // Handle multiple response shapes from the API

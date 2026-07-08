@@ -23,6 +23,8 @@ const DEFAULT_EMAIL = 'contact@example.com';
 const DEFAULT_ADDRESS = '';
 const DEFAULT_FB = '';
 const DEFAULT_IG = '';
+const DEFAULT_TWITTER = '';
+const DEFAULT_TIKTOK = '';
 
 function VisaIcon() {
   return (
@@ -44,22 +46,34 @@ function MastercardIcon() {
   );
 }
 
-
-
-
-
 function FacebookIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 3.656 10.938 8.437 11.946v-8.437H7.078v-3.497h2.359v-2.666c0-2.475 1.438-3.843 3.667-3.843 1.063 0 2.166.197 2.166.197v2.379h-1.223c-1.228 0-1.606-.765-1.606-1.541v-1.714h2.806l-.443 3.497h-2.363v8.437C17.344 23.011 21 18.063 21 12.073z"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M9 8H7v4h2v12h5V12h3.642L18 8h-4V6.333C14 5.378 14.192 5 15.115 5H18V0h-3.808C10.596 0 9 1.583 9 4.615V8z"/>
     </svg>
   );
 }
 
 function InstagramIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+    </svg>
+  );
+}
+
+function TwitterIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  );
+}
+
+function TikTokIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.57-3.99-1.57-.49-.45-.91-.97-1.24-1.54v7.87c.05 2.44-.99 4.9-3.07 6.18-2.22 1.39-5.22 1.35-7.39-.08C4.58 19.34 3.75 16.2 4.6 13.5c.74-2.42 2.92-4.22 5.46-4.52V13c-1.45.15-2.88 1.11-3.35 2.5-.59 1.69.17 3.75 1.73 4.54 1.57.8 3.73.34 4.75-1.18.29-.41.38-.91.38-1.41V0h-1.06z"/>
     </svg>
   );
 }
@@ -155,6 +169,8 @@ export default function Footer({ initialCustomization, storeName: propStoreName,
     return {
       facebook: fc?.socials?.facebook || initialCustomization?.socialLinks?.facebook || DEFAULT_FB,
       instagram: fc?.socials?.instagram || initialCustomization?.socialLinks?.instagram || DEFAULT_IG,
+      twitter: fc?.socials?.twitter || initialCustomization?.socialLinks?.twitter || DEFAULT_TWITTER,
+      tiktok: fc?.socials?.tiktok || initialCustomization?.socialLinks?.tiktok || DEFAULT_TIKTOK,
     };
   });
   const hasFetched = useRef(false);
@@ -222,6 +238,8 @@ export default function Footer({ initialCustomization, storeName: propStoreName,
           setSocialLinks({
             facebook: fc?.socials?.facebook || customization.socialLinks?.facebook || DEFAULT_FB,
             instagram: fc?.socials?.instagram || customization.socialLinks?.instagram || DEFAULT_IG,
+            twitter: fc?.socials?.twitter || customization.socialLinks?.twitter || DEFAULT_TWITTER,
+            tiktok: fc?.socials?.tiktok || customization.socialLinks?.tiktok || DEFAULT_TIKTOK,
           });
         } else if (customization?.contactInfo) {
           setContactInfo({
@@ -234,6 +252,8 @@ export default function Footer({ initialCustomization, storeName: propStoreName,
           setSocialLinks({
             facebook: customization.socialLinks.facebook || DEFAULT_FB,
             instagram: customization.socialLinks.instagram || DEFAULT_IG,
+            twitter: customization.socialLinks.twitter || DEFAULT_TWITTER,
+            tiktok: customization.socialLinks.tiktok || DEFAULT_TIKTOK,
           });
         }
         if (customization?.footerContent?.bio || customization?.footerContent?.description || customization?.footerStyle?.bio) {
@@ -281,6 +301,8 @@ export default function Footer({ initialCustomization, storeName: propStoreName,
           setSocialLinks({
             facebook: fc?.socials?.facebook || cust.socialLinks?.facebook || DEFAULT_FB,
             instagram: fc?.socials?.instagram || cust.socialLinks?.instagram || DEFAULT_IG,
+            twitter: fc?.socials?.twitter || cust.socialLinks?.twitter || DEFAULT_TWITTER,
+            tiktok: fc?.socials?.tiktok || cust.socialLinks?.tiktok || DEFAULT_TIKTOK,
           });
         } else if (cust?.contactInfo) {
           setContactInfo({
@@ -293,6 +315,8 @@ export default function Footer({ initialCustomization, storeName: propStoreName,
           setSocialLinks({
             facebook: cust.socialLinks.facebook || DEFAULT_FB,
             instagram: cust.socialLinks.instagram || DEFAULT_IG,
+            twitter: cust.socialLinks.twitter || DEFAULT_TWITTER,
+            tiktok: cust.socialLinks.tiktok || DEFAULT_TIKTOK,
           });
         }
         if (cust?.footerContent?.bio || cust?.footerContent?.description || cust?.footerStyle?.bio) {
@@ -351,6 +375,16 @@ export default function Footer({ initialCustomization, storeName: propStoreName,
             {socialLinks.instagram && (
               <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="Instagram">
                 <InstagramIcon />
+              </a>
+            )}
+            {socialLinks.twitter && (
+              <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="Twitter / X">
+                <TwitterIcon />
+              </a>
+            )}
+            {socialLinks.tiktok && (
+              <a href={socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="footer__social-link" aria-label="TikTok">
+                <TikTokIcon />
               </a>
             )}
           </div>

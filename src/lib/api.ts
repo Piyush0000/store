@@ -24,7 +24,7 @@ export interface Customization {
   headerConfig: { showSearch: boolean; showCart: boolean; showWishlist: boolean; storeName: string; logoUrl: string };
   footerConfig: { showAbout: boolean; showContact: boolean; showSocial: boolean; showNewsletter: boolean };
   homePageConfig: { heroEnabled: boolean; featuredEnabled: boolean; categoriesEnabled: boolean; images: string[]; videoUrl?: string };
-  socialLinks: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string };
+  socialLinks: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string; tiktok?: string };
   navLinks: { label: string; href: string }[];
   ctaButtons: any[];
   features: { title: string; description: string; icon: string }[];
@@ -41,6 +41,16 @@ export interface Customization {
   reelsSection?: {
     enabled?: boolean;
     reels?: Array<{ id: string; title: string; sub: string; category: string; videoUrl: string; ctaLink?: string }>;
+  };
+  fakeSalesPopup?: {
+    enabled?: boolean;
+    intervalSeconds?: number;
+    delaySeconds?: number;
+  };
+  floatingLogo?: {
+    enabled?: boolean;
+    imageUrl?: string;
+    linkUrl?: string;
   };
   testimonialsSection?: {
     enabled?: boolean;
@@ -219,7 +229,7 @@ const MOCK_STOREFRONT: StorefrontData = {
 export async function fetchStorefront(subdomain?: string): Promise<StorefrontData> {
   try {
     const apiUrl = getApiUrl(subdomain);
-    const res = await fetch(apiUrl, { next: { revalidate: 60 } });
+    const res = await fetch(apiUrl, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
     return data;
