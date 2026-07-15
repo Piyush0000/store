@@ -232,6 +232,35 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Auto-apply coupon from URL query param
+  const autoAppliedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || autoAppliedRef.current || subtotal === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const urlCoupon = params.get('coupon');
+    if (urlCoupon) {
+      autoAppliedRef.current = true;
+      setCouponInput(urlCoupon);
+      setIsApplyingCoupon(true);
+      setCouponError(null);
+      validateCouponAction(urlCoupon, subtotal)
+        .then((result) => {
+          if (result.success && result.coupon) {
+            setAppliedCoupon(result.coupon);
+            setDiscountAmount(result.discount || 0);
+          } else {
+            setCouponError(result.message || 'Invalid coupon code');
+          }
+        })
+        .catch(() => {
+          setCouponError('Failed to validate coupon code. Please try again.');
+        })
+        .finally(() => {
+          setIsApplyingCoupon(false);
+        });
+    }
+  }, [subtotal]);
+
   useEffect(() => {
     if (resendTimer > 0) {
       const interval = setInterval(() => setResendTimer((prev) => prev - 1), 1000);

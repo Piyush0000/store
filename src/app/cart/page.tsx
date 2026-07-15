@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
+import { validateCouponAction } from '@/actions/coupon-actions';
 import './cart.css';
 
 export default function CartPage() {
@@ -13,8 +15,41 @@ export default function CartPage() {
   console.log('[PAGE:Cart] Cart total:', cartTotal);
   console.log('[PAGE:Cart] Cart count:', cartCount);
 
+  // Coupon states
+  const [couponInput, setCouponInput] = useState('');
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError(null);
+    try {
+      const result = await validateCouponAction(couponInput, cartTotal);
+      if (result.success && result.coupon) {
+        setAppliedCoupon(result.coupon);
+        setDiscountAmount(result.discount || 0);
+      } else {
+        setCouponError(result.message || 'Invalid coupon code');
+      }
+    } catch (err: any) {
+      setCouponError('Failed to validate coupon code. Please try again.');
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponInput('');
+    setCouponError(null);
+  };
+
   const shippingAmount = cartTotal > 499 ? 0 : 49;
-  const finalTotal = cartTotal + shippingAmount;
+  const finalTotal = cartTotal + shippingAmount - discountAmount;
 
   const formatPrice = (price: number) => `₹${price.toLocaleString('en-IN')}`;
 
@@ -111,6 +146,13 @@ export default function CartPage() {
             <span>{formatPrice(cartTotal)}</span>
           </div>
 
+          {appliedCoupon && (
+            <div className="cart__summary-row cart__summary-row--discount">
+              <span>Discount ({appliedCoupon.code})</span>
+              <span>-{formatPrice(discountAmount)}</span>
+            </div>
+          )}
+
           <div className="cart__summary-row cart__summary-row--shipping">
             <span>Shipping</span>
             <span>{shippingAmount === 0 ? 'FREE' : formatPrice(shippingAmount)}</span>
@@ -118,10 +160,37 @@ export default function CartPage() {
 
           <div className="cart__summary-divider" />
 
-          <div className="cart__promo-input">
-            <input type="text" placeholder="Promo code" />
-            <button className="cart__promo-btn">APPLY</button>
-          </div>
+          {!appliedCoupon ? (
+            <>
+              <div className="cart__promo-input">
+                <input
+                  type="text"
+                  placeholder="Promo code"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
+                  disabled={isApplyingCoupon}
+                />
+                <button
+                  className="cart__promo-btn"
+                  onClick={handleApplyCoupon}
+                  disabled={isApplyingCoupon || !couponInput.trim()}
+                >
+                  {isApplyingCoupon ? '...' : 'APPLY'}
+                </button>
+              </div>
+              {couponError && <p className="cart__promo-error">{couponError}</p>}
+            </>
+          ) : (
+            <div className="cart__promo-applied-info">
+              <div>
+                <span className="cart__promo-applied-code">{appliedCoupon.code}</span>
+                <p className="cart__promo-success">Coupon applied successfully!</p>
+              </div>
+              <button className="cart__promo-remove-btn" onClick={handleRemoveCoupon}>
+                REMOVE
+              </button>
+            </div>
+          )}
 
           <Link href="/catalogue" className="cart__continue-btn">
             CONTINUE SHOPPING
@@ -133,7 +202,10 @@ export default function CartPage() {
               <span>{formatPrice(finalTotal > 0 ? finalTotal : 0)}</span>
             </div>
 
-            <Link href="/checkout" className="cart__checkout-btn">
+            <Link
+              href={appliedCoupon ? `/checkout?coupon=${encodeURIComponent(appliedCoupon.code)}` : '/checkout'}
+              className="cart__checkout-btn"
+            >
               PROCEED TO CHECKOUT
             </Link>
 
