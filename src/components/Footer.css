@@ -78,10 +78,15 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: #1a1a1a;
+  background: var(--footer-border, #222);
   border-radius: 50%;
+  color: var(--footer-text, #fff);
   transition: all 0.3s ease;
   text-decoration: none;
+}
+
+.footer__social-link svg {
+  display: block;
 }
 
 .footer__social-link img {
@@ -91,7 +96,8 @@
 }
 
 .footer__social-link:hover {
-  background: #c9a84c;
+  background: var(--gold, #c9a84c);
+  color: #ffffff;
   transform: translateY(-2px);
 }
 

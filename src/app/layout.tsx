@@ -9,6 +9,8 @@ import BottomNav from "@/components/BottomNav";
 import Script from "next/script";
 import { Inter, Playfair_Display } from "next/font/google";
 import PageLoader from "@/components/PageLoader";
+import FakeSalesPopup from "@/components/FakeSalesPopup";
+import FloatingLogo from "@/components/FloatingLogo";
 
 import { fetchStorefront } from "@/lib/api";
 import { extractPixelId } from "@/lib/pixel";
@@ -44,12 +46,14 @@ export default async function RootLayout({
   let customization = null;
   let storeName = "";
   let storeSubdomain = "";
+  let products: any[] = [];
   try {
     const subdomain = await getServerSubdomain();
     const data = await fetchStorefront(subdomain);
     customization = data.customization;
     storeName = data.store?.name || "";
     storeSubdomain = data.store?.subdomain || subdomain;
+    products = data.products || [];
   } catch (err: any) {
     if (err && (err.digest === 'DYNAMIC_SERVER_USAGE' || String(err.message).includes('Dynamic server usage'))) {
       throw err;
@@ -102,6 +106,12 @@ export default async function RootLayout({
               <AnnouncementBar initialCustomization={customization} storeSubdomain={storeSubdomain} />
               <Header initialCustomization={customization} storeName={storeName} storeSubdomain={storeSubdomain} />
               <main>{children}</main>
+              {customization?.fakeSalesPopup?.enabled && (
+                <FakeSalesPopup config={customization.fakeSalesPopup} products={products} />
+              )}
+              {customization?.floatingLogo?.enabled && (
+                <FloatingLogo config={customization.floatingLogo} />
+              )}
               <Footer initialCustomization={customization} storeName={storeName} storeSubdomain={storeSubdomain} />
               <BottomNav />
             </CartProvider>
