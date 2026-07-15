@@ -27,9 +27,29 @@ export default async function ProductPage({ params }: PageProps) {
     notFound();
   }
 
-  const relatedProducts = products
-    .filter((p: any) => p.category === product.category && p.id !== product.id)
+  let customFields: any = {};
+  if (product.customFields) {
+    if (typeof product.customFields === 'string') {
+      try {
+        customFields = JSON.parse(product.customFields);
+      } catch (e) {}
+    } else {
+      customFields = product.customFields;
+    }
+  }
+
+  const targetCategory = customFields?.relatedCategory || product.category;
+
+  let relatedProducts = products
+    .filter((p: any) => p.category === targetCategory && p.id !== product.id)
     .slice(0, 4);
+
+  // Fallback to same category if the chosen category has no products
+  if (relatedProducts.length === 0 && targetCategory !== product.category) {
+    relatedProducts = products
+      .filter((p: any) => p.category === product.category && p.id !== product.id)
+      .slice(0, 4);
+  }
 
   return <ProductClient product={product} relatedProducts={relatedProducts} />;
 }

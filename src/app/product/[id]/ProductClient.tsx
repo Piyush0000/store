@@ -37,46 +37,28 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
       setSelectedVariant(product.variants[0]);
     }
     if (product) {
-      trackViewContent(product.name, product.id, product.price);
+      trackViewContent(product.name, product.id, Number(product.price));
     }
   }, [product]);
 
-  const displayPrice = selectedVariant?.price || product.price;
-  const originalPrice = product.compareAtPrice || null;
-  const discount = originalPrice ? Math.round(((originalPrice - product.price) / originalPrice) * 100) : 0;
+  const displayPrice = selectedVariant 
+    ? Number(selectedVariant.price) 
+    : Number(product.price);
 
-  const handleAddToCart = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: displayPrice,
-      compareAtPrice: product.compareAtPrice,
-      images: product.images,
-      variantId: selectedVariant?.id,
-    }, quantity, selectedVariant?.options || {});
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
-  };
+  const originalPrice = selectedVariant?.options?.compareAtPrice !== undefined && selectedVariant?.options?.compareAtPrice !== null
+    ? Number(selectedVariant.options.compareAtPrice)
+    : (product.compareAtPrice ? Number(product.compareAtPrice) : null);
 
-  const handleBuyNow = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: displayPrice,
-      compareAtPrice: product.compareAtPrice,
-      images: product.images,
-      variantId: selectedVariant?.id,
-    }, quantity, selectedVariant?.options || {});
-    setTimeout(() => { window.location.href = '/cart'; }, 500);
-  };
+  const discount = originalPrice && displayPrice && originalPrice > displayPrice
+    ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100)
+    : 0;
 
-  const renderStars = (rating: number) =>
-    [...Array(5)].map((_, i) => (
-      <Star key={i} size={14} fill={i < Math.floor(rating) ? 'var(--gold-light, #c9a84c)' : 'none'} stroke="var(--gold-light, #c9a84c)" strokeWidth={1.5} />
-    ));
+  const IGNORED_OPTION_KEYS = ['isActive', 'compareAtPrice', 'status', 'sku', 'price', 'stock', 'id', 'name'];
 
-  const variantOptionKeys = product.variants?.length > 0
-    ? [...new Set<string>(product.variants.flatMap((v: any) => Object.keys(v.options || {})))]
+  const customOptionKeys = product.variants?.length > 0
+    ? [...new Set<string>(product.variants.flatMap((v: any) => 
+        Object.keys(v.options || {}).filter(k => !IGNORED_OPTION_KEYS.includes(k))
+      ))]
     : [];
 
   const getOptionValues = (key: string) =>
@@ -85,12 +67,63 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
   const handleOptionChange = (key: string, value: string) => {
     const match = product.variants.find((v: any) =>
       v.options?.[key] === value &&
-      Object.keys(selectedVariant?.options || {})
+      customOptionKeys
         .filter(k => k !== key)
         .every(k => v.options?.[k] === selectedVariant?.options?.[k])
     );
     if (match) setSelectedVariant(match);
   };
+
+  const isSizeVariant = product.variants?.every((v: any) => 
+    /^(xs|s|m|l|xl|xxl|xxxl|2xl|3xl|4xl)$/i.test(v.name.trim())
+  ) ?? false;
+  const optionLabel = isSizeVariant ? 'Size' : 'Option';
+
+  const handleAddToCart = () => {
+    const variantSelection = selectedVariant
+      ? (customOptionKeys.length > 0 
+          ? Object.fromEntries(
+              customOptionKeys.map(k => [k.charAt(0).toUpperCase() + k.slice(1), selectedVariant.options?.[k]])
+            )
+          : { [optionLabel]: selectedVariant.name })
+      : {};
+
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: displayPrice,
+      compareAtPrice: originalPrice || undefined,
+      images: product.images,
+      variantId: selectedVariant?.id,
+    }, quantity, variantSelection);
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
+
+  const handleBuyNow = () => {
+    const variantSelection = selectedVariant
+      ? (customOptionKeys.length > 0 
+          ? Object.fromEntries(
+              customOptionKeys.map(k => [k.charAt(0).toUpperCase() + k.slice(1), selectedVariant.options?.[k]])
+            )
+          : { [optionLabel]: selectedVariant.name })
+      : {};
+
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: displayPrice,
+      compareAtPrice: originalPrice || undefined,
+      images: product.images,
+      variantId: selectedVariant?.id,
+    }, quantity, variantSelection);
+    setTimeout(() => { window.location.href = '/cart'; }, 500);
+  };
+
+  const renderStars = (rating: number) =>
+    [...Array(5)].map((_, i) => (
+      <Star key={i} size={14} fill={i < Math.floor(rating) ? 'var(--gold-light, #c9a84c)' : 'none'} stroke="var(--gold-light, #c9a84c)" strokeWidth={1.5} />
+    ));
 
   return (
     <>
@@ -151,26 +184,45 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
               )}
             </div>
 
-            {variantOptionKeys.length > 0 && (
+            {product.variants?.length > 0 && (
               <div className="product-page__variants">
-                {variantOptionKeys.map(key => (
-                  <div key={key} className="product-page__variant-group">
+                {customOptionKeys.length > 0 ? (
+                  customOptionKeys.map((key: string) => (
+                    <div key={key} className="product-page__variant-group">
+                      <label>
+                        {key.charAt(0).toUpperCase() + key.slice(1)}: <strong>{selectedVariant?.options?.[key]}</strong>
+                      </label>
+                      <div className="product-page__variant-options">
+                        {getOptionValues(key).map((value: string) => (
+                          <button
+                            key={value}
+                            className={`product-page__variant-btn ${selectedVariant?.options?.[key] === value ? 'active' : ''}`}
+                            onClick={() => handleOptionChange(key, value)}
+                          >
+                            {value}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="product-page__variant-group">
                     <label>
-                      {key.charAt(0).toUpperCase() + key.slice(1)}: <strong>{selectedVariant?.options?.[key]}</strong>
+                      {optionLabel}: <strong>{selectedVariant?.name}</strong>
                     </label>
                     <div className="product-page__variant-options">
-                      {getOptionValues(key).map(value => (
+                      {product.variants.map((v: any) => (
                         <button
-                          key={value}
-                          className={`product-page__variant-btn ${selectedVariant?.options?.[key] === value ? 'active' : ''}`}
-                          onClick={() => handleOptionChange(key, value)}
+                          key={v.id}
+                          className={`product-page__variant-btn ${selectedVariant?.id === v.id ? 'active' : ''}`}
+                          onClick={() => setSelectedVariant(v)}
                         >
-                          {value}
+                          {v.name}
                         </button>
                       ))}
                     </div>
                   </div>
-                ))}
+                )}
                 {selectedVariant && (
                   <p className="product-page__variant-stock">
                     {selectedVariant.stock > 0 ? `${selectedVariant.stock} in stock` : 'Out of stock'}
