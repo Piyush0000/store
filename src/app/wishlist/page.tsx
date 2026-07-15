@@ -45,7 +45,7 @@ export default function WishlistPage() {
               )}
               <div className="wishlist__item-info">
                 <h3>{item.name}</h3>
-                <span className="wishlist__price">₹{item.price.toLocaleString('en-IN')}</span>
+                <span className="wishlist__price">₹{Number(item.price).toLocaleString('en-IN')}</span>
                 <button
                   className="wishlist__add-cart"
                   onClick={() =>

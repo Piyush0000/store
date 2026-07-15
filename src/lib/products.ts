@@ -69,11 +69,11 @@ function prioritizeProducts(products: NormalizedProduct[]): NormalizedProduct[] 
  * Hyphens within a slug are converted to spaces to match API category names.
  */
 function parseCategoryFilter(filter: string): string[] {
-  return filter
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(slug => slug.replace(/-/g, ' '));
+  if (!filter) return [];
+  if (filter.includes(',')) {
+    return filter.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [filter.trim()];
 }
 
 // ─── Fetching ───────────────────────────────────────────────────────────────────
@@ -141,6 +141,9 @@ export async function buildSectionData(
             }
           }
         }
+      } else {
+        // Fetch all products if no category filter is specified
+        products = await getProductsByCategory(subdomain, "");
       }
 
       const sorted = prioritizeProducts(products);

@@ -35,9 +35,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     ? product.images 
     : ['https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80'];
 
-  const originalPrice = product.compareAtPrice || null;
+  const originalPrice = product.compareAtPrice ? Number(product.compareAtPrice) : null;
   const rating = product.averageRating || 0;
-  const discount = originalPrice ? Math.round(((originalPrice - product.price) / originalPrice) * 100) : 0;
+  const numericPrice = Number(product.price);
+  const discount = originalPrice && numericPrice && originalPrice > numericPrice
+    ? Math.round(((originalPrice - numericPrice) / originalPrice) * 100)
+    : 0;
 
   const handleMouseEnter = () => {
     if (images.length <= 1) return;
@@ -161,7 +164,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
 
         <div className="product-card__prices">
-          <span className="product-card__price">₹{product.price.toLocaleString('en-IN')}</span>
+          <span className="product-card__price">₹{Number(product.price).toLocaleString('en-IN')}</span>
           {originalPrice && (
             <span className="product-card__original-price">₹{originalPrice.toLocaleString('en-IN')}</span>
           )}
