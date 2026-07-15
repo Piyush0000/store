@@ -92,17 +92,48 @@ export default function ProductClient({
     }, 500);
   };
 
-  const renderStars = (rating: number = 4) => {
-    const finalRating = rating || 4;
-    return [...Array(5)].map((_, i) => (
-      <Star
-        key={i}
-        size={14}
-        fill={i < Math.floor(finalRating) ? "#FFE500" : "none"}
-        stroke="#FFE500"
-        strokeWidth={1.5}
-      />
-    ));
+  const renderStars = (rating: number = 4.5) => {
+    const finalRating = rating || 4.5;
+    return (
+      <>
+        <svg
+          width="0"
+          height="0"
+          style={{ position: "absolute" }}
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient
+              id="half-star-grad"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
+              <stop offset="50%" stopColor="#FFE500" />
+              <stop offset="50%" stopColor="transparent" />
+            </linearGradient>
+          </defs>
+        </svg>
+        {[...Array(5)].map((_, i) => {
+          let fillVal = "none";
+          if (i < Math.floor(finalRating)) {
+            fillVal = "#FFE500";
+          } else if (i === Math.floor(finalRating) && finalRating % 1 >= 0.5) {
+            fillVal = "url(#half-star-grad)";
+          }
+          return (
+            <Star
+              key={i}
+              size={14}
+              fill={fillVal}
+              stroke="#FFE500"
+              strokeWidth={1.5}
+            />
+          );
+        })}
+      </>
+    );
   };
 
   const variantOptionKeys =
@@ -184,11 +215,8 @@ export default function ProductClient({
             <h1 className="product-page__title">{product.name}</h1>
 
             <div className="product-page__rating">
+              <span>Ratings : </span>
               {renderStars(product.averageRating || 0)}
-              <span className="product-page__rating-count">
-                {product.averageRating || 0} | {product.reviewCount || 0}{" "}
-                reviews
-              </span>
             </div>
 
             <div className="product-page__pricing">
