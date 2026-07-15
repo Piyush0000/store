@@ -2192,3 +2192,94 @@
 .checkout__delivery-capsule-phone-icon {
   color: #64748b;
 }
+
+/* Coupon Section styling */
+.checkout__coupon-section {
+  background: #ffffff;
+  border: 1px solid var(--checkout-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.checkout__coupon-input-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.checkout__coupon-input {
+  flex: 1;
+  border: 1px solid var(--checkout-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--checkout-text-dark);
+  outline: none;
+  background-color: var(--checkout-bg);
+  transition: all 0.2s ease;
+}
+
+.checkout__coupon-input:focus {
+  border-color: var(--checkout-blue);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.15);
+}
+
+.checkout__coupon-input.error {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.checkout__coupon-btn {
+  background-color: var(--checkout-text-dark);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.checkout__coupon-btn:hover:not(:disabled) {
+  background-color: #334155;
+}
+
+.checkout__coupon-btn:disabled {
+  background-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.checkout__coupon-btn--remove {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.checkout__coupon-btn--remove:hover {
+  background-color: #fecaca;
+}
+
+.checkout__coupon-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-weight: 500;
+  text-align: left;
+}
+
+.checkout__coupon-success {
+  color: #16a34a;
+  font-size: 13px;
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-weight: 500;
+  text-align: left;
+}

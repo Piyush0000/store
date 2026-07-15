@@ -14,6 +14,7 @@ import {
 import { getUserByPhone, createOrUpdateUser } from '@/actions/user-actions';
 import { createAddress, createOrder, createCodOrder, getStorefrontCodFee } from '@/actions/order-actions';
 import { initiatePayUPayment } from '@/actions/payment-actions';
+import { validateCouponAction } from '@/actions/coupon-actions';
 import './checkout.css';
 
 const IndiaFlag = () => (
@@ -81,7 +82,46 @@ export default function CheckoutPage() {
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [payUData, setPayUData] = useState<any>(null);
   const launchAttemptedRef = useRef(false);
-  const [orderSummary, setOrderSummary] = useState<{ items: typeof cartItems; subtotal: number; paymentMethod: string | null } | null>(null);
+  const [orderSummary, setOrderSummary] = useState<{
+    items: typeof cartItems;
+    subtotal: number;
+    paymentMethod: string | null;
+    discountAmount?: number;
+    couponCode?: string | null;
+  } | null>(null);
+
+  // Coupon state variables
+  const [couponInput, setCouponInput] = useState('');
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError(null);
+    try {
+      const result = await validateCouponAction(couponInput, subtotal);
+      if (result.success && result.coupon) {
+        setAppliedCoupon(result.coupon);
+        setDiscountAmount(result.discount || 0);
+      } else {
+        setCouponError(result.message || 'Invalid coupon code');
+      }
+    } catch (err: any) {
+      setCouponError('Failed to validate coupon code. Please try again.');
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponInput('');
+    setCouponError(null);
+  };
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -471,7 +511,7 @@ export default function CheckoutPage() {
       const result = await createCodOrder({
         userId: userId || `temp_${phone}`,
         items: orderItems,
-        totalAmount: calculatedSubtotal,
+        totalAmount: calculatedSubtotal + codFee - discountAmount,
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
@@ -483,7 +523,9 @@ export default function CheckoutPage() {
           state: selectedAddress?.state || '',
           pincode: selectedAddress?.pincode || '',
         },
-      });
+        couponCode: appliedCoupon?.code || undefined,
+        discountAmount: discountAmount || undefined,
+      } as any);
 
       console.log('[Checkout] COD order result:', result);
 
@@ -492,9 +534,17 @@ export default function CheckoutPage() {
         // Store order summary in a ref to preserve data even after state clears
         const capturedItems = [...cartItems];
         const capturedSubtotal = calculatedSubtotal;
+        const capturedDiscount = discountAmount;
+        const capturedCouponCode = appliedCoupon?.code || null;
 
         setOrderId(result.orderId);
-        setOrderSummary({ items: capturedItems, subtotal: capturedSubtotal, paymentMethod: 'COD' });
+        setOrderSummary({
+          items: capturedItems,
+          subtotal: capturedSubtotal,
+          paymentMethod: 'COD',
+          discountAmount: capturedDiscount,
+          couponCode: capturedCouponCode,
+        });
 
         // Log state after setOrderSummary
         console.log('[Checkout] After setOrderSummary, orderSummary:', { items: capturedItems.length, subtotal: capturedSubtotal });
@@ -582,7 +632,7 @@ export default function CheckoutPage() {
           variantId: item.variantId,
           variant: item.variants ? Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ') : undefined,
         })),
-        totalAmount: calculatedSubtotal,
+        totalAmount: calculatedSubtotal - discountAmount,
         subtotal: calculatedSubtotal,
         tax: 0,
         shipping: 0,
@@ -599,6 +649,8 @@ export default function CheckoutPage() {
           pincode: selectedAddress?.pincode || '',
         },
         payuTxnId: txnId,
+        couponCode: appliedCoupon?.code || undefined,
+        discountAmount: discountAmount || undefined,
       });
 
       if (result.success && result.data) {
@@ -607,7 +659,7 @@ export default function CheckoutPage() {
 
       const payUResult = await initiatePayUPayment({
         orderId: ordId,
-        amount: subtotal,
+        amount: subtotal - discountAmount,
         firstName: customerFirstName,
         email: customerEmail,
         phone: `+91${phone}`,
@@ -1069,7 +1121,7 @@ export default function CheckoutPage() {
                       <div className="checkout__payment-actions">
                         <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
                         <button className="checkout__place-order-btn" onClick={handleCreateCodOrder} disabled={isLoading}>
-                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${subtotal.toLocaleString()}`}
+                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${(subtotal + codFee - discountAmount).toLocaleString()}`}
                         </button>
                       </div>
                     )}
@@ -1082,7 +1134,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
-
+ 
               {paymentMethod === 'PAYU' && !payUData && (
                 <div className="checkout__payment-inline-wrapper">
                   <div className="checkout__payment-confirm">
@@ -1094,7 +1146,7 @@ export default function CheckoutPage() {
                     <div className="checkout__payment-actions">
                       <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
                       <button className="checkout__place-order-btn checkout__place-order-btn--online" onClick={handleInitiatePayU} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : `PAY NOW - ₹${subtotal.toLocaleString()}`}
+                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : `PAY NOW - ₹${(subtotal - discountAmount).toLocaleString()}`}
                       </button>
                     </div>
                   </div>
@@ -1135,22 +1187,71 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* Coupon / Discount Input */}
+              {step !== 'success' && (
+                <div className="checkout__coupon-section">
+                  <div className="checkout__coupon-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Discount Code"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        setCouponError(null);
+                      }}
+                      disabled={isApplyingCoupon || appliedCoupon !== null}
+                      className={`checkout__coupon-input ${couponError ? 'error' : ''}`}
+                    />
+                    {appliedCoupon ? (
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        className="checkout__coupon-btn checkout__coupon-btn--remove"
+                      >
+                        Remove
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={isApplyingCoupon || !couponInput.trim()}
+                        className="checkout__coupon-btn"
+                      >
+                        {isApplyingCoupon ? <Loader2 className="animate-spin" size={16} /> : 'Apply'}
+                      </button>
+                    )}
+                  </div>
+                  {couponError && <p className="checkout__coupon-error">{couponError}</p>}
+                  {appliedCoupon && (
+                    <p className="checkout__coupon-success">
+                      🎉 Code <strong>{appliedCoupon.code}</strong> applied! You saved ₹{discountAmount.toLocaleString('en-IN')}
+                    </p>
+                  )}
+                </div>
+              )}
+ 
               <div className="checkout__summary-rows">
                 <div className="checkout__summary-row"><span>Subtotal</span><span>₹{(orderSummary?.subtotal ?? subtotal).toLocaleString('en-IN')}</span></div>
+                {(orderSummary?.discountAmount ?? discountAmount) > 0 && (
+                  <div className="checkout__summary-row checkout__summary-row--green">
+                    <span>Discount {(orderSummary?.couponCode ?? appliedCoupon?.code) && `(${(orderSummary?.couponCode ?? appliedCoupon?.code)})`}</span>
+                    <span>-₹{(orderSummary?.discountAmount ?? discountAmount).toLocaleString('en-IN')}</span>
+                  </div>
+                )}
                 {(orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{codFee}</span></div>}
                 <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
               </div>
-
+ 
               {/* Free Shipping Banner */}
               <div className="checkout__free-shipping-banner">
                 <Truck size={16} className="checkout__free-shipping-icon" />
                 <span>Yay! You get FREE shipping 🥳</span>
               </div>
-
+ 
               <div className="checkout__summary-divider" />
               <div className="checkout__summary-row checkout__summary-row--total">
                 <span>Total</span>
-                <span className="checkout__summary-total-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0)).toLocaleString('en-IN')}</span>
+                <span className="checkout__summary-total-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) - (orderSummary?.discountAmount ?? discountAmount)).toLocaleString('en-IN')}</span>
               </div>
 
               <div className="checkout__summary-badges">

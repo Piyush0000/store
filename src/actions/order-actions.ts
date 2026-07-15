@@ -205,6 +205,8 @@ export async function createCodOrder(data: {
     state: string;
     pincode: string;
   };
+  couponCode?: string;
+  discountAmount?: number;
 }) {
   const subdomain = await getServerSubdomain();
   const storefront = await fetchStorefront(subdomain);
@@ -228,9 +230,9 @@ export async function createCodOrder(data: {
     return { success: false, message: 'Invalid cart total. Please refresh the page and try again.' };
   }
 
-  // Validate total matches items + COD fee
+  // Validate total matches items + COD fee - discount
   const COD_FEE = storefront.settings?.codFee ?? 0;
-  const expectedTotal = itemSubtotal + COD_FEE;
+  const expectedTotal = itemSubtotal + COD_FEE - (data.discountAmount || 0);
   if (Math.abs(data.totalAmount - expectedTotal) > 1) {
     console.warn('[COD] Total mismatch:', { passed: data.totalAmount, calculated: expectedTotal, itemSubtotal });
   }
@@ -278,6 +280,8 @@ export async function createCodOrder(data: {
     source: 'STOREFRONT',
     paymentStatus: 'PENDING',
     status: 'PENDING',
+    couponCode: data.couponCode || null,
+    discountAmount: data.discountAmount || null,
     items: data.items.map((item) => ({
       productId: item.productId || item.name,
       name: item.name,
@@ -357,6 +361,8 @@ export async function createCodOrder(data: {
     email: data.email || '',
     phone: data.phone,
     shippingAddress: data.shippingAddress,
+    couponCode: data.couponCode,
+    discountAmount: data.discountAmount,
   });
 
   if (!orderResult.success) {
