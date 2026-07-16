@@ -489,11 +489,6 @@
   margin: 0 auto;
 }
 
-.featured-collection__grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
