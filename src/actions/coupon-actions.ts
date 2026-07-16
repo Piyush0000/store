@@ -14,7 +14,17 @@ export async function validateCouponAction(code: string, orderTotal: number) {
     }
 
     const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-    const validateUrl = apiBase.replace('/storefront/public', '/coupons/validate');
+    let validateUrl = '';
+    if (apiBase.includes('/storefront/public')) {
+      validateUrl = apiBase.replace('/storefront/public', '/coupons/validate');
+    } else {
+      const sanitizedBase = apiBase.replace(/\/+$/, '');
+      if (sanitizedBase.endsWith('/api')) {
+        validateUrl = sanitizedBase + '/coupons/validate';
+      } else {
+        validateUrl = sanitizedBase + '/api/coupons/validate';
+      }
+    }
 
     const response = await fetch(validateUrl, {
       method: 'POST',
