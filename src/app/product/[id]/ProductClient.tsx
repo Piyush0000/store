@@ -51,25 +51,46 @@ export default function ProductClient({
     }
   }, [product]);
 
-  const displayPrice = selectedVariant 
-    ? Number(selectedVariant.price) 
+  const displayPrice = selectedVariant
+    ? Number(selectedVariant.price)
     : Number(product.price);
 
-  const originalPrice = selectedVariant?.options?.compareAtPrice !== undefined && selectedVariant?.options?.compareAtPrice !== null
-    ? Number(selectedVariant.options.compareAtPrice)
-    : (product.compareAtPrice ? Number(product.compareAtPrice) : null);
+  const originalPrice =
+    selectedVariant?.options?.compareAtPrice !== undefined &&
+    selectedVariant?.options?.compareAtPrice !== null
+      ? Number(selectedVariant.options.compareAtPrice)
+      : product.compareAtPrice
+        ? Number(product.compareAtPrice)
+        : null;
 
-  const discount = originalPrice && displayPrice && originalPrice > displayPrice
-    ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100)
-    : 0;
+  const discount =
+    originalPrice && displayPrice && originalPrice > displayPrice
+      ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100)
+      : 0;
 
-  const IGNORED_OPTION_KEYS = ['isActive', 'compareAtPrice', 'status', 'sku', 'price', 'stock', 'id', 'name'];
+  const IGNORED_OPTION_KEYS = [
+    "isActive",
+    "compareAtPrice",
+    "status",
+    "sku",
+    "price",
+    "stock",
+    "id",
+    "name",
+  ];
 
-  const customOptionKeys = product.variants?.length > 0
-    ? [...new Set<string>(product.variants.flatMap((v: any) => 
-        Object.keys(v.options || {}).filter(k => !IGNORED_OPTION_KEYS.includes(k))
-      ))]
-    : [];
+  const customOptionKeys =
+    product.variants?.length > 0
+      ? [
+          ...new Set<string>(
+            product.variants.flatMap((v: any) =>
+              Object.keys(v.options || {}).filter(
+                (k) => !IGNORED_OPTION_KEYS.includes(k),
+              ),
+            ),
+          ),
+        ]
+      : [];
 
   const getOptionValues = (key: string) => [
     ...new Set<string>(
@@ -78,65 +99,119 @@ export default function ProductClient({
   ];
 
   const handleOptionChange = (key: string, value: string) => {
-    const match = product.variants.find((v: any) =>
-      v.options?.[key] === value &&
-      customOptionKeys
-        .filter(k => k !== key)
-        .every(k => v.options?.[k] === selectedVariant?.options?.[k])
+    const match = product.variants.find(
+      (v: any) =>
+        v.options?.[key] === value &&
+        customOptionKeys
+          .filter((k) => k !== key)
+          .every((k) => v.options?.[k] === selectedVariant?.options?.[k]),
     );
     if (match) setSelectedVariant(match);
   };
 
-  const isSizeVariant = product.variants?.every((v: any) => 
-    /^(xs|s|m|l|xl|xxl|xxxl|2xl|3xl|4xl)$/i.test(v.name.trim())
-  ) ?? false;
-  const optionLabel = isSizeVariant ? 'Size' : 'Option';
+  const isSizeVariant =
+    product.variants?.every((v: any) =>
+      /^(xs|s|m|l|xl|xxl|xxxl|2xl|3xl|4xl)$/i.test(v.name.trim()),
+    ) ?? false;
+  const optionLabel = isSizeVariant ? "Size" : "Option";
 
   const handleAddToCart = () => {
     const variantSelection = selectedVariant
-      ? (customOptionKeys.length > 0 
-          ? Object.fromEntries(
-              customOptionKeys.map(k => [k.charAt(0).toUpperCase() + k.slice(1), selectedVariant.options?.[k]])
-            )
-          : { [optionLabel]: selectedVariant.name })
+      ? customOptionKeys.length > 0
+        ? Object.fromEntries(
+            customOptionKeys.map((k) => [
+              k.charAt(0).toUpperCase() + k.slice(1),
+              selectedVariant.options?.[k],
+            ]),
+          )
+        : { [optionLabel]: selectedVariant.name }
       : {};
 
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: displayPrice,
-      compareAtPrice: originalPrice || undefined,
-      images: product.images,
-      variantId: selectedVariant?.id,
-    }, quantity, variantSelection);
+    addToCart(
+      {
+        id: product.id,
+        name: product.name,
+        price: displayPrice,
+        compareAtPrice: originalPrice || undefined,
+        images: product.images,
+        variantId: selectedVariant?.id,
+      },
+      quantity,
+      variantSelection,
+    );
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleBuyNow = () => {
     const variantSelection = selectedVariant
-      ? (customOptionKeys.length > 0 
-          ? Object.fromEntries(
-              customOptionKeys.map(k => [k.charAt(0).toUpperCase() + k.slice(1), selectedVariant.options?.[k]])
-            )
-          : { [optionLabel]: selectedVariant.name })
+      ? customOptionKeys.length > 0
+        ? Object.fromEntries(
+            customOptionKeys.map((k) => [
+              k.charAt(0).toUpperCase() + k.slice(1),
+              selectedVariant.options?.[k],
+            ]),
+          )
+        : { [optionLabel]: selectedVariant.name }
       : {};
 
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: displayPrice,
-      compareAtPrice: originalPrice || undefined,
-      images: product.images,
-      variantId: selectedVariant?.id,
-    }, quantity, variantSelection);
-    setTimeout(() => { window.location.href = '/cart'; }, 500);
+    addToCart(
+      {
+        id: product.id,
+        name: product.name,
+        price: displayPrice,
+        compareAtPrice: originalPrice || undefined,
+        images: product.images,
+        variantId: selectedVariant?.id,
+      },
+      quantity,
+      variantSelection,
+    );
+    setTimeout(() => {
+      window.location.href = "/cart";
+    }, 500);
   };
 
-  const renderStars = (rating: number) =>
-    [...Array(5)].map((_, i) => (
-      <Star key={i} size={14} fill={i < Math.floor(rating) ? 'var(--gold-light, #c9a84c)' : 'none'} stroke="var(--gold-light, #c9a84c)" strokeWidth={1.5} />
-    ));
+  const renderStars = (rating: number) => {
+    const finalRating = rating || 4.5;
+    return (
+      <>
+        <svg width="0" height="0" style={{ position: "absolute" }}>
+          <defs>
+            <linearGradient
+              id="star-half-gold"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
+              <stop offset="50%" stopColor="#FFC107" />
+              <stop offset="50%" stopColor="transparent" />
+            </linearGradient>
+          </defs>
+        </svg>
+        {[...Array(5)].map((_, i) => {
+          const isFull = i < Math.floor(finalRating);
+          const isHalf =
+            !isFull && i === Math.floor(finalRating) && finalRating % 1 >= 0.5;
+          const fillValue = isFull
+            ? "#FFC107"
+            : isHalf
+              ? "url(#star-half-gold)"
+              : "none";
+          return (
+            <Star
+              key={i}
+              size={14}
+              fill={fillValue}
+              stroke="#FFC107"
+              strokeWidth={1.5}
+            />
+          );
+        })}
+      </>
+    );
+  };
 
   return (
     <>
@@ -217,13 +292,14 @@ export default function ProductClient({
                   customOptionKeys.map((key: string) => (
                     <div key={key} className="product-page__variant-group">
                       <label>
-                        {key.charAt(0).toUpperCase() + key.slice(1)}: <strong>{selectedVariant?.options?.[key]}</strong>
+                        {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
+                        <strong>{selectedVariant?.options?.[key]}</strong>
                       </label>
                       <div className="product-page__variant-options">
                         {getOptionValues(key).map((value: string) => (
                           <button
                             key={value}
-                            className={`product-page__variant-btn ${selectedVariant?.options?.[key] === value ? 'active' : ''}`}
+                            className={`product-page__variant-btn ${selectedVariant?.options?.[key] === value ? "active" : ""}`}
                             onClick={() => handleOptionChange(key, value)}
                           >
                             {value}
@@ -241,7 +317,7 @@ export default function ProductClient({
                       {product.variants.map((v: any) => (
                         <button
                           key={v.id}
-                          className={`product-page__variant-btn ${selectedVariant?.id === v.id ? 'active' : ''}`}
+                          className={`product-page__variant-btn ${selectedVariant?.id === v.id ? "active" : ""}`}
                           onClick={() => setSelectedVariant(v)}
                         >
                           {v.name}
