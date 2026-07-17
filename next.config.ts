@@ -24,6 +24,15 @@ const nextConfig: NextConfig = {
     qualities: [70, 75, 80],
   },
   compress: true,
+  async rewrites() {
+    return [
+      { source: "/combos", destination: "/offers" },
+      { source: "/value-combo", destination: "/offers" },
+      { source: "/value-combos", destination: "/offers" },
+      { source: "/bundles", destination: "/offers" },
+      { source: "/bundle", destination: "/offers" },
+    ];
+  },
 };
 
 export default nextConfig;

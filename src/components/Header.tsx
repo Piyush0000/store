@@ -69,7 +69,14 @@ export default function Header({ initialCustomization, storeName: propStoreName,
   const [logoError, setLogoError] = useState(false);
   const [storeName, setStoreName] = useState(getInitialStoreName);
   const [navLinks, setNavLinks] = useState<{ label: string; path: string }[]>(getInitialNavLinks);
+  const [hasBundles, setHasBundles] = useState(false);
   const hasFetched = useRef(false);
+
+  const renderedLinks = hasBundles
+    ? (navLinks.some(link => link.path === '/offers' || link.path === '/combos' || link.path === '/value-combo' || link.path === '/value-combos' || link.path === '/bundles' || link.path === '/bundle')
+        ? navLinks
+        : [...navLinks, { label: 'OFFERS', path: '/offers' }])
+    : navLinks;
 
   useEffect(() => {
     setLogoError(false);
@@ -128,10 +135,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
         const res = await fetch(bundlesUrl, { cache: 'no-store' });
         const data = await res.json();
         if (data.success && data.bundles && data.bundles.length > 0) {
-          setNavLinks((prev) => {
-            if (prev.some(link => link.path === '/offers')) return prev;
-            return [...prev, { label: 'OFFERS', path: '/offers' }];
-          });
+          setHasBundles(true);
         }
       } catch (err) {
         console.warn('[Header] Failed to fetch active bundles:', err);
@@ -305,19 +309,19 @@ export default function Header({ initialCustomization, storeName: propStoreName,
             </button>
           </div>
         </div>
-        <nav className="header__nav">
-          <div className="header__nav-inner">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path || link.label}
-                href={link.path}
-                className="header__nav-link"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </nav>
+         <nav className="header__nav">
+           <div className="header__nav-inner">
+             {renderedLinks.map((link) => (
+               <Link
+                 key={link.path || link.label}
+                 href={link.path}
+                 className="header__nav-link"
+               >
+                 {link.label}
+               </Link>
+             ))}
+           </div>
+         </nav>
       </header>
 
       {/* Mobile Overlay Menu */}
@@ -330,11 +334,11 @@ export default function Header({ initialCustomization, storeName: propStoreName,
                 <X size={24} />
               </button>
             </div>
-            {navLinks.map((link) => (
-              <Link key={`mobile-${link.path || link.label}`} href={link.path} className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>
-                {link.label}
-              </Link>
-            ))}
+             {renderedLinks.map((link) => (
+               <Link key={`mobile-${link.path || link.label}`} href={link.path} className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>
+                 {link.label}
+               </Link>
+             ))}
             <Link href="/orders" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>MY ORDERS</Link>
             <Link href="/wishlist" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>WISHLIST</Link>
           </div>
