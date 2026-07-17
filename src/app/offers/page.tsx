@@ -45,8 +45,25 @@ export default function OffersPage() {
         const subdomain = getSubdomain();
         const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
         
+        let bundlesUrl = '';
+        let productsUrl = '';
+        
+        if (apiBase.includes('/storefront/public')) {
+          const sanitizedBase = apiBase.replace(/\/+$/, '');
+          bundlesUrl = sanitizedBase.replace('/storefront/public', '/bundles/public') + '/' + subdomain;
+          productsUrl = sanitizedBase + '/' + subdomain + '/frontend';
+        } else {
+          const sanitizedBase = apiBase.replace(/\/+$/, '');
+          if (sanitizedBase.endsWith('/api')) {
+            bundlesUrl = sanitizedBase + '/bundles/public/' + subdomain;
+            productsUrl = sanitizedBase + '/storefront/public/' + subdomain + '/frontend';
+          } else {
+            bundlesUrl = sanitizedBase + '/api/bundles/public/' + subdomain;
+            productsUrl = sanitizedBase + '/api/storefront/public/' + subdomain + '/frontend';
+          }
+        }
+        
         // 1. Fetch active bundles
-        const bundlesUrl = apiBase.replace('/storefront/public', '/bundles/public') + '/' + subdomain;
         const bundlesRes = await fetch(bundlesUrl, { cache: 'no-store' });
         const bundlesData = await bundlesRes.json();
         
@@ -55,7 +72,6 @@ export default function OffersPage() {
         }
 
         // 2. Fetch all products to resolve Category bundles
-        const productsUrl = `${apiBase}/${subdomain}/frontend`;
         const productsRes = await fetch(productsUrl, { cache: 'no-store' });
         const productsData = await productsRes.json();
 
