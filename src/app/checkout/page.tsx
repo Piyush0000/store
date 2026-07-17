@@ -125,6 +125,10 @@ export default function CheckoutPage() {
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
+  const bundleDiscountTotal = cartItems.reduce((acc, item) => acc + (item.type === 'BUNDLE' ? (item.discountAmount || 0) : 0) * item.quantity, 0);
+  const displaySubtotal = cartItems.reduce((acc, item) => acc + (item.type === 'BUNDLE' ? (item.regularTotal || item.price) : item.price) * item.quantity, 0);
+  const displayDiscountTotal = discountAmount + bundleDiscountTotal;
+
   useEffect(() => {
     getStorefrontCodFee().then(fee => setCodFee(fee));
   }, []);
@@ -521,26 +525,54 @@ export default function CheckoutPage() {
     }
 
     try {
-      const orderItems = cartItems.map((item) => ({
-        productId: item.id,
-        name: item.name,
-        price: Number(item.price),
-        quantity: item.quantity,
-        image: item.images?.[0] || '',
-        variantId: item.variantId,
-        variant: item.variants ? Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ') : undefined,
-      }));
+      const orderItems: any[] = [];
+      let totalBundleDiscount = 0;
+      let totalRegularSubtotal = 0;
+
+      cartItems.forEach((item) => {
+        if (item.type === 'BUNDLE' && item.items) {
+          const regularTotal = item.regularTotal || (item.items.reduce((sum, i) => sum + i.price, 0));
+          const discountAmt = item.discountAmount || 0;
+          totalBundleDiscount += discountAmt * item.quantity;
+          totalRegularSubtotal += regularTotal * item.quantity;
+
+          item.items.forEach((p) => {
+            orderItems.push({
+              productId: p.id,
+              name: p.name,
+              price: Number(p.price),
+              quantity: item.quantity,
+              image: p.image || '',
+              variantId: undefined,
+              variant: `Bundle: ${item.name}`,
+            });
+          });
+        } else {
+          totalRegularSubtotal += item.price * item.quantity;
+          orderItems.push({
+            productId: item.id,
+            name: item.name,
+            price: Number(item.price),
+            quantity: item.quantity,
+            image: item.images?.[0] || '',
+            variantId: item.variantId,
+            variant: item.variants ? Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ') : undefined,
+          });
+        }
+      });
+
+      const overallDiscount = discountAmount + totalBundleDiscount;
 
       console.log('[Checkout] Creating COD order:', {
         itemCount: orderItems.length,
-        calculatedSubtotal,
+        calculatedSubtotal: totalRegularSubtotal,
         prices: orderItems.map(i => ({ name: i.name, price: i.price, qty: i.quantity }))
       });
 
       const result = await createCodOrder({
         userId: userId || `temp_${phone}`,
         items: orderItems,
-        totalAmount: calculatedSubtotal + codFee - discountAmount,
+        totalAmount: totalRegularSubtotal + codFee - overallDiscount,
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
@@ -553,17 +585,17 @@ export default function CheckoutPage() {
           pincode: selectedAddress?.pincode || '',
         },
         couponCode: appliedCoupon?.code || undefined,
-        discountAmount: discountAmount || undefined,
+        discountAmount: overallDiscount || undefined,
       } as any);
 
       console.log('[Checkout] COD order result:', result);
 
       if (result.success && result.orderId) {
-        console.log('[Checkout] Order success, setting orderSummary with subtotal:', calculatedSubtotal);
+        console.log('[Checkout] Order success, setting orderSummary with subtotal:', totalRegularSubtotal);
         // Store order summary in a ref to preserve data even after state clears
         const capturedItems = [...cartItems];
-        const capturedSubtotal = calculatedSubtotal;
-        const capturedDiscount = discountAmount;
+        const capturedSubtotal = totalRegularSubtotal;
+        const capturedDiscount = overallDiscount;
         const capturedCouponCode = appliedCoupon?.code || null;
 
         setOrderId(result.orderId);
@@ -650,19 +682,49 @@ export default function CheckoutPage() {
         throw new Error('Failed to create user');
       }
 
+      const orderItems: any[] = [];
+      let totalBundleDiscount = 0;
+      let totalRegularSubtotal = 0;
+
+      cartItems.forEach((item) => {
+        if (item.type === 'BUNDLE' && item.items) {
+          const regularTotal = item.regularTotal || (item.items.reduce((sum, i) => sum + i.price, 0));
+          const discountAmt = item.discountAmount || 0;
+          totalBundleDiscount += discountAmt * item.quantity;
+          totalRegularSubtotal += regularTotal * item.quantity;
+
+          item.items.forEach((p) => {
+            orderItems.push({
+              productId: p.id,
+              name: p.name,
+              price: Number(p.price),
+              quantity: item.quantity,
+              image: p.image || '',
+              variantId: undefined,
+              variant: `Bundle: ${item.name}`,
+            });
+          });
+        } else {
+          totalRegularSubtotal += item.price * item.quantity;
+          orderItems.push({
+            productId: item.id,
+            name: item.name,
+            price: Number(item.price),
+            quantity: item.quantity,
+            image: item.images?.[0] || '',
+            variantId: item.variantId,
+            variant: item.variants ? Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ') : undefined,
+          });
+        }
+      });
+
+      const overallDiscount = discountAmount + totalBundleDiscount;
+
       const result = await createOrder({
         userId: uid,
-        items: cartItems.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.images?.[0] || '',
-          variantId: item.variantId,
-          variant: item.variants ? Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ') : undefined,
-        })),
-        totalAmount: calculatedSubtotal - discountAmount,
-        subtotal: calculatedSubtotal,
+        items: orderItems,
+        totalAmount: totalRegularSubtotal - overallDiscount,
+        subtotal: totalRegularSubtotal,
         tax: 0,
         shipping: 0,
         paymentMethod: 'PAYU',
@@ -679,7 +741,7 @@ export default function CheckoutPage() {
         },
         payuTxnId: txnId,
         couponCode: appliedCoupon?.code || undefined,
-        discountAmount: discountAmount || undefined,
+        discountAmount: overallDiscount || undefined,
       });
 
       if (result.success && result.data) {
@@ -688,7 +750,7 @@ export default function CheckoutPage() {
 
       const payUResult = await initiatePayUPayment({
         orderId: ordId,
-        amount: subtotal - discountAmount,
+        amount: totalRegularSubtotal - overallDiscount,
         firstName: customerFirstName,
         email: customerEmail,
         phone: `+91${phone}`,
@@ -1150,7 +1212,7 @@ export default function CheckoutPage() {
                       <div className="checkout__payment-actions">
                         <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
                         <button className="checkout__place-order-btn" onClick={handleCreateCodOrder} disabled={isLoading}>
-                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${(subtotal + codFee - discountAmount).toLocaleString()}`}
+                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${(displaySubtotal + codFee - displayDiscountTotal).toLocaleString()}`}
                         </button>
                       </div>
                     )}
@@ -1175,7 +1237,7 @@ export default function CheckoutPage() {
                     <div className="checkout__payment-actions">
                       <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
                       <button className="checkout__place-order-btn checkout__place-order-btn--online" onClick={handleInitiatePayU} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : `PAY NOW - ₹${(subtotal - discountAmount).toLocaleString()}`}
+                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : `PAY NOW - ₹${(displaySubtotal - displayDiscountTotal).toLocaleString()}`}
                       </button>
                     </div>
                   </div>
@@ -1209,6 +1271,11 @@ export default function CheckoutPage() {
                     <img src={item.images?.[0] || 'https://via.placeholder.com/60'} alt={item.name} />
                     <div className="checkout__summary-item-info">
                       <span className="checkout__summary-item-name">{item.name}</span>
+                      {item.type === 'BUNDLE' && item.items && (
+                        <span style={{ fontSize: '0.75rem', color: '#666', marginTop: '2px', display: 'block' }}>
+                          {item.items.map((i: any) => i.name).join(', ')}
+                        </span>
+                      )}
                       <span className="checkout__summary-item-qty">Qty: {item.quantity}</span>
                     </div>
                     <span className="checkout__summary-item-price">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
@@ -1260,11 +1327,11 @@ export default function CheckoutPage() {
               )}
  
               <div className="checkout__summary-rows">
-                <div className="checkout__summary-row"><span>Subtotal</span><span>₹{(orderSummary?.subtotal ?? subtotal).toLocaleString('en-IN')}</span></div>
-                {(orderSummary?.discountAmount ?? discountAmount) > 0 && (
+                <div className="checkout__summary-row"><span>Subtotal</span><span>₹{(orderSummary?.subtotal ?? displaySubtotal).toLocaleString('en-IN')}</span></div>
+                {(orderSummary?.discountAmount ?? displayDiscountTotal) > 0 && (
                   <div className="checkout__summary-row checkout__summary-row--green">
                     <span>Discount {(orderSummary?.couponCode ?? appliedCoupon?.code) && `(${(orderSummary?.couponCode ?? appliedCoupon?.code)})`}</span>
-                    <span>-₹{(orderSummary?.discountAmount ?? discountAmount).toLocaleString('en-IN')}</span>
+                    <span>-₹{(orderSummary?.discountAmount ?? displayDiscountTotal).toLocaleString('en-IN')}</span>
                   </div>
                 )}
                 {(orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{codFee}</span></div>}
@@ -1280,7 +1347,7 @@ export default function CheckoutPage() {
               <div className="checkout__summary-divider" />
               <div className="checkout__summary-row checkout__summary-row--total">
                 <span>Total</span>
-                <span className="checkout__summary-total-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) - (orderSummary?.discountAmount ?? discountAmount)).toLocaleString('en-IN')}</span>
+                <span className="checkout__summary-total-price">₹{((orderSummary?.subtotal ?? displaySubtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
               </div>
 
               <div className="checkout__summary-badges">

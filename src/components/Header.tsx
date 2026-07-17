@@ -5,6 +5,7 @@ import { Search, Heart, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from './CartProvider';
 import { fetchStorefront } from '@/lib/api';
+import { getSubdomain } from '@/lib/config';
 import './Header.css';
 
 const HomeIcon = () => (
@@ -116,6 +117,28 @@ export default function Header({ initialCustomization, storeName: propStoreName,
       })
       .catch((err) => console.warn('[Header] Failed to fetch config:', err));
   }, [initialCustomization, propStoreName]);
+
+  useEffect(() => {
+    async function checkBundles() {
+      try {
+        const sub = storeSubdomain || getSubdomain();
+        if (!sub) return;
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+        const bundlesUrl = apiBase.replace('/storefront/public', '/bundles/public') + '/' + sub;
+        const res = await fetch(bundlesUrl, { cache: 'no-store' });
+        const data = await res.json();
+        if (data.success && data.bundles && data.bundles.length > 0) {
+          setNavLinks((prev) => {
+            if (prev.some(link => link.path === '/offers')) return prev;
+            return [...prev, { label: 'OFFERS', path: '/offers' }];
+          });
+        }
+      } catch (err) {
+        console.warn('[Header] Failed to fetch active bundles:', err);
+      }
+    }
+    checkBundles();
+  }, [storeSubdomain]);
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
