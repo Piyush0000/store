@@ -131,7 +131,17 @@ export default function Header({ initialCustomization, storeName: propStoreName,
         const sub = storeSubdomain || getSubdomain();
         if (!sub) return;
         const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-        const bundlesUrl = apiBase.replace('/storefront/public', '/bundles/public') + '/' + sub;
+        let bundlesUrl = '';
+        if (apiBase.includes('/storefront/public')) {
+          bundlesUrl = apiBase.replace('/storefront/public', '/bundles/public') + '/' + sub;
+        } else {
+          const sanitizedBase = apiBase.replace(/\/+$/, '');
+          if (sanitizedBase.endsWith('/api')) {
+            bundlesUrl = sanitizedBase + '/bundles/public/' + sub;
+          } else {
+            bundlesUrl = sanitizedBase + '/api/bundles/public/' + sub;
+          }
+        }
         const res = await fetch(bundlesUrl, { cache: 'no-store' });
         const data = await res.json();
         if (data.success && data.bundles && data.bundles.length > 0) {
