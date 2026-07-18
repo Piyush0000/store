@@ -12,17 +12,21 @@ import {
 import { useCart } from "@/components/CartProvider";
 import { useWishlist } from "@/components/WishlistProvider";
 import ProductCard from "@/components/ProductCard";
+import TestimonialsSection from "@/components/TestimonialsSection";
 import { trackViewContent } from "@/lib/pixel";
+import type { TestimonialSection } from "@/lib/api";
 import "./product.css";
 
 interface ProductClientProps {
   product: any;
   relatedProducts: any[];
+  testimonials: TestimonialSection | null;
 }
 
 export default function ProductClient({
   product,
   relatedProducts,
+  testimonials,
 }: ProductClientProps) {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -467,6 +471,24 @@ export default function ProductClient({
             </div>
           )}
         </div>
+
+        {/* testimonial section */}
+        {testimonials &&
+          testimonials.enabled !== false &&
+          testimonials.testimonials &&
+          testimonials.testimonials.length > 0 && (
+            <div
+              className="w-full flex flex-col items-center justify-center"
+              style={{ marginTop: "60px" }}
+            >
+              <div style={{ width: "100%" }}>
+                <TestimonialsSection
+                  testimonials={testimonials.testimonials}
+                  title={testimonials.title || ""}
+                />
+              </div>
+            </div>
+          )}
       </section>
 
       {relatedProducts.length > 0 && (
