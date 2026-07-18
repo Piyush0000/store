@@ -81,13 +81,22 @@ export default function CartDrawer() {
                     />
                   </div>
                   <div className="cart-item__details">
-                    <Link
-                      href={`/product/${item.id}`}
-                      className="cart-item__name"
-                      onClick={() => setIsCartOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
+                    {item.type === 'BUNDLE' ? (
+                      <span className="cart-item__name">{item.name}</span>
+                    ) : (
+                      <Link
+                        href={`/product/${item.id}`}
+                        className="cart-item__name"
+                        onClick={() => setIsCartOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    )}
+                    {item.type === 'BUNDLE' && item.items && (
+                      <p className="cart-item__bundle-products" style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
+                        Includes: {item.items.map((i: any) => i.name).join(', ')}
+                      </p>
+                    )}
                     {item.variants && Object.keys(item.variants).length > 0 && (
                       <p className="cart-item__variants">
                         {Object.entries(item.variants).map(([key, value]) => (

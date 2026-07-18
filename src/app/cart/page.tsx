@@ -87,6 +87,11 @@ export default function CartPage() {
 
               <div className="cart__item-details">
                 <h3 className="cart__item-name">{item.name}</h3>
+                {item.type === 'BUNDLE' && item.items && (
+                  <p className="cart__item-bundle-products" style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
+                    Includes: {item.items.map((i: any) => i.name).join(', ')}
+                  </p>
+                )}
                 {item.variants && Object.keys(item.variants).length > 0 && (
                   <p className="cart__item-variants">
                     {Object.entries(item.variants).map(([key, val]) => `${key}: ${val}`).join(' | ')}
