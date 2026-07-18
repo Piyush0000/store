@@ -1272,9 +1272,16 @@ export default function CheckoutPage() {
                     <div className="checkout__summary-item-info">
                       <span className="checkout__summary-item-name">{item.name}</span>
                       {item.type === 'BUNDLE' && item.items && (
-                        <span style={{ fontSize: '0.75rem', color: '#666', marginTop: '2px', display: 'block' }}>
-                          {item.items.map((i: any) => i.name).join(', ')}
-                        </span>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px', lineHeight: '1.3' }}>
+                          {item.items.map((i: any) => (
+                            <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ color: '#94a3b8' }}>•</span>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
+                                {i.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       )}
                       <span className="checkout__summary-item-qty">Qty: {item.quantity}</span>
                     </div>
