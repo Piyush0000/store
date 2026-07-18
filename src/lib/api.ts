@@ -150,6 +150,22 @@ export interface Store {
   createdAt: string;
 }
 
+export interface Testimonial {
+  id: string;
+  date: string;
+  name: string;
+  image: string;
+  rating: number;
+  ctaLink: string;
+  description: string;
+}
+
+export interface TestimonialSection {
+  enabled?: boolean;
+  title?: string;
+  testimonials?: Testimonial[];
+}
+
 export interface StorefrontData {
   success: boolean;
   store: Store;
@@ -165,6 +181,7 @@ export interface StorefrontData {
   announcements: Announcement[];
   legalPages: LegalPage[];
   products: Product[];
+  testimonialsSection?: TestimonialSection;
   categories: string[];
   theme: { id: string; name: string; slug: string; category: string };
 }
@@ -222,6 +239,21 @@ const MOCK_STOREFRONT: StorefrontData = {
   announcements: [],
   legalPages: [],
   products: DUMMY_PRODUCTS,
+  testimonialsSection: {
+    enabled: true,
+    title: 'What Our Customers Say',
+    testimonials: [
+      {
+        id: 'testi-1782338023236',
+        date: '',
+        name: 'Zainab Alam',
+        image: 'https://res.cloudinary.com/dsj1swlkk/image/upload/v1782338145/orbit-platform/1782338144669-568854731-6543540005_6577680675_a2a3948497248.webp',
+        rating: 5,
+        ctaLink: '',
+        description: 'Very nice product with great packet\n'
+      }
+    ]
+  },
   categories: ['sample-category', 'featured-items'],
   theme: { id: '1', name: 'default', slug: 'default', category: 'all' }
 };
