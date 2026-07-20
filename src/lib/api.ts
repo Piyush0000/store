@@ -38,6 +38,12 @@ export interface Customization {
   footerStyle?: any;
   footerContent?: any;
   categoryImages?: Record<string, string>;
+  shippingSettings?: {
+    enabled?: boolean;
+    shippingFee?: number;
+    freeShippingThreshold?: number;
+    shippingLabel?: string;
+  };
   reelsSection?: {
     enabled?: boolean;
     reels?: Array<{ id: string; title: string; sub: string; category: string; videoUrl: string; ctaLink?: string }>;

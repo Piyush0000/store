@@ -34,7 +34,7 @@ export async function getStorefrontShippingFee(): Promise<{
     const settings = storefront.settings || {};
     const customization = storefront.customization || {};
 
-    const shippingSettings = customization.shippingSettings || {};
+    const shippingSettings = (customization as any).shippingSettings || {};
     const shippingFee = Number(shippingSettings.shippingFee ?? settings.shippingFee ?? 0);
     const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? settings.freeShippingThreshold ?? 0);
     const shippingLabel = shippingSettings.shippingLabel || 'Shipment Fee';
