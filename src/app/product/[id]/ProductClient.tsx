@@ -8,6 +8,7 @@ import {
   Truck,
   Shield,
   RotateCcw,
+  Clock,
 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { useWishlist } from "@/components/WishlistProvider";
@@ -16,6 +17,8 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import { trackViewContent } from "@/lib/pixel";
 import type { TestimonialSection } from "@/lib/api";
 import "./product.css";
+
+const pad = (num: number) => String(num).padStart(2, '0');
 
 interface ProductClientProps {
   product: any;
@@ -37,7 +40,32 @@ export default function ProductClient({
   const [activeTab, setActiveTab] = useState("description");
   const [imageLoading, setImageLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [saleTime, setSaleTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Update sale countdown every second (resets every 12 hours)
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const targetHour = currentHour < 12 ? 12 : 24;
+      const targetDate = new Date(now);
+      targetDate.setHours(targetHour, 0, 0, 0);
+
+      const diffMs = targetDate.getTime() - now.getTime();
+      const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
+
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      setSaleTime({ hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Check if image is already loaded (e.g. from cache) upon mounting or changing image index
   useEffect(() => {
@@ -61,7 +89,7 @@ export default function ProductClient({
 
   const originalPrice =
     selectedVariant?.options?.compareAtPrice !== undefined &&
-    selectedVariant?.options?.compareAtPrice !== null
+      selectedVariant?.options?.compareAtPrice !== null
       ? Number(selectedVariant.options.compareAtPrice)
       : product.compareAtPrice
         ? Number(product.compareAtPrice)
@@ -86,14 +114,14 @@ export default function ProductClient({
   const customOptionKeys =
     product.variants?.length > 0
       ? [
-          ...new Set<string>(
-            product.variants.flatMap((v: any) =>
-              Object.keys(v.options || {}).filter(
-                (k) => !IGNORED_OPTION_KEYS.includes(k),
-              ),
+        ...new Set<string>(
+          product.variants.flatMap((v: any) =>
+            Object.keys(v.options || {}).filter(
+              (k) => !IGNORED_OPTION_KEYS.includes(k),
             ),
           ),
-        ]
+        ),
+      ]
       : [];
 
   const getOptionValues = (key: string) => [
@@ -123,11 +151,11 @@ export default function ProductClient({
     const variantSelection = selectedVariant
       ? customOptionKeys.length > 0
         ? Object.fromEntries(
-            customOptionKeys.map((k) => [
-              k.charAt(0).toUpperCase() + k.slice(1),
-              selectedVariant.options?.[k],
-            ]),
-          )
+          customOptionKeys.map((k) => [
+            k.charAt(0).toUpperCase() + k.slice(1),
+            selectedVariant.options?.[k],
+          ]),
+        )
         : { [optionLabel]: selectedVariant.name }
       : {};
 
@@ -151,11 +179,11 @@ export default function ProductClient({
     const variantSelection = selectedVariant
       ? customOptionKeys.length > 0
         ? Object.fromEntries(
-            customOptionKeys.map((k) => [
-              k.charAt(0).toUpperCase() + k.slice(1),
-              selectedVariant.options?.[k],
-            ]),
-          )
+          customOptionKeys.map((k) => [
+            k.charAt(0).toUpperCase() + k.slice(1),
+            selectedVariant.options?.[k],
+          ]),
+        )
         : { [optionLabel]: selectedVariant.name }
       : {};
 
@@ -217,40 +245,27 @@ export default function ProductClient({
     );
   };
 
+  // Auto-play slideshow loop
+  useEffect(() => {
+    if (!product.images || product.images.length <= 1) return;
+    const timer = setInterval(() => {
+      setSelectedImageIndex((prev) => (prev + 1) % product.images.length);
+      setImageLoading(true);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [product.images, selectedImageIndex]);
+
   return (
     <>
       <section className="product-page">
         <div className="product-page__container">
           <div className="product-page__gallery">
-            <div className="product-page__main-image">
-              {imageLoading && (
-                <div className="product-page__loading-spinner">
-                  <img
-                    src="/spinner.svg"
-                    alt="Loading..."
-                    className="spinner-icon"
-                  />
-                </div>
-              )}
-              <img
-                ref={imgRef}
-                src={
-                  product.images?.[selectedImageIndex] ||
-                  product.images?.[0] ||
-                  "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80"
-                }
-                alt={product.name}
-                onLoad={() => setImageLoading(false)}
-                onError={() => setImageLoading(false)}
-                style={{ borderRadius: "4px", backgroundColor: "#fff" }}
-              />
-            </div>
             {product.images.length > 1 && (
               <div className="product-page__thumbnails">
                 {product.images.map((img: string, index: number) => (
                   <button
                     key={index}
-                    className={`product-page__thumb ${index === selectedImageIndex ? "active" : ""}`}
+                    className={`product-page__thumb ${index === selectedImageIndex ? 'active' : ''}`}
                     onClick={() => {
                       setSelectedImageIndex(index);
                       setImageLoading(true);
@@ -261,6 +276,24 @@ export default function ProductClient({
                 ))}
               </div>
             )}
+            <div className="product-page__main-image">
+              {discount > 0 && (
+                <span className="product-page__discount">{discount}% OFF</span>
+              )}
+              {imageLoading && (
+                <div className="product-page__loading-spinner">
+                  <img src="/spinner.svg" alt="Loading..." className="spinner-icon" />
+                </div>
+              )}
+              <img
+                ref={imgRef}
+                src={product.images?.[selectedImageIndex] || product.images?.[0] || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80'}
+                alt={product.name}
+                onLoad={() => setImageLoading(false)}
+                onError={() => setImageLoading(false)}
+                style={{ borderRadius: '4px', backgroundColor: '#fff' }}
+              />
+            </div>
           </div>
 
           <div className="product-page__info">
@@ -288,6 +321,14 @@ export default function ProductClient({
                   </span>
                 </>
               )}
+            </div>
+
+            <div className="product-page__sale-timer">
+              <span className="sale-live-badge">Sale Is Live!</span>
+              <span className="sale-countdown">
+                <Clock size={13} className="sale-clock-icon" />
+                {pad(saleTime.hours)}H:{pad(saleTime.minutes)}M:{pad(saleTime.seconds)}S
+              </span>
             </div>
 
             {product.variants?.length > 0 && (
@@ -360,7 +401,8 @@ export default function ProductClient({
                 {addedToCart ? "Added!" : "Add to Cart"}
               </button>
               <button className="product-page__buy-now" onClick={handleBuyNow}>
-                Buy Now
+                <span>Buy Now</span>
+                <img src="/buynow.png" alt="Buy Now" className="product-page__buy-now-img" />
               </button>
             </div>
 
@@ -384,17 +426,28 @@ export default function ProductClient({
             </button>
 
             <div className="product-page__benefits">
-              <div className="product-page__benefit">
-                <Truck size={16} />
-                <span>Free Delivery on orders ₹499+</span>
+              <div className="product-page__benefits-grid">
+                <div className="product-page__benefit">
+                  <div className="benefit-icon-wrapper">
+                    <span className="benefit-icon-text">₹</span>
+                  </div>
+                  <span>Cash on Delivery</span>
+                </div>
+                <div className="product-page__benefit">
+                  <div className="benefit-icon-wrapper">
+                    <RotateCcw size={16} />
+                  </div>
+                  <span className="underline-text">Secure Checkout</span>
+                </div>
+                <div className="product-page__benefit">
+                  <div className="benefit-icon-wrapper">
+                    <Truck size={16} />
+                  </div>
+                  <span>Free Delivery on orders above ₹499</span>
+                </div>
               </div>
-              <div className="product-page__benefit">
-                <Shield size={16} />
-                <span>100% Authentic</span>
-              </div>
-              <div className="product-page__benefit">
-                <RotateCcw size={16} />
-                <span>Secure Checkout</span>
+              <div className="product-page__delivery-banner">
+                Get it delivered in 3-6 days
               </div>
             </div>
           </div>
@@ -407,12 +460,14 @@ export default function ProductClient({
           >
             Description
           </button>
+          {/* 
           <button
             className={`product-page__tab ${activeTab === "reviews" ? "active" : ""}`}
             onClick={() => setActiveTab("reviews")}
           >
             Reviews ({product.reviewCount || 0})
           </button>
+          */}
           <button
             className={`product-page__tab ${activeTab === "shipping" ? "active" : ""}`}
             onClick={() => setActiveTab("shipping")}
@@ -424,10 +479,71 @@ export default function ProductClient({
         <div className="product-page__tab-content">
           {activeTab === "description" && (
             <div className="product-page__description">
-              <p>{product.description}</p>
+              {(() => {
+                const parseDescription = (desc: string) => {
+                  if (!desc) return [];
+                  const lines = desc.split('\n');
+                  const groups: { type: 'bullet' | 'text'; content: string }[] = [];
+                  let currentGroup: { type: 'bullet' | 'text'; content: string } | null = null;
+                  
+                  for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) {
+                      currentGroup = null;
+                      continue;
+                    }
+                    const isBulletStart = trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*');
+                    if (isBulletStart) {
+                      const content = trimmed.replace(/^[•\-\*]\s*/, '');
+                      currentGroup = { type: 'bullet', content };
+                      groups.push(currentGroup);
+                    } else {
+                      if (currentGroup) {
+                        currentGroup.content += ' ' + trimmed;
+                      } else {
+                        currentGroup = { type: 'text', content: trimmed };
+                        groups.push(currentGroup);
+                      }
+                    }
+                  }
+                  return groups;
+                };
+
+                return parseDescription(product.description).map((group, idx) => {
+                  if (group.type === 'bullet') {
+                    const colonIndex = group.content.indexOf(':');
+                    if (colonIndex > -1) {
+                      const title = group.content.substring(0, colonIndex + 1);
+                      const desc = group.content.substring(colonIndex + 1);
+                      return (
+                        <div key={idx} className="product-page__bullet-box">
+                          <span className="product-page__bullet-dot">•</span>
+                          <div className="product-page__bullet-content">
+                            <strong>{title}</strong>{desc}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={idx} className="product-page__bullet-box">
+                        <span className="product-page__bullet-dot">•</span>
+                        <div className="product-page__bullet-content">
+                          {group.content}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <p key={idx} className="product-page__description-text">
+                      {group.content}
+                    </p>
+                  );
+                });
+              })()}
             </div>
           )}
 
+          {/* 
           {activeTab === "reviews" && (
             <div className="product-page__reviews">
               {product.reviews?.length === 0 ? (
@@ -457,6 +573,7 @@ export default function ProductClient({
               )}
             </div>
           )}
+          */}
 
           {activeTab === "shipping" && (
             <div className="product-page__shipping-info">

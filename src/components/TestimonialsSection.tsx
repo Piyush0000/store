@@ -136,19 +136,25 @@ export default function TestimonialsSection({
                   style={{ width: `${100 / slidesPerPage}%` }}
                 >
                   <div className="testimonials-section__card">
-                    <div className="testimonials-section__image-container">
-                      <img
-                        src={
-                          t.image ||
-                          "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80"
-                        }
-                        alt={t.name}
-                        className="testimonials-section__image"
-                        loading="lazy"
-                      />
-                    </div>
+                    <img
+                      src={
+                        t.image ||
+                        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80"
+                      }
+                      alt={t.name}
+                      className="testimonials-section__image"
+                      loading="lazy"
+                    />
                     <div className="testimonials-section__content">
-                      <h4 className="testimonials-section__name">{t.name}</h4>
+                      <div className="testimonials-section__quote-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+                        </svg>
+                      </div>
+                      
+                      <p className="testimonials-section__text">
+                        {t.description}
+                      </p>
 
                       <div className="testimonials-section__meta">
                         <div className="testimonials-section__stars">
@@ -161,16 +167,15 @@ export default function TestimonialsSection({
                         )}
                       </div>
 
-                      <p className="testimonials-section__text">
-                        {t.description}
-                      </p>
-
-                      <a
-                        href={t.ctaLink || "#"}
-                        className="testimonials-section__know-more"
-                      >
-                        know more
-                      </a>
+                      <div className="testimonials-section__bottom-row">
+                        <a
+                          href={t.ctaLink || "#"}
+                          className="testimonials-section__know-more"
+                        >
+                          know more
+                        </a>
+                        <h4 className="testimonials-section__name">— {t.name}</h4>
+                      </div>
                     </div>
                   </div>
                 </div>

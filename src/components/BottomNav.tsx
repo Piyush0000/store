@@ -51,6 +51,10 @@ export default function BottomNav() {
         return pathname.startsWith(href);
     };
 
+    if (pathname?.startsWith('/product')) {
+        return null;
+    }
+
     return (
         <nav className="bottom-nav" aria-label="Bottom navigation">
             {NAV_ITEMS.map(({ label, href, icon: Icon, exact }) => {

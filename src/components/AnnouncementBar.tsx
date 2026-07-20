@@ -50,6 +50,7 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
 
   const [announcements, setAnnouncements] = useState<any[]>(getInitialAnnouncements);
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 3, seconds: 0 });
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [backgroundColor, setBackgroundColor] = useState(() => {
     return initialCustomization?.announcementBar?.backgroundColor || '#000000';
   });
@@ -113,14 +114,30 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
     return () => clearInterval(interval);
   }, []);
 
+  const timeLeftText = `Limited Time: ${pad(timeLeft.hours)}H:${pad(timeLeft.minutes)}M:${pad(timeLeft.seconds)}S`;
+
   const staticMessages = [
     { text: 'Hurry Up, Shop Now!', link: '' },
     { text: '50% Off', link: '' },
-    { text: `Limited Time: ${pad(timeLeft.hours)}H:${pad(timeLeft.minutes)}M:${pad(timeLeft.seconds)}S`, link: '' },
+    { text: timeLeftText, link: '' },
     { text: 'Save Min 50% on all orders and get free shipping', link: '' },
   ];
 
   const displayList = announcements.length > 0 ? announcements : staticMessages;
+
+  // Reset current index if content list length changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [displayList.length]);
+
+  // Autoplay cycle
+  useEffect(() => {
+    if (displayList.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % displayList.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [displayList.length]);
 
   const textColor = getContrastColor(backgroundColor);
   const barStyle = {
@@ -128,33 +145,35 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
     color: textColor,
   };
 
-  // Duplicate items to ensure smooth continuous infinite scrolling marquee
-  const trackItems = [...displayList, ...displayList, ...displayList, ...displayList];
-
   return (
     <div className="announcement-bar" style={barStyle}>
       <div className="announcement-marquee">
-        <div className="announcement-track">
-          {trackItems.map((ann, i) => {
+        <div 
+          className="announcement-track"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {displayList.map((ann, i) => {
             const itemContent = (
               <span className="announcement-item">
                 <span className="announcement-diamond">◆</span>
-                {ann.text}
+                {ann.text === 'Limited Time: 00H:03M:00S' ? timeLeftText : ann.text}
               </span>
             );
 
-            if (ann.link) {
-              return (
-                <Link key={i} href={ann.link} className="announcement-link hover:underline transition-all">
-                  {itemContent}
-                </Link>
-              );
-            }
-
-            return (
-              <span key={i}>
+            const slideContent = ann.link ? (
+              <Link href={ann.link} className="announcement-link hover:underline transition-all">
+                {itemContent}
+              </Link>
+            ) : (
+              <span>
                 {itemContent}
               </span>
+            );
+
+            return (
+              <div key={i} className="announcement-slide">
+                {slideContent}
+              </div>
             );
           })}
         </div>
