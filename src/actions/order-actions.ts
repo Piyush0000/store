@@ -22,6 +22,41 @@ export async function getStorefrontCodFee(): Promise<number> {
   return storefront.settings?.codFee ?? 0;
 }
 
+export async function getStorefrontShippingFee(): Promise<{
+  shippingFee: number;
+  freeShippingThreshold: number;
+  shippingLabel: string;
+  enabled: boolean;
+}> {
+  try {
+    const subdomain = await getServerSubdomain();
+    const storefront = await fetchStorefront(subdomain);
+    const settings = storefront.settings || {};
+    const customization = storefront.customization || {};
+
+    const shippingSettings = customization.shippingSettings || {};
+    const shippingFee = Number(shippingSettings.shippingFee ?? settings.shippingFee ?? 0);
+    const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? settings.freeShippingThreshold ?? 0);
+    const shippingLabel = shippingSettings.shippingLabel || 'Shipment Fee';
+    const enabled = shippingSettings.enabled !== false;
+
+    return {
+      shippingFee,
+      freeShippingThreshold,
+      shippingLabel,
+      enabled,
+    };
+  } catch (error) {
+    console.error('Error fetching storefront shipping fee:', error);
+    return {
+      shippingFee: 0,
+      freeShippingThreshold: 0,
+      shippingLabel: 'Shipment Fee',
+      enabled: false,
+    };
+  }
+}
+
 export async function createAddress(userId: string, data: z.infer<typeof addressSchema>) {
   try {
     const address = await prisma.address.create({

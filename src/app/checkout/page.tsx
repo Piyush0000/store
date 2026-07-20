@@ -12,7 +12,7 @@ import {
   validateSession,
 } from '@/actions/otp-actions';
 import { getUserByPhone, createOrUpdateUser } from '@/actions/user-actions';
-import { createAddress, createOrder, createCodOrder, getStorefrontCodFee } from '@/actions/order-actions';
+import { createAddress, createOrder, createCodOrder, getStorefrontCodFee, getStorefrontShippingFee } from '@/actions/order-actions';
 import { initiatePayUPayment } from '@/actions/payment-actions';
 import { validateCouponAction } from '@/actions/coupon-actions';
 import './checkout.css';
@@ -44,6 +44,12 @@ export default function CheckoutPage() {
   const { track } = useAnalytics();
   const { cartItems, clearCart, cartTotal } = useCart();
   const [codFee, setCodFee] = useState(0);
+  const [shippingConfig, setShippingConfig] = useState({
+    shippingFee: 0,
+    freeShippingThreshold: 0,
+    shippingLabel: 'Shipment Fee',
+    enabled: true,
+  });
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [step, setStep] = useState<Step>('identify');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -131,7 +137,17 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     getStorefrontCodFee().then(fee => setCodFee(fee));
+    getStorefrontShippingFee().then(cfg => setShippingConfig(cfg));
   }, []);
+
+  const effectiveShippingFee = (function() {
+    if (!shippingConfig.enabled) return 0;
+    const currentSubtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    if (shippingConfig.freeShippingThreshold > 0 && currentSubtotal >= shippingConfig.freeShippingThreshold) {
+      return 0;
+    }
+    return shippingConfig.shippingFee;
+  })();
 
 
 
@@ -572,7 +588,7 @@ export default function CheckoutPage() {
       const result = await createCodOrder({
         userId: userId || `temp_${phone}`,
         items: orderItems,
-        totalAmount: totalRegularSubtotal + codFee - overallDiscount,
+        totalAmount: totalRegularSubtotal + codFee + effectiveShippingFee - overallDiscount,
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
@@ -723,10 +739,10 @@ export default function CheckoutPage() {
       const result = await createOrder({
         userId: uid,
         items: orderItems,
-        totalAmount: totalRegularSubtotal - overallDiscount,
+        totalAmount: totalRegularSubtotal + effectiveShippingFee - overallDiscount,
         subtotal: totalRegularSubtotal,
         tax: 0,
-        shipping: 0,
+        shipping: effectiveShippingFee,
         paymentMethod: 'PAYU',
         firstName: customerFirstName,
         lastName: customerLastName,
@@ -1258,7 +1274,7 @@ export default function CheckoutPage() {
           <div className="checkout__summary-header" onClick={() => setIsSummaryOpen(!isSummaryOpen)}>
             <h2 className="checkout__summary-title">ORDER SUMMARY</h2>
             <div className="checkout__summary-toggle">
-              <span className="checkout__summary-toggle-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0)).toLocaleString('en-IN')}</span>
+              <span className="checkout__summary-toggle-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) + effectiveShippingFee - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
               <ChevronDown size={20} className="checkout__summary-toggle-icon" />
             </div>
           </div>
@@ -1342,19 +1358,28 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 {(orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{codFee}</span></div>}
-                <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
+                {effectiveShippingFee > 0 ? (
+                  <div className="checkout__summary-row">
+                    <span>{shippingConfig.shippingLabel || 'Shipment Fee'}</span>
+                    <span>₹{effectiveShippingFee}</span>
+                  </div>
+                ) : (
+                  <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
+                )}
               </div>
  
               {/* Free Shipping Banner */}
-              <div className="checkout__free-shipping-banner">
-                <Truck size={16} className="checkout__free-shipping-icon" />
-                <span>Yay! You get FREE shipping 🥳</span>
-              </div>
+              {effectiveShippingFee === 0 && (
+                <div className="checkout__free-shipping-banner">
+                  <Truck size={16} className="checkout__free-shipping-icon" />
+                  <span>Yay! You get FREE shipping 🥳</span>
+                </div>
+              )}
  
               <div className="checkout__summary-divider" />
               <div className="checkout__summary-row checkout__summary-row--total">
                 <span>Total</span>
-                <span className="checkout__summary-total-price">₹{((orderSummary?.subtotal ?? displaySubtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
+                <span className="checkout__summary-total-price">₹{Math.max(0, (orderSummary?.subtotal ?? displaySubtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) + effectiveShippingFee - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
               </div>
 
               <div className="checkout__summary-badges">
