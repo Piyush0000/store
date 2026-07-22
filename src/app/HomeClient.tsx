@@ -495,8 +495,8 @@ export default function HomeClient({
         <section className="featured-collection animate-slide-up delay-600">
           <h2 className="section-title">ALL PRODUCTS</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
-            {bestSellers.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {bestSellers.map((product, idx) => (
+              <ProductCard key={product.id} product={product} priority={idx < 4} />
             ))}
           </div>
         </section>

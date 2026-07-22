@@ -40,9 +40,9 @@ export default function ProductsSection({ title, subtitle, products, className =
             ‹
           </button>
           <div className="products-section__slider" ref={sliderRef}>
-            {products.map((product) => (
+            {products.map((product, idx) => (
               <div key={product.id} className="products-section__slider-item">
-                <ProductCard product={product} />
+                <ProductCard product={product} priority={idx < 4} />
               </div>
             ))}
           </div>
@@ -56,8 +56,8 @@ export default function ProductsSection({ title, subtitle, products, className =
         </div>
       ) : (
         <div className="products-section__grid">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {products.map((product, idx) => (
+            <ProductCard key={product.id} product={product} priority={idx < 4} />
           ))}
         </div>
       )}

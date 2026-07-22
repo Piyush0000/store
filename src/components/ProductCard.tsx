@@ -20,12 +20,15 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
+  priority?: boolean;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, priority = false }: ProductCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -41,6 +44,50 @@ export default function ProductCard({ product }: ProductCardProps) {
   const discount = originalPrice && numericPrice && originalPrice > numericPrice
     ? Math.round(((originalPrice - numericPrice) / originalPrice) * 100)
     : 0;
+
+  // Handle cached image or decoding check on mount and image index switch
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+
+    let isMounted = true;
+
+    if (img.complete && img.naturalWidth > 0) {
+      setImgLoaded(true);
+    } else if (typeof img.decode === 'function') {
+      img.decode()
+        .then(() => {
+          if (isMounted) setImgLoaded(true);
+        })
+        .catch(() => {
+          // Fallback to onLoad event if decode fails
+        });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentImageIndex, images]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.currentTarget;
+    if (typeof target.decode === 'function') {
+      target.decode()
+        .then(() => {
+          setImgLoaded(true);
+        })
+        .catch(() => {
+          setImgLoaded(true);
+        });
+    } else {
+      setImgLoaded(true);
+    }
+  };
+
+  const handleImageError = () => {
+    setImgError(true);
+    setImgLoaded(true);
+  };
 
   const handleMouseEnter = () => {
     if (images.length <= 1) return;
@@ -104,16 +151,24 @@ export default function ProductCard({ product }: ProductCardProps) {
             transform: `translateX(-${currentImageIndex * 100}%)`,
           }}
         >
-          {images.map((img, index) => (
-            <img
-              key={index}
-              src={img}
-              alt={`${product.name} - Image ${index + 1}`}
-              className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
-              onLoad={index === 0 ? () => setImgLoaded(true) : undefined}
-              loading={index === 0 ? "eager" : "lazy"}
-            />
-          ))}
+          {images.map((img, index) => {
+            const isFirst = index === 0;
+            const isEager = priority && isFirst;
+            return (
+              <img
+                key={index}
+                ref={isFirst ? imgRef : undefined}
+                src={imgError && isFirst ? 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' : img}
+                alt={`${product.name} - Image ${index + 1}`}
+                className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
+                onLoad={isFirst ? handleImageLoad : undefined}
+                onError={isFirst ? handleImageError : undefined}
+                loading={isEager ? "eager" : "lazy"}
+                decoding="async"
+                {...(isEager ? { fetchPriority: "high" as const } : {})}
+              />
+            );
+          })}
         </div>
         {images.length > 1 && (
           <div className="product-card__slider-dots">
