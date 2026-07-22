@@ -31,7 +31,7 @@ export default function ProductClient({
   relatedProducts,
   testimonials,
 }: ProductClientProps) {
-  const { addToCart } = useCart();
+  const { addToCart, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const liked = isInWishlist(product.id);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -199,9 +199,10 @@ export default function ProductClient({
       quantity,
       variantSelection,
     );
+    setIsCartOpen(false);
     setTimeout(() => {
-      window.location.href = "/cart";
-    }, 500);
+      window.location.href = "/checkout";
+    }, 300);
   };
 
   const renderStars = (rating: number) => {
