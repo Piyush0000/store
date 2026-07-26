@@ -1,23 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
-import {
-  Loader2,
-  Phone,
-  CheckCircle2,
-  Truck,
-  ChevronRight,
-  Banknote,
-  CreditCard,
-  ShoppingBag,
-  Lock,
-  RefreshCw,
-  ShieldCheck,
-  PhoneCall,
-  ArrowRight,
-  ChevronDown,
-} from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 import {
@@ -36,64 +21,20 @@ import {
 } from "@/actions/order-actions";
 import { initiatePayUPayment } from "@/actions/payment-actions";
 import { validateCouponAction } from "@/actions/coupon-actions";
+import OtpStep from "@/components/OtpStep";
+import DetailsForm from "@/components/DetailsForm";
+import AddressSection from "@/components/AddressSection";
+import PaymentStep from "@/components/PaymentStep";
+import OrderSummary from "@/components/OrderSummary";
+import SuccessStep from "@/components/SuccessStep";
 import "./checkout.css";
-
-const IndiaFlag = () => (
-  <svg width="20" height="14" viewBox="0 0 30 20" className="checkout__flag">
-    <rect width="30" height="20" fill="#FFF" />
-    <rect width="30" height="6.67" fill="#FF9933" />
-    <rect y="13.33" width="30" height="6.67" fill="#138808" />
-    <circle cx="15" cy="10" r="2" fill="#000080" />
-    <circle
-      cx="15"
-      cy="10"
-      r="2"
-      fill="none"
-      stroke="#000080"
-      strokeWidth="0.5"
-    />
-    <circle cx="15" cy="10" r="0.4" fill="#000080" />
-  </svg>
-);
 
 type Step = "identify" | "verify" | "details" | "payment" | "success";
 
-const indianStates = [
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chhattisgarh",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
-  "Delhi",
-  "Jammu & Kashmir",
-  "Ladakh",
-  "Chandigarh",
-  "Andaman & Nicobar Islands",
-  "Puducherry",
-];
+const isStepActive = (step: Step, s: Step) => {
+  const order: Step[] = ["identify", "verify", "details", "payment", "success"];
+  return order.indexOf(step) >= order.indexOf(s);
+};
 
 export default function CheckoutPage() {
   const { track } = useAnalytics();
@@ -158,7 +99,49 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
 
-  const handleApplyCoupon = async () => {
+  const subtotal = useMemo(
+    () => cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0),
+    [cartItems],
+  );
+
+  const bundleDiscountTotal = useMemo(
+    () =>
+      cartItems.reduce(
+        (acc, item) =>
+          acc +
+          (item.type === "BUNDLE" ? item.discountAmount || 0 : 0) *
+            item.quantity,
+        0,
+      ),
+    [cartItems],
+  );
+  const displayDiscountTotal = discountAmount + bundleDiscountTotal;
+
+  const displaySubtotal = useMemo(
+    () =>
+      cartItems.reduce(
+        (acc, item) =>
+          acc +
+          (item.type === "BUNDLE"
+            ? item.regularTotal || item.price
+            : item.price) *
+            item.quantity,
+        0,
+      ),
+    [cartItems],
+  );
+
+  const effectiveShippingFee = useMemo(() => {
+    if (!shippingConfig.enabled) return 0;
+    if (
+      shippingConfig.freeShippingThreshold > 0 &&
+      subtotal >= shippingConfig.freeShippingThreshold
+    )
+      return 0;
+    return shippingConfig.shippingFee;
+  }, [shippingConfig, subtotal]);
+
+  const handleApplyCoupon = useCallback(async () => {
     if (!couponInput.trim()) return;
     setIsApplyingCoupon(true);
     setCouponError(null);
@@ -175,54 +158,23 @@ export default function CheckoutPage() {
     } finally {
       setIsApplyingCoupon(false);
     }
-  };
+  }, [couponInput, subtotal]);
 
-  const handleRemoveCoupon = () => {
+  const handleRemoveCoupon = useCallback(() => {
     setAppliedCoupon(null);
     setDiscountAmount(0);
     setCouponInput("");
     setCouponError(null);
-  };
-
-  const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0,
-  );
-
-  const bundleDiscountTotal = cartItems.reduce(
-    (acc, item) =>
-      acc +
-      (item.type === "BUNDLE" ? item.discountAmount || 0 : 0) * item.quantity,
-    0,
-  );
-  const displaySubtotal = cartItems.reduce(
-    (acc, item) =>
-      acc +
-      (item.type === "BUNDLE" ? item.regularTotal || item.price : item.price) *
-        item.quantity,
-    0,
-  );
-  const displayDiscountTotal = discountAmount + bundleDiscountTotal;
-
-  useEffect(() => {
-    getStorefrontCodFee().then((fee) => setCodFee(fee));
-    getStorefrontShippingFee().then((cfg) => setShippingConfig(cfg));
   }, []);
 
-  const effectiveShippingFee = (function () {
-    if (!shippingConfig.enabled) return 0;
-    const currentSubtotal = cartItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0,
+  useEffect(() => {
+    Promise.all([getStorefrontCodFee(), getStorefrontShippingFee()]).then(
+      ([fee, cfg]) => {
+        setCodFee(fee);
+        setShippingConfig(cfg);
+      },
     );
-    if (
-      shippingConfig.freeShippingThreshold > 0 &&
-      currentSubtotal >= shippingConfig.freeShippingThreshold
-    ) {
-      return 0;
-    }
-    return shippingConfig.shippingFee;
-  })();
+  }, []);
 
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
@@ -333,15 +285,13 @@ export default function CheckoutPage() {
     }
   }, []);
 
-  // Auto-apply coupon from URL query param
+  // Auto-apply coupon from URL query param — fires once on mount only
   const autoAppliedRef = useRef(false);
+  const subtotalRef = useRef(subtotal);
+  subtotalRef.current = subtotal;
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      autoAppliedRef.current ||
-      subtotal === 0
-    )
-      return;
+    if (typeof window === "undefined") return;
+    if (autoAppliedRef.current || subtotalRef.current === 0) return;
     const params = new URLSearchParams(window.location.search);
     const urlCoupon = params.get("coupon");
     if (urlCoupon) {
@@ -349,7 +299,7 @@ export default function CheckoutPage() {
       setCouponInput(urlCoupon);
       setIsApplyingCoupon(true);
       setCouponError(null);
-      validateCouponAction(urlCoupon, subtotal)
+      validateCouponAction(urlCoupon, subtotalRef.current)
         .then((result) => {
           if (result.success && result.coupon) {
             setAppliedCoupon(result.coupon);
@@ -365,37 +315,48 @@ export default function CheckoutPage() {
           setIsApplyingCoupon(false);
         });
     }
-  }, [subtotal]);
+  }, []);
 
   useEffect(() => {
-    if (resendTimer > 0) {
-      const interval = setInterval(
-        () => setResendTimer((prev) => prev - 1),
-        1000,
-      );
-      return () => clearInterval(interval);
-    }
-  }, [resendTimer]);
+    if (resendTimer <= 0) return;
+    const interval = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resendTimer > 0]);
 
-  const handleOtpChange = (index: number, value: string) => {
-    const digit = value.replace(/\D/g, "").slice(-1);
-    const newOtp = [...otp];
-    newOtp[index] = digit;
-    setOtp(newOtp);
+  const handleOtpChange = useCallback(
+    (index: number, value: string) => {
+      const digit = value.replace(/\D/g, "").slice(-1);
+      const newOtp = [...otp];
+      newOtp[index] = digit;
+      setOtp(newOtp);
 
-    // Auto-focus next input
-    if (digit && index < 3) {
-      otpRefs.current[index + 1]?.focus();
-    }
-  };
+      // Auto-focus next input
+      if (digit && index < 3) {
+        otpRefs.current[index + 1]?.focus();
+      }
+    },
+    [otp],
+  );
 
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-  };
+  const handleOtpKeyDown = useCallback(
+    (index: number, e: React.KeyboardEvent) => {
+      if (e.key === "Backspace" && !otp[index] && index > 0) {
+        otpRefs.current[index - 1]?.focus();
+      }
+    },
+    [otp],
+  );
 
-  const handleSendOtp = async () => {
+  const handleSendOtp = useCallback(async () => {
     if (!phone || phone.length < 10) {
       setError("Please enter a valid phone number");
       return;
@@ -419,9 +380,9 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [phone]);
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = useCallback(async () => {
     const otpCode = otp.join("");
     if (!otpCode || otpCode.length !== 4) {
       setError("Please enter the 4-digit code");
@@ -483,9 +444,9 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [otp, phone, sessionId, deviceId]);
 
-  const handleSaveAddress = async () => {
+  const handleSaveAddress = useCallback(async () => {
     if (
       !addressForm.flatHouse ||
       !addressForm.areaStreet ||
@@ -499,8 +460,8 @@ export default function CheckoutPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // De-duplicate: check if similar address already exists
-      const isDuplicate = savedAddresses.some(
+      // De-duplicate: find existing address in a single pass
+      const existingAddr = savedAddresses.find(
         (addr) =>
           addr.flatHouse?.toLowerCase().trim() ===
             addressForm.flatHouse.toLowerCase().trim() &&
@@ -513,19 +474,7 @@ export default function CheckoutPage() {
           addr.pincode?.trim() === addressForm.pincode.trim(),
       );
 
-      if (isDuplicate) {
-        const existingAddr = savedAddresses.find(
-          (addr) =>
-            addr.flatHouse?.toLowerCase().trim() ===
-              addressForm.flatHouse.toLowerCase().trim() &&
-            addr.areaStreet?.toLowerCase().trim() ===
-              addressForm.areaStreet.toLowerCase().trim() &&
-            addr.city?.toLowerCase().trim() ===
-              addressForm.city.toLowerCase().trim() &&
-            addr.state?.toLowerCase().trim() ===
-              addressForm.state.toLowerCase().trim() &&
-            addr.pincode?.trim() === addressForm.pincode.trim(),
-        );
+      if (existingAddr) {
         setSelectedAddress(existingAddr);
         setShowAddressForm(false);
         setError(null);
@@ -570,9 +519,9 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [addressForm, savedAddresses, phone, userId]);
 
-  const handleContinueToPayment = async () => {
+  const handleContinueToPayment = useCallback(async () => {
     setError(null);
     setFieldErrors({});
 
@@ -643,9 +592,63 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    customerFirstName,
+    customerLastName,
+    customerEmail,
+    selectedAddress,
+    userId,
+    phone,
+    step,
+  ]);
 
-  const handleCreateCodOrder = async () => {
+  // Shared helper: maps cartItems → order items array + totals
+  const buildOrderItems = useCallback(() => {
+    const orderItems: any[] = [];
+    let totalBundleDiscount = 0;
+    let totalRegularSubtotal = 0;
+
+    cartItems.forEach((item) => {
+      if (item.type === "BUNDLE" && item.items) {
+        const regularTotal =
+          item.regularTotal || item.items.reduce((sum, i) => sum + i.price, 0);
+        const discountAmt = item.discountAmount || 0;
+        totalBundleDiscount += discountAmt * item.quantity;
+        totalRegularSubtotal += regularTotal * item.quantity;
+
+        item.items.forEach((p) => {
+          orderItems.push({
+            productId: p.id,
+            name: p.name,
+            price: Number(p.price),
+            quantity: item.quantity,
+            image: p.image || "",
+            variantId: undefined,
+            variant: `Bundle: ${item.name}`,
+          });
+        });
+      } else {
+        totalRegularSubtotal += item.price * item.quantity;
+        orderItems.push({
+          productId: item.id,
+          name: item.name,
+          price: Number(item.price),
+          quantity: item.quantity,
+          image: item.images?.[0] || "",
+          variantId: item.variantId,
+          variant: item.variants
+            ? Object.entries(item.variants)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(", ")
+            : undefined,
+        });
+      }
+    });
+
+    return { orderItems, totalBundleDiscount, totalRegularSubtotal };
+  }, [cartItems]);
+
+  const handleCreateCodOrder = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -657,79 +660,44 @@ export default function CheckoutPage() {
     }
 
     // Validate prices
-    const calculatedSubtotal = cartItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0,
-    );
-    if (calculatedSubtotal <= 0) {
+    if (subtotal <= 0) {
       setError("Invalid cart total. Please refresh the page and try again.");
       setIsLoading(false);
       return;
     }
 
     // Log price issues for debugging
-    const zeroPriceItems = cartItems.filter((item) => item.price <= 0);
-    if (zeroPriceItems.length > 0) {
-      console.warn(
-        "[Checkout] Items with 0 or negative price:",
-        zeroPriceItems.map((i) => ({ id: i.id, name: i.name, price: i.price })),
-      );
+    if (process.env.NODE_ENV === "development") {
+      const zeroPriceItems = cartItems.filter((item) => item.price <= 0);
+      if (zeroPriceItems.length > 0) {
+        console.warn(
+          "[Checkout] Items with 0 or negative price:",
+          zeroPriceItems.map((i) => ({
+            id: i.id,
+            name: i.name,
+            price: i.price,
+          })),
+        );
+      }
     }
 
     try {
-      const orderItems: any[] = [];
-      let totalBundleDiscount = 0;
-      let totalRegularSubtotal = 0;
-
-      cartItems.forEach((item) => {
-        if (item.type === "BUNDLE" && item.items) {
-          const regularTotal =
-            item.regularTotal ||
-            item.items.reduce((sum, i) => sum + i.price, 0);
-          const discountAmt = item.discountAmount || 0;
-          totalBundleDiscount += discountAmt * item.quantity;
-          totalRegularSubtotal += regularTotal * item.quantity;
-
-          item.items.forEach((p) => {
-            orderItems.push({
-              productId: p.id,
-              name: p.name,
-              price: Number(p.price),
-              quantity: item.quantity,
-              image: p.image || "",
-              variantId: undefined,
-              variant: `Bundle: ${item.name}`,
-            });
-          });
-        } else {
-          totalRegularSubtotal += item.price * item.quantity;
-          orderItems.push({
-            productId: item.id,
-            name: item.name,
-            price: Number(item.price),
-            quantity: item.quantity,
-            image: item.images?.[0] || "",
-            variantId: item.variantId,
-            variant: item.variants
-              ? Object.entries(item.variants)
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join(", ")
-              : undefined,
-          });
-        }
-      });
+      const { orderItems, totalBundleDiscount, totalRegularSubtotal } =
+        buildOrderItems();
 
       const overallDiscount = discountAmount + totalBundleDiscount;
 
-      console.log("[Checkout] Creating COD order:", {
-        itemCount: orderItems.length,
-        calculatedSubtotal: totalRegularSubtotal,
-        prices: orderItems.map((i) => ({
-          name: i.name,
-          price: i.price,
-          qty: i.quantity,
-        })),
-      });
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Checkout] Creating COD order:", {
+          itemCount: orderItems.length,
+          calculatedSubtotal: totalRegularSubtotal,
+          prices: orderItems.map((i) => ({
+            name: i.name,
+            price: i.price,
+            qty: i.quantity,
+          })),
+        });
+      }
 
       const result = await createCodOrder({
         userId: userId || `temp_${phone}`,
@@ -754,13 +722,17 @@ export default function CheckoutPage() {
         discountAmount: overallDiscount || undefined,
       } as any);
 
-      console.log("[Checkout] COD order result:", result);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Checkout] COD order result:", result);
+      }
 
       if (result.success && result.orderId) {
-        console.log(
-          "[Checkout] Order success, setting orderSummary with subtotal:",
-          totalRegularSubtotal,
-        );
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "[Checkout] Order success, setting orderSummary with subtotal:",
+            totalRegularSubtotal,
+          );
+        }
         // Store order summary in a ref to preserve data even after state clears
         const capturedItems = [...cartItems];
         const capturedSubtotal = totalRegularSubtotal;
@@ -776,11 +748,12 @@ export default function CheckoutPage() {
           couponCode: capturedCouponCode,
         });
 
-        // Log state after setOrderSummary
-        console.log("[Checkout] After setOrderSummary, orderSummary:", {
-          items: capturedItems.length,
-          subtotal: capturedSubtotal,
-        });
+        if (process.env.NODE_ENV === "development") {
+          console.log("[Checkout] After setOrderSummary, orderSummary:", {
+            items: capturedItems.length,
+            subtotal: capturedSubtotal,
+          });
+        }
 
         // Clear cart AFTER setting orderSummary
         clearCart();
@@ -801,7 +774,9 @@ export default function CheckoutPage() {
         // Change step last
         setStep("success");
 
-        console.log("[Checkout] Step changed to success");
+        if (process.env.NODE_ENV === "development") {
+          console.log("[Checkout] Step changed to success");
+        }
       } else {
         throw new Error(result.message);
       }
@@ -810,9 +785,25 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    cartItems,
+    subtotal,
+    buildOrderItems,
+    discountAmount,
+    phone,
+    codFee,
+    effectiveShippingFee,
+    customerFirstName,
+    customerLastName,
+    customerEmail,
+    selectedAddress,
+    appliedCoupon,
+    userId,
+    clearCart,
+    track,
+  ]);
 
-  const handleInitiatePayU = async () => {
+  const handleInitiatePayU = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -823,11 +814,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    const calculatedSubtotal = cartItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0,
-    );
-    if (calculatedSubtotal <= 0) {
+    if (subtotal <= 0) {
       setError("Invalid cart total. Please refresh the page and try again.");
       setIsLoading(false);
       return;
@@ -857,47 +844,8 @@ export default function CheckoutPage() {
         throw new Error("Failed to create user");
       }
 
-      const orderItems: any[] = [];
-      let totalBundleDiscount = 0;
-      let totalRegularSubtotal = 0;
-
-      cartItems.forEach((item) => {
-        if (item.type === "BUNDLE" && item.items) {
-          const regularTotal =
-            item.regularTotal ||
-            item.items.reduce((sum, i) => sum + i.price, 0);
-          const discountAmt = item.discountAmount || 0;
-          totalBundleDiscount += discountAmt * item.quantity;
-          totalRegularSubtotal += regularTotal * item.quantity;
-
-          item.items.forEach((p) => {
-            orderItems.push({
-              productId: p.id,
-              name: p.name,
-              price: Number(p.price),
-              quantity: item.quantity,
-              image: p.image || "",
-              variantId: undefined,
-              variant: `Bundle: ${item.name}`,
-            });
-          });
-        } else {
-          totalRegularSubtotal += item.price * item.quantity;
-          orderItems.push({
-            productId: item.id,
-            name: item.name,
-            price: Number(item.price),
-            quantity: item.quantity,
-            image: item.images?.[0] || "",
-            variantId: item.variantId,
-            variant: item.variants
-              ? Object.entries(item.variants)
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join(", ")
-              : undefined,
-          });
-        }
-      });
+      const { orderItems, totalBundleDiscount, totalRegularSubtotal } =
+        buildOrderItems();
 
       const overallDiscount = discountAmount + totalBundleDiscount;
 
@@ -953,307 +901,35 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    cartItems,
+    subtotal,
+    phone,
+    customerEmail,
+    customerFirstName,
+    customerLastName,
+    discountAmount,
+    effectiveShippingFee,
+    selectedAddress,
+    appliedCoupon,
+    buildOrderItems,
+    userId,
+  ]);
 
-  const renderDetailsForm = () => {
-    const isStepPayment = step === "payment";
-    return (
-      <section className="checkout__section">
-        <div className="checkout__step-header">
-          <CheckCircle2 size={24} />
-          <h2>YOUR DETAILS</h2>
-          <span className="checkout__verified-badge">✓ Verified</span>
-        </div>
-        <p className="checkout__step-desc">
-          We&apos;ll use this to contact you about your order
-        </p>
+  const onFirstNameChange = useCallback((v: string) => {
+    setCustomerFirstName(v);
+    setFieldErrors((prev) => ({ ...prev, firstName: "" }));
+  }, []);
 
-        <div className="checkout__row">
-          <div className="checkout__field">
-            <label>First Name *</label>
-            <input
-              type="text"
-              value={customerFirstName}
-              onChange={(e) => {
-                setCustomerFirstName(
-                  e.target.value.replace(/[^a-zA-Z\s]/g, ""),
-                );
-                setFieldErrors((prev) => ({ ...prev, firstName: "" }));
-              }}
-              className={fieldErrors.firstName ? "error" : ""}
-            />
-            {fieldErrors.firstName && (
-              <span className="checkout__error">{fieldErrors.firstName}</span>
-            )}
-          </div>
-          <div className="checkout__field">
-            <label>Last Name *</label>
-            <input
-              type="text"
-              value={customerLastName}
-              onChange={(e) => {
-                setCustomerLastName(e.target.value.replace(/[^a-zA-Z\s]/g, ""));
-                setFieldErrors((prev) => ({ ...prev, lastName: "" }));
-              }}
-              className={fieldErrors.lastName ? "error" : ""}
-            />
-            {fieldErrors.lastName && (
-              <span className="checkout__error">{fieldErrors.lastName}</span>
-            )}
-          </div>
-        </div>
+  const onLastNameChange = useCallback((v: string) => {
+    setCustomerLastName(v);
+    setFieldErrors((prev) => ({ ...prev, lastName: "" }));
+  }, []);
 
-        <div className="checkout__field">
-          <label>Email *</label>
-          <input
-            type="email"
-            value={customerEmail}
-            onChange={(e) => {
-              setCustomerEmail(e.target.value);
-              setFieldErrors((prev) => ({ ...prev, email: "" }));
-            }}
-            className={fieldErrors.email ? "error" : ""}
-          />
-          {fieldErrors.email && (
-            <span className="checkout__error">{fieldErrors.email}</span>
-          )}
-        </div>
-
-        <div className="checkout__address-section">
-          <h3 className="checkout__address-title">DELIVERY ADDRESS</h3>
-
-          {!showAddressForm && (
-            <button
-              className="checkout__add-address-btn"
-              onClick={() => setShowAddressForm(true)}
-            >
-              + Add New Address
-            </button>
-          )}
-
-          {showAddressForm && (
-            <div className="checkout__address-form">
-              <div className="checkout__address-type-btns">
-                {["HOME", "WORK", "OTHER"].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setAddressForm({ ...addressForm, type })}
-                    className={`checkout__address-type-btn ${addressForm.type === type ? "active" : ""}`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-
-              <div className="checkout__field">
-                <label>House/Flat/Building *</label>
-                <input
-                  type="text"
-                  value={addressForm.flatHouse}
-                  onChange={(e) =>
-                    setAddressForm({
-                      ...addressForm,
-                      flatHouse: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="checkout__field">
-                <label>Street/Area/Landmark *</label>
-                <input
-                  type="text"
-                  value={addressForm.areaStreet}
-                  onChange={(e) =>
-                    setAddressForm({
-                      ...addressForm,
-                      areaStreet: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="checkout__row checkout__row--3">
-                <div className="checkout__field">
-                  <label>City *</label>
-                  <input
-                    type="text"
-                    value={addressForm.city}
-                    onChange={(e) =>
-                      setAddressForm({
-                        ...addressForm,
-                        city: e.target.value.replace(/[^a-zA-Z\s]/g, ""),
-                      })
-                    }
-                  />
-                </div>
-                <div className="checkout__field">
-                  <label>State *</label>
-                  <select
-                    value={addressForm.state}
-                    onChange={(e) =>
-                      setAddressForm({ ...addressForm, state: e.target.value })
-                    }
-                  >
-                    <option value="">Select</option>
-                    {indianStates.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="checkout__field">
-                  <label>PIN Code *</label>
-                  <input
-                    type="text"
-                    value={addressForm.pincode}
-                    onChange={(e) =>
-                      setAddressForm({
-                        ...addressForm,
-                        pincode: e.target.value.replace(/\D/g, "").slice(0, 6),
-                      })
-                    }
-                    maxLength={6}
-                  />
-                </div>
-              </div>
-
-              <div className="checkout__address-form-actions">
-                <button
-                  className="checkout__btn-secondary"
-                  onClick={() => setShowAddressForm(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="checkout__btn-primary"
-                  onClick={handleSaveAddress}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Loader2 className="animate-spin" size={16} />
-                  ) : (
-                    "Save Address"
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {savedAddresses.length > 0 && (
-            <div className="checkout__saved-addresses">
-              {savedAddresses.map((addr) => (
-                <div
-                  key={addr.id}
-                  className={`checkout__address-card ${selectedAddress?.id === addr.id ? "selected" : ""}`}
-                  onClick={() => {
-                    setSelectedAddress(addr);
-                    setShowAddressForm(false);
-                  }}
-                >
-                  <div className="checkout__address-card-header">
-                    <span className="checkout__address-type">{addr.type}</span>
-                    {addr.isDefault && (
-                      <span className="checkout__address-default">Default</span>
-                    )}
-                    {selectedAddress?.id === addr.id && (
-                      <CheckCircle2
-                        size={14}
-                        className="checkout__address-check"
-                      />
-                    )}
-                  </div>
-                  <p className="checkout__address-detail">{addr.flatHouse}</p>
-                  <p className="checkout__address-detail">
-                    {addr.areaStreet}, {addr.city}, {addr.state} -{" "}
-                    {addr.pincode}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {error && <span className="checkout__error">{error}</span>}
-
-        <div className="checkout__mobile-sticky-bottom">
-          <button
-            className="checkout__continue-btn"
-            onClick={handleContinueToPayment}
-            disabled={isLoading || !selectedAddress}
-          >
-            {isLoading ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : isStepPayment ? (
-              "CONFIRM DETAILS"
-            ) : (
-              "CONTINUE TO PAYMENT"
-            )}{" "}
-            <ChevronRight size={18} />
-          </button>
-
-          <div className="checkout__powered-by-wrapper">
-            <div className="checkout__powered-by">
-              <span>Powered by</span>
-              <img
-                src="/evoc-logo.png"
-                alt="EvocLabs"
-                className="checkout__evoc-logo"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  };
-
-  const renderDeliveryCapsule = () => {
-    if (!selectedAddress) return null;
-    const tagLabel = selectedAddress.type || "HOME";
-
-    return (
-      <div className="checkout__delivery-capsule">
-        <div className="checkout__delivery-capsule-header">
-          <span className="checkout__delivery-capsule-title">
-            Delivery details
-          </span>
-          <button
-            type="button"
-            className="checkout__delivery-capsule-change"
-            onClick={() => setIsEditingDetails(true)}
-          >
-            Change
-          </button>
-        </div>
-        <div className="checkout__delivery-capsule-content">
-          <div className="checkout__delivery-capsule-name-row">
-            <span className="checkout__delivery-capsule-name">
-              {customerFirstName} {customerLastName}
-            </span>
-            <span className="checkout__delivery-capsule-tag">
-              {tagLabel.charAt(0).toUpperCase() +
-                tagLabel.slice(1).toLowerCase()}
-            </span>
-          </div>
-          <p className="checkout__delivery-capsule-address">
-            {selectedAddress.flatHouse}, {selectedAddress.areaStreet},{" "}
-            {selectedAddress.city}, {selectedAddress.state}
-          </p>
-          <p className="checkout__delivery-capsule-pincode">
-            {selectedAddress.pincode}
-          </p>
-          <div className="checkout__delivery-capsule-phone">
-            <Phone
-              size={14}
-              className="checkout__delivery-capsule-phone-icon"
-            />
-            <span>{phone}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const onEmailChange = useCallback((v: string) => {
+    setCustomerEmail(v);
+    setFieldErrors((prev) => ({ ...prev, email: "" }));
+  }, []);
 
   if (cartItems.length === 0 && step !== "success") {
     return (
@@ -1271,42 +947,31 @@ export default function CheckoutPage() {
     );
   }
 
-  const isStepActive = (s: Step) => {
-    const order: Step[] = [
-      "identify",
-      "verify",
-      "details",
-      "payment",
-      "success",
-    ];
-    return order.indexOf(step) >= order.indexOf(s);
-  };
-
   return (
     <div className="checkout">
       <h1 className="checkout__title">CHECKOUT</h1>
 
       <div className="checkout__steps">
         <div
-          className={`checkout__step ${isStepActive("identify") ? "active" : ""}`}
+          className={`checkout__step ${isStepActive(step, "identify") ? "active" : ""}`}
         >
           <span className="checkout__step-num">1</span>
           <span className="checkout__step-label">Login</span>
         </div>
         <div
-          className={`checkout__step-line ${isStepActive("details") ? "active" : isStepActive("identify") ? "half-active" : ""}`}
+          className={`checkout__step-line ${isStepActive(step, "details") ? "active" : isStepActive(step, "identify") ? "half-active" : ""}`}
         />
         <div
-          className={`checkout__step ${isStepActive("details") ? "active" : ""}`}
+          className={`checkout__step ${isStepActive(step, "details") ? "active" : ""}`}
         >
           <span className="checkout__step-num">2</span>
           <span className="checkout__step-label">Details</span>
         </div>
         <div
-          className={`checkout__step-line ${isStepActive("payment") ? "active" : isStepActive("details") ? "half-active" : ""}`}
+          className={`checkout__step-line ${isStepActive(step, "payment") ? "active" : isStepActive(step, "details") ? "half-active" : ""}`}
         />
         <div
-          className={`checkout__step ${isStepActive("payment") ? "active" : ""}`}
+          className={`checkout__step ${isStepActive(step, "payment") ? "active" : ""}`}
         >
           <span className="checkout__step-num">3</span>
           <span className="checkout__step-label">Payment</span>
@@ -1316,681 +981,132 @@ export default function CheckoutPage() {
       <div className="checkout__layout">
         <div className="checkout__form">
           {step === "success" && orderSummary && (
-            <section className="checkout__section">
-              <CheckCircle2 size={64} className="checkout__success-icon" />
-              <h2 className="checkout__success-heading">Order Confirmed!</h2>
-              <p className="checkout__success-order">
-                Order #{orderId?.split("-")[0]}
-              </p>
-              <p className="checkout__success-message">
-                Your shipment is being packed and will ship to you soon.
-              </p>
-              <div className="checkout__success-delivery">
-                <Truck size={18} />
-                <span>
-                  {orderSummary.paymentMethod === "COD"
-                    ? "Cash on Delivery"
-                    : "Online Payment"}
-                </span>
-              </div>
-              <Link
-                href="/catalogue"
-                className="checkout__continue-btn checkout__continue-btn--success"
-              >
-                CONTINUE SHOPPING
-              </Link>
-            </section>
+            <SuccessStep
+              orderId={orderId}
+              paymentMethod={orderSummary.paymentMethod}
+            />
           )}
 
-          {step === "identify" && (
-            <section className="checkout__section checkout__section--sticky">
-              <div className="checkout__illustration-container">
-                <img
-                  src="/otp-illustration.png"
-                  alt="Verify Phone"
-                  className="checkout__illustration"
-                />
-              </div>
-              <h3 className="checkout__verification-title">
-                Verify Your Phone Number
-              </h3>
-              <p className="checkout__verification-desc">
-                Secure checkout requires phone verification.
-                <br />
-                We'll send a one-time OTP to continue.
-              </p>
-
-              <div className="checkout__verification-badges">
-                <div className="checkout__badge-item">
-                  <div className="checkout__badge-icon-wrapper">
-                    <ShieldCheck size={16} className="checkout__badge-icon" />
-                  </div>
-                  <div className="checkout__badge-text">
-                    <span>Secure</span>
-                    <span>Verification</span>
-                  </div>
-                </div>
-                <div className="checkout__badge-divider" />
-                <div className="checkout__badge-item">
-                  <div className="checkout__badge-icon-wrapper">
-                    <PhoneCall size={16} className="checkout__badge-icon" />
-                  </div>
-                  <div className="checkout__badge-text">
-                    <span>No Spam</span>
-                    <span>Calls</span>
-                  </div>
-                </div>
-                <div className="checkout__badge-divider" />
-                <div className="checkout__badge-item">
-                  <div className="checkout__badge-icon-wrapper">
-                    <Lock size={16} className="checkout__badge-icon" />
-                  </div>
-                  <div className="checkout__badge-text">
-                    <span>OTP Required for</span>
-                    <span>Delivery Updates</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="checkout__phone-input-container">
-                <div className="checkout__country-selector">
-                  <IndiaFlag />
-                  <span className="checkout__country-code">+91</span>
-                  <ChevronDown size={14} className="checkout__caret" />
-                </div>
-                <div className="checkout__phone-divider" />
-                <input
-                  type="tel"
-                  value={
-                    phone.length > 5
-                      ? `${phone.slice(0, 5)} ${phone.slice(5)}`
-                      : phone
-                  }
-                  onChange={(e) =>
-                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
-                  }
-                  placeholder="98765 43210"
-                  maxLength={11}
-                  className="checkout__phone-field"
-                />
-              </div>
-              {error && (
-                <span
-                  className="checkout__error"
-                  style={{ marginTop: "-16px", marginBottom: "16px" }}
-                >
-                  {error}
-                </span>
-              )}
-
-              <button
-                className="checkout__send-otp-btn"
-                onClick={handleSendOtp}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  "SEND OTP"
-                )}{" "}
-                <ArrowRight size={18} />
-              </button>
-              <div
-                className="checkout__powered-by-wrapper"
-                style={{ marginTop: "20px" }}
-              >
-                <div className="checkout__powered-by">
-                  <span className="checkout__powered-by-text">Powered by</span>
-                  <img
-                    src="/evoc-logo.png"
-                    alt="EvocLabs"
-                    className="checkout__evoc-logo"
-                  />
-                </div>
-              </div>
-            </section>
+          {(step === "identify" || step === "verify") && (
+            <OtpStep
+              step={step as "identify" | "verify"}
+              phone={phone}
+              otp={otp}
+              otpRefs={otpRefs}
+              resendTimer={resendTimer}
+              isLoading={isLoading}
+              error={error}
+              onPhoneChange={setPhone}
+              onOtpChange={handleOtpChange}
+              onOtpKeyDown={handleOtpKeyDown}
+              onSendOtp={handleSendOtp}
+              onVerifyOtp={handleVerifyOtp}
+            />
           )}
 
-          {step === "verify" && (
-            <section className="checkout__section checkout__section--sticky">
-              <div className="checkout__illustration-container">
-                <img
-                  src="/otp-illustration.png"
-                  alt="Verify Phone"
-                  className="checkout__illustration"
-                />
-              </div>
-              <h3 className="checkout__verification-title">
-                Verify Your Phone Number
-              </h3>
-              <p className="checkout__verification-desc">
-                We&apos;ve sent a 4-digit code to +91 {phone.slice(0, 5)}{" "}
-                {phone.slice(5)}
-              </p>
-
-              <div
-                className="checkout__otp-inputs"
-                style={{ margin: "24px 0 12px" }}
-              >
-                {[0, 1, 2, 3].map((index) => (
-                  <input
-                    key={index}
-                    ref={(el) => {
-                      if (el) otpRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={otp[index] || ""}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    onFocus={(e) => e.target.select()}
-                    className={`checkout__otp-digit ${error ? "error" : ""}`}
-                  />
-                ))}
-              </div>
-              {error && (
-                <span
-                  className="checkout__error"
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    marginBottom: "16px",
-                  }}
-                >
-                  {error}
-                </span>
-              )}
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  marginBottom: "24px",
-                }}
-              >
-                <button
-                  className="checkout__resend"
-                  onClick={handleSendOtp}
-                  disabled={resendTimer > 0 || isLoading}
-                >
-                  {resendTimer > 0
-                    ? `Resend OTP in ${resendTimer}s`
-                    : "Resend OTP"}
-                </button>
-              </div>
-
-              <button
-                className="checkout__send-otp-btn"
-                onClick={handleVerifyOtp}
-                disabled={isLoading || otp.join("").length !== 4}
-              >
-                {isLoading ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  "VERIFY & CONTINUE"
-                )}{" "}
-                <ArrowRight size={18} />
-              </button>
-              <div
-                className="checkout__powered-by-wrapper"
-                style={{ marginTop: "20px" }}
-              >
-                <div className="checkout__powered-by">
-                  <span className="checkout__powered-by-text">Powered by</span>
-                  <img
-                    src="/evoc-logo.png"
-                    alt="EvocLabs"
-                    className="checkout__evoc-logo"
-                  />
-                </div>
-              </div>
-            </section>
+          {step === "details" && (
+            <DetailsForm
+              isStepPayment={false}
+              customerFirstName={customerFirstName}
+              customerLastName={customerLastName}
+              customerEmail={customerEmail}
+              fieldErrors={fieldErrors}
+              error={error}
+              isLoading={isLoading}
+              showAddressForm={showAddressForm}
+              addressForm={addressForm}
+              savedAddresses={savedAddresses}
+              selectedAddress={selectedAddress}
+              onFirstNameChange={onFirstNameChange}
+              onLastNameChange={onLastNameChange}
+              onEmailChange={onEmailChange}
+              onShowAddressForm={setShowAddressForm}
+              onAddressFormChange={setAddressForm}
+              onSaveAddress={handleSaveAddress}
+              onSelectAddress={setSelectedAddress}
+              onContinue={handleContinueToPayment}
+            />
           )}
-
-          {step === "details" && renderDetailsForm()}
 
           {step === "payment" && (
             <>
-              {isEditingDetails ? renderDetailsForm() : renderDeliveryCapsule()}
+              {isEditingDetails ? (
+                <DetailsForm
+                  isStepPayment={true}
+                  customerFirstName={customerFirstName}
+                  customerLastName={customerLastName}
+                  customerEmail={customerEmail}
+                  fieldErrors={fieldErrors}
+                  error={error}
+                  isLoading={isLoading}
+                  showAddressForm={showAddressForm}
+                  addressForm={addressForm}
+                  savedAddresses={savedAddresses}
+                  selectedAddress={selectedAddress}
+                  onFirstNameChange={onFirstNameChange}
+                  onLastNameChange={onLastNameChange}
+                  onEmailChange={onEmailChange}
+                  onShowAddressForm={setShowAddressForm}
+                  onAddressFormChange={setAddressForm}
+                  onSaveAddress={handleSaveAddress}
+                  onSelectAddress={setSelectedAddress}
+                  onContinue={handleContinueToPayment}
+                />
+              ) : (
+                <AddressSection
+                  selectedAddress={selectedAddress}
+                  customerFirstName={customerFirstName}
+                  customerLastName={customerLastName}
+                  phone={phone}
+                  onChangeClick={() => setIsEditingDetails(true)}
+                />
+              )}
 
-              <section
-                className="checkout__section"
-                style={{ marginTop: isEditingDetails ? "24px" : "0" }}
-              >
-                <div className="checkout__step-header">
-                  <h2>PAYMENT METHOD</h2>
-                </div>
-                <p className="checkout__step-desc">
-                  Select your preferred way to pay
-                </p>
-
-                {paymentMethod === null && (
-                  <div className="checkout__payment-options">
-                    <div
-                      className="checkout__payment-card"
-                      onClick={() => setPaymentMethod("COD")}
-                    >
-                      <div className="checkout__payment-header">
-                        <div className="checkout__payment-info-left">
-                          <div className="checkout__payment-icon">
-                            <Banknote size={24} />
-                          </div>
-                          <div>
-                            <p className="checkout__payment-title">
-                              Cash on Delivery
-                            </p>
-                            <p className="checkout__payment-note">
-                              + Rs. {codFee} fee
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          className="checkout__payment-select-btn"
-                          type="button"
-                        >
-                          Select <ChevronRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div
-                      className="checkout__payment-card"
-                      onClick={() => setPaymentMethod("PAYU")}
-                    >
-                      <div className="checkout__payment-header">
-                        <div className="checkout__payment-info-left">
-                          <div className="checkout__payment-icon">
-                            <CreditCard size={24} />
-                          </div>
-                          <div>
-                            <p className="checkout__payment-title">
-                              Online Payment
-                            </p>
-                            <p className="checkout__payment-note">
-                              Cards, UPI, Net Banking
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          className="checkout__payment-select-btn"
-                          type="button"
-                        >
-                          Select <ChevronRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === "COD" && (
-                  <div className="checkout__payment-inline-wrapper">
-                    <div className="checkout__payment-confirm">
-                      <div className="checkout__cod-info">
-                        <p>Pay with cash when your order arrives.</p>
-                      </div>
-                      {error && (
-                        <span className="checkout__error">{error}</span>
-                      )}
-                      {error &&
-                      (error.includes("Unable to verify") ||
-                        error.includes("stock")) ? (
-                        <div className="checkout__payment-actions">
-                          <Link
-                            href="/catalogue"
-                            className="checkout__btn-secondary"
-                          >
-                            Go Back to Shop
-                          </Link>
-                          <button
-                            className="checkout__btn-secondary"
-                            onClick={() => {
-                              setPaymentMethod(null);
-                              setError(null);
-                            }}
-                          >
-                            Choose Different Payment
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="checkout__payment-actions">
-                          <button
-                            className="checkout__btn-secondary"
-                            onClick={() => setPaymentMethod(null)}
-                          >
-                            Choose Different Payment
-                          </button>
-                          <button
-                            className="checkout__place-order-btn"
-                            onClick={handleCreateCodOrder}
-                            disabled={isLoading}
-                          >
-                            {isLoading ? (
-                              <Loader2 className="animate-spin" size={18} />
-                            ) : (
-                              `CONFIRM ORDER - ₹${(displaySubtotal + codFee - displayDiscountTotal).toLocaleString()}`
-                            )}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div
-                      className="checkout__powered-by-wrapper"
-                      style={{ marginTop: "24px" }}
-                    >
-                      <div className="checkout__powered-by">
-                        <span>Powered by</span>
-                        <img
-                          src="/evoc-logo.png"
-                          alt="EvocLabs"
-                          className="checkout__evoc-logo"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === "PAYU" && !payUData && (
-                  <div className="checkout__payment-inline-wrapper">
-                    <div className="checkout__payment-confirm">
-                      <div className="checkout__online-info">
-                        <p>Pay securely via PayU.</p>
-                        <p className="checkout__secure-badge">
-                          🔒 256-bit SSL Encrypted
-                        </p>
-                      </div>
-                      {error && (
-                        <span className="checkout__error">{error}</span>
-                      )}
-                      <div className="checkout__payment-actions">
-                        <button
-                          className="checkout__btn-secondary"
-                          onClick={() => setPaymentMethod(null)}
-                        >
-                          Choose Different Payment
-                        </button>
-                        <button
-                          className="checkout__place-order-btn checkout__place-order-btn--online"
-                          onClick={handleInitiatePayU}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="animate-spin" size={18} />
-                          ) : (
-                            `PAY NOW - ₹${(displaySubtotal - displayDiscountTotal).toLocaleString()}`
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      className="checkout__powered-by-wrapper"
-                      style={{ marginTop: "24px" }}
-                    >
-                      <div className="checkout__powered-by">
-                        <span>Powered by</span>
-                        <img
-                          src="/evoc-logo.png"
-                          alt="EvocLabs"
-                          className="checkout__evoc-logo"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </section>
+              <PaymentStep
+                paymentMethod={paymentMethod}
+                payUData={payUData}
+                codFee={codFee}
+                displaySubtotal={displaySubtotal}
+                displayDiscountTotal={displayDiscountTotal}
+                isLoading={isLoading}
+                error={error}
+                onSelectPayment={setPaymentMethod}
+                onCreateCodOrder={handleCreateCodOrder}
+                onInitiatePayU={handleInitiatePayU}
+                onClearPaymentMethod={() => setPaymentMethod(null)}
+                onClearError={() => setError(null)}
+              />
             </>
           )}
         </div>
 
-        <div className={`checkout__summary ${isSummaryOpen ? "open" : ""}`}>
-          <div
-            className="checkout__summary-header"
-            onClick={() => setIsSummaryOpen(!isSummaryOpen)}
-          >
-            <h2 className="checkout__summary-title">ORDER SUMMARY</h2>
-            <div className="checkout__summary-toggle">
-              <span className="checkout__summary-toggle-price">
-                ₹
-                {(
-                  (orderSummary?.subtotal ?? subtotal) +
-                  (orderSummary?.paymentMethod === "COD" ||
-                  paymentMethod === "COD"
-                    ? codFee
-                    : 0) +
-                  effectiveShippingFee -
-                  (orderSummary?.discountAmount ?? displayDiscountTotal)
-                ).toLocaleString("en-IN")}
-              </span>
-              <ChevronDown
-                size={20}
-                className="checkout__summary-toggle-icon"
-              />
-            </div>
-          </div>
-
-          <div className="checkout__summary-content-wrapper">
-            <div className="checkout__summary-content">
-              <div className="checkout__summary-items">
-                {(orderSummary?.items || cartItems).map((item) => (
-                  <div
-                    key={`${item.id}-${JSON.stringify(item.variants || {})}`}
-                    className="checkout__summary-item"
-                  >
-                    <img
-                      src={item.images?.[0] || "https://via.placeholder.com/60"}
-                      alt={item.name}
-                    />
-                    <div className="checkout__summary-item-info">
-                      <span className="checkout__summary-item-name">
-                        {item.name}
-                      </span>
-                      {item.type === "BUNDLE" && item.items && (
-                        <div
-                          style={{
-                            fontSize: "0.72rem",
-                            color: "#64748b",
-                            marginTop: "2px",
-                            lineHeight: "1.3",
-                          }}
-                        >
-                          {item.items.map((i: any) => (
-                            <div
-                              key={i.id}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                              }}
-                            >
-                              <span style={{ color: "#94a3b8" }}>•</span>
-                              <span
-                                style={{
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: 1,
-                                  WebkitBoxOrient: "vertical",
-                                }}
-                              >
-                                {i.name}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <span className="checkout__summary-item-qty">
-                        Qty: {item.quantity}
-                      </span>
-
-                      {item.variants &&
-                        Object.keys(item.variants).length > 0 && (
-                          <span className="checkout__summary-item-qty">
-                            {Object.entries(item.variants)
-                              .map(([key, value]) => `${key}: ${value}`)
-                              .join(", ")}
-                          </span>
-                        )}
-                    </div>
-                    <span className="checkout__summary-item-price">
-                      ₹{(item.price * item.quantity).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Coupon / Discount Input */}
-              {step !== "success" && (
-                <div className="checkout__coupon-section">
-                  <div className="checkout__coupon-input-wrapper">
-                    <input
-                      type="text"
-                      placeholder="Discount Code"
-                      value={couponInput}
-                      onChange={(e) => {
-                        setCouponInput(e.target.value.toUpperCase());
-                        setCouponError(null);
-                      }}
-                      disabled={isApplyingCoupon || appliedCoupon !== null}
-                      className={`checkout__coupon-input ${couponError ? "error" : ""}`}
-                    />
-                    {appliedCoupon ? (
-                      <button
-                        type="button"
-                        onClick={handleRemoveCoupon}
-                        className="checkout__coupon-btn checkout__coupon-btn--remove"
-                      >
-                        Remove
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleApplyCoupon}
-                        disabled={isApplyingCoupon || !couponInput.trim()}
-                        className="checkout__coupon-btn"
-                      >
-                        {isApplyingCoupon ? (
-                          <Loader2 className="animate-spin" size={16} />
-                        ) : (
-                          "Apply"
-                        )}
-                      </button>
-                    )}
-                  </div>
-                  {couponError && (
-                    <p className="checkout__coupon-error">{couponError}</p>
-                  )}
-                  {appliedCoupon && (
-                    <p className="checkout__coupon-success">
-                      🎉 Code <strong>{appliedCoupon.code}</strong> applied! You
-                      saved ₹{discountAmount.toLocaleString("en-IN")}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="checkout__summary-rows">
-                <div className="checkout__summary-row">
-                  <span>Subtotal</span>
-                  <span>
-                    ₹
-                    {(orderSummary?.subtotal ?? displaySubtotal).toLocaleString(
-                      "en-IN",
-                    )}
-                  </span>
-                </div>
-                {(orderSummary?.discountAmount ?? displayDiscountTotal) > 0 && (
-                  <div className="checkout__summary-row checkout__summary-row--green">
-                    <span>
-                      Discount{" "}
-                      {(orderSummary?.couponCode ?? appliedCoupon?.code) &&
-                        `(${orderSummary?.couponCode ?? appliedCoupon?.code})`}
-                    </span>
-                    <span>
-                      -₹
-                      {(
-                        orderSummary?.discountAmount ?? displayDiscountTotal
-                      ).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                )}
-                {(orderSummary?.paymentMethod === "COD" ||
-                  paymentMethod === "COD") && (
-                  <div className="checkout__summary-row">
-                    <span>COD Fee</span>
-                    <span>₹{codFee}</span>
-                  </div>
-                )}
-                {effectiveShippingFee > 0 ? (
-                  <div className="checkout__summary-row">
-                    <span>
-                      {shippingConfig.shippingLabel || "Shipment Fee"}
-                    </span>
-                    <span>₹{effectiveShippingFee}</span>
-                  </div>
-                ) : (
-                  <div className="checkout__summary-row checkout__summary-row--green">
-                    <span>Shipping</span>
-                    <span>FREE</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Free Shipping Banner */}
-              {effectiveShippingFee === 0 && (
-                <div className="checkout__free-shipping-banner">
-                  <Truck size={16} className="checkout__free-shipping-icon" />
-                  <span>Yay! You get FREE shipping 🥳</span>
-                </div>
-              )}
-
-              <div className="checkout__summary-divider" />
-              <div className="checkout__summary-row checkout__summary-row--total">
-                <span>Total</span>
-                <span className="checkout__summary-total-price">
-                  ₹
-                  {Math.max(
-                    0,
-                    (orderSummary?.subtotal ?? displaySubtotal) +
-                      (orderSummary?.paymentMethod === "COD" ||
-                      paymentMethod === "COD"
-                        ? codFee
-                        : 0) +
-                      effectiveShippingFee -
-                      (orderSummary?.discountAmount ?? displayDiscountTotal),
-                  ).toLocaleString("en-IN")}
-                </span>
-              </div>
-
-              <div className="checkout__summary-badges">
-                <div className="checkout__summary-badge">
-                  <Lock size={14} />
-                  <span>Secure Payment</span>
-                </div>
-                <div className="checkout__summary-badge-divider" />
-                <div className="checkout__summary-badge">
-                  <ShieldCheck size={14} />
-                  <span>100% Authentic</span>
-                </div>
-                <div className="checkout__summary-badge-divider" />
-                <div className="checkout__summary-badge">
-                  <RefreshCw size={14} />
-                  <span>Easy Returns</span>
-                </div>
-              </div>
-
-              <div className="checkout__powered-by-wrapper">
-                <div className="checkout__powered-by">
-                  <span>Powered by</span>
-                  <img
-                    src="/evoc-logo.png"
-                    alt="EvocLabs"
-                    className="checkout__evoc-logo"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <OrderSummary
+          step={step}
+          isSummaryOpen={isSummaryOpen}
+          onToggleSummary={() => setIsSummaryOpen(!isSummaryOpen)}
+          items={orderSummary?.items || cartItems}
+          orderSummarySubtotal={orderSummary?.subtotal ?? null}
+          orderSummaryDiscount={orderSummary?.discountAmount ?? null}
+          orderSummaryCouponCode={orderSummary?.couponCode}
+          orderSummaryPaymentMethod={orderSummary?.paymentMethod}
+          displaySubtotal={displaySubtotal}
+          displayDiscountTotal={displayDiscountTotal}
+          codFee={codFee}
+          paymentMethod={paymentMethod}
+          effectiveShippingFee={effectiveShippingFee}
+          shippingLabel={shippingConfig.shippingLabel}
+          appliedCoupon={appliedCoupon}
+          discountAmount={discountAmount}
+          couponInput={couponInput}
+          couponError={couponError}
+          isApplyingCoupon={isApplyingCoupon}
+          onCouponInputChange={(v) => {
+            setCouponInput(v);
+            setCouponError(null);
+          }}
+          onApplyCoupon={handleApplyCoupon}
+          onRemoveCoupon={handleRemoveCoupon}
+        />
       </div>
     </div>
   );
