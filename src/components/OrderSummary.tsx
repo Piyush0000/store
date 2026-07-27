@@ -94,8 +94,12 @@ const OrderSummary = React.memo(function OrderSummary({
                 className="checkout__summary-item"
               >
                 <img
-                  src={item.images?.[0] || "https://via.placeholder.com/60"}
+                  src={item.images?.[0] || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="%23f1f5f9"><rect width="60" height="60"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="10">Item</text></svg>'}
                   alt={item.name}
+                  loading="lazy"
+                  decoding="async"
+                  width={60}
+                  height={60}
                 />
                 <div className="checkout__summary-item-info">
                   <span className="checkout__summary-item-name">

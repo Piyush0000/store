@@ -2,32 +2,30 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { useAnalytics } from "@/components/AnalyticsProvider";
-import {
-  sendOtp,
-  verifyOtp,
-  createSession,
-  validateSession,
-} from "@/actions/otp-actions";
+import { sendOtp, verifyOtp, createSession } from "@/actions/otp-actions";
 import { getUserByPhone, createOrUpdateUser } from "@/actions/user-actions";
 import {
   createAddress,
   createOrder,
   createCodOrder,
-  getStorefrontCodFee,
-  getStorefrontShippingFee,
 } from "@/actions/order-actions";
 import { initiatePayUPayment } from "@/actions/payment-actions";
 import { validateCouponAction } from "@/actions/coupon-actions";
+import { getInitialCheckoutState } from "@/actions/checkout-actions";
 import OtpStep from "@/components/OtpStep";
 import DetailsForm from "@/components/DetailsForm";
 import AddressSection from "@/components/AddressSection";
 import PaymentStep from "@/components/PaymentStep";
 import OrderSummary from "@/components/OrderSummary";
-import SuccessStep from "@/components/SuccessStep";
 import "./checkout.css";
+
+const SuccessStep = dynamic(() => import("@/components/SuccessStep"), {
+  ssr: false,
+});
 
 type Step = "identify" | "verify" | "details" | "payment" | "success";
 
@@ -167,15 +165,6 @@ export default function CheckoutPage() {
     setCouponError(null);
   }, []);
 
-  useEffect(() => {
-    Promise.all([getStorefrontCodFee(), getStorefrontShippingFee()]).then(
-      ([fee, cfg]) => {
-        setCodFee(fee);
-        setShippingConfig(cfg);
-      },
-    );
-  }, []);
-
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
     if (!payUData || !pendingOrderId) return;
@@ -213,7 +202,7 @@ export default function CheckoutPage() {
     launchAttemptedRef.current = false;
   }, [payUData, pendingOrderId]);
 
-  // Initialize device ID and validate session on mount
+  // Initialize device ID, fetch initial checkout data, and set step in single pass
   const sessionChecked = useRef(false);
 
   useEffect(() => {
@@ -231,46 +220,36 @@ export default function CheckoutPage() {
     }
     setDeviceId(storedDeviceId);
 
-    // Validate existing session
-    const checkSession = async () => {
-      const sessionResult = await validateSession();
-      if (sessionResult.valid && sessionResult.phone) {
-        setPhone(sessionResult.phone);
-        const userResult = await getUserByPhone(sessionResult.phone);
-        let isRecurring = false;
-        if (userResult.success && userResult.data) {
-          setUser(userResult.data);
-          setUserId(userResult.data.id);
-          const addresses = userResult.data.addresses || [];
-          setSavedAddresses(addresses);
-          if (userResult.data.firstName)
-            setCustomerFirstName(userResult.data.firstName);
-          if (userResult.data.lastName)
-            setCustomerLastName(userResult.data.lastName);
-          if (userResult.data.email) setCustomerEmail(userResult.data.email);
-          if (addresses.length > 0) {
+    // Single unified server action call for all initial state
+    getInitialCheckoutState().then((initialData) => {
+      setCodFee(initialData.codFee);
+      setShippingConfig(initialData.shippingConfig);
+
+      if (initialData.sessionValid && initialData.phone) {
+        setPhone(initialData.phone);
+        if (initialData.user) {
+          setUser(initialData.user);
+          setUserId(initialData.user.id);
+          setSavedAddresses(initialData.savedAddresses);
+          if (initialData.customerFirstName)
+            setCustomerFirstName(initialData.customerFirstName);
+          if (initialData.customerLastName)
+            setCustomerLastName(initialData.customerLastName);
+          if (initialData.customerEmail)
+            setCustomerEmail(initialData.customerEmail);
+
+          if (initialData.savedAddresses.length > 0) {
             const defaultAddr =
-              addresses.find((a: any) => a.isDefault) || addresses[0];
+              initialData.savedAddresses.find((a: any) => a.isDefault) ||
+              initialData.savedAddresses[0];
             setSelectedAddress(defaultAddr);
-            if (
-              userResult.data.firstName &&
-              userResult.data.lastName &&
-              userResult.data.email
-            ) {
-              isRecurring = true;
-            }
           }
         }
-        if (isRecurring) {
-          setStep("payment");
-        } else {
-          setStep("details");
-        }
+        setStep(initialData.initialStep);
       } else {
         setStep("identify");
       }
-    };
-    checkSession();
+    });
 
     // Track InitiateCheckout event
     try {
@@ -949,6 +928,13 @@ export default function CheckoutPage() {
 
   return (
     <div className="checkout">
+      <link
+        rel="preload"
+        href="/otp-illustration.webp"
+        as="image"
+        type="image/webp"
+        fetchPriority="high"
+      />
       <h1 className="checkout__title">CHECKOUT</h1>
 
       <div className="checkout__steps">

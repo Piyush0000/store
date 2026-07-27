@@ -8,6 +8,7 @@ import {
   ArrowRight,
   ChevronDown,
 } from "lucide-react";
+import Image from "next/image";
 import React from "react";
 
 const IndiaFlag = () => (
@@ -61,10 +62,15 @@ const OtpStep = React.memo(function OtpStep({
     return (
       <section className="checkout__section checkout__section--sticky">
         <div className="checkout__illustration-container">
-          <img
-            src="/otp-illustration.png"
+          <Image
+            src="/otp-illustration.webp"
             alt="Verify Phone"
             className="checkout__illustration"
+            width={192}
+            height={192}
+            loading="eager"
+            fetchPriority="high"
+            unoptimized
           />
         </div>
         <h3 className="checkout__verification-title">
@@ -161,6 +167,8 @@ const OtpStep = React.memo(function OtpStep({
               src="/evoc-logo.png"
               alt="EvocLabs"
               className="checkout__evoc-logo"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         </div>
@@ -172,10 +180,15 @@ const OtpStep = React.memo(function OtpStep({
   return (
     <section className="checkout__section checkout__section--sticky">
       <div className="checkout__illustration-container">
-        <img
-          src="/otp-illustration.png"
+        <Image
+          src="/otp-illustration.webp"
           alt="Verify Phone"
           className="checkout__illustration"
+          width={192}
+          height={192}
+          loading="eager"
+          fetchPriority="high"
+          unoptimized
         />
       </div>
       <h3 className="checkout__verification-title">Verify Your Phone Number</h3>
@@ -253,11 +266,13 @@ const OtpStep = React.memo(function OtpStep({
             src="/evoc-logo.png"
             alt="EvocLabs"
             className="checkout__evoc-logo"
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
     </section>
   );
-})
+});
 
 export default OtpStep;
