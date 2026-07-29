@@ -65,6 +65,9 @@ export default function CheckoutPage() {
   const [resendTimer, setResendTimer] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isSessionVerified, setIsSessionVerified] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'COD' | 'PAYU' | null>(null);
 
   const [customerFirstName, setCustomerFirstName] = useState('');
   const [customerLastName, setCustomerLastName] = useState('');
@@ -210,6 +213,7 @@ export default function CheckoutPage() {
       const sessionResult = await validateSession();
       if (sessionResult.valid && sessionResult.phone) {
         setPhone(sessionResult.phone);
+        setIsSessionVerified(true);
         const userResult = await getUserByPhone(sessionResult.phone);
         let isRecurring = false;
         if (userResult.success && userResult.data) {
@@ -306,22 +310,63 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleSendOtp = async () => {
+  const handleIdentifySubmit = async () => {
     if (!phone || phone.length < 10) {
       setError('Please enter a valid phone number');
       return;
     }
     setIsLoading(true);
     setError(null);
-    setOtp(['', '', '', '']); // Reset OTP inputs
+    try {
+      const userResult = await getUserByPhone(phone);
+      let hasAddress = false;
+      if (userResult.success && userResult.data) {
+        setUser(userResult.data);
+        setUserId(userResult.data.id);
+        const addresses = userResult.data.addresses || [];
+        setSavedAddresses(addresses);
+        if (userResult.data.firstName) setCustomerFirstName(userResult.data.firstName);
+        if (userResult.data.lastName) setCustomerLastName(userResult.data.lastName);
+        if (userResult.data.email) setCustomerEmail(userResult.data.email);
+        if (addresses.length > 0) {
+          const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
+          setSelectedAddress(defaultAddr);
+          hasAddress = true;
+        }
+      }
+      if (hasAddress && customerFirstName && customerLastName && customerEmail) {
+        setStep('payment');
+      } else {
+        setStep('details');
+      }
+    } catch (err: any) {
+      setStep('details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFinalOrderClick = async (actionType: 'COD' | 'PAYU') => {
+    if (isSessionVerified) {
+      if (actionType === 'COD') {
+        await handleCreateCodOrder();
+      } else {
+        await handleInitiatePayU();
+      }
+      return;
+    }
+
+    setPendingAction(actionType);
+    setIsLoading(true);
+    setError(null);
+    setOtp(['', '', '', '']);
     try {
       const result = await sendOtp({ phone });
       if (result.success) {
         setSessionId((result as any).sessionId || null);
         setResendTimer(120);
-        setStep('verify');
-        // Focus first OTP input after step change
-        setTimeout(() => otpRefs.current[0]?.focus(), 100);
+        setIsOtpModalOpen(true);
+        setTimeout(() => otpRefs.current[0]?.focus(), 150);
       } else {
         throw new Error(result.message);
       }
@@ -332,7 +377,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleFinalOtpVerify = async () => {
     const otpCode = otp.join('');
     if (!otpCode || otpCode.length !== 4) {
       setError('Please enter the 4-digit code');
@@ -344,39 +389,16 @@ export default function CheckoutPage() {
       const result = await verifyOtp({ phone, code: otpCode, sessionId: sessionId || undefined });
       if (result.success) {
         await createSession(phone, deviceId);
+        setIsSessionVerified(true);
+        setIsOtpModalOpen(false);
 
-        // Get or create user
-        const userResult = await getUserByPhone(phone);
-        let isRecurring = false;
-        if (userResult.success && userResult.data) {
-          setUser(userResult.data);
-          setUserId(userResult.data.id);
-          const addresses = userResult.data.addresses || [];
-          setSavedAddresses(addresses);
-          if (userResult.data.firstName) setCustomerFirstName(userResult.data.firstName);
-          if (userResult.data.lastName) setCustomerLastName(userResult.data.lastName);
-          if (userResult.data.email) setCustomerEmail(userResult.data.email);
-          if (addresses.length > 0) {
-            const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
-            setSelectedAddress(defaultAddr);
-            if (userResult.data.firstName && userResult.data.lastName && userResult.data.email) {
-              isRecurring = true;
-            }
-          }
-        } else {
-          const newUserResult = await createOrUpdateUser({ phone });
-          if (newUserResult.success && newUserResult.data) {
-            setUser(newUserResult.data);
-            setUserId(newUserResult.data.id);
-          }
-        }
-        if (isRecurring) {
-          setStep('payment');
-        } else {
-          setStep('details');
+        if (pendingAction === 'COD') {
+          await handleCreateCodOrder();
+        } else if (pendingAction === 'PAYU') {
+          await handleInitiatePayU();
         }
       } else {
-        throw new Error(result.message);
+        throw new Error(result.message || 'Invalid OTP code');
       }
     } catch (err: any) {
       setError(err.message);
@@ -385,66 +407,25 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleSaveAddress = async () => {
-    if (!addressForm.flatHouse || !addressForm.areaStreet || !addressForm.city || !addressForm.state || !addressForm.pincode) {
-      setError('Please fill all address fields');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      // De-duplicate: check if similar address already exists
-      const isDuplicate = savedAddresses.some(addr =>
-        addr.flatHouse?.toLowerCase().trim() === addressForm.flatHouse.toLowerCase().trim() &&
-        addr.areaStreet?.toLowerCase().trim() === addressForm.areaStreet.toLowerCase().trim() &&
-        addr.city?.toLowerCase().trim() === addressForm.city.toLowerCase().trim() &&
-        addr.state?.toLowerCase().trim() === addressForm.state.toLowerCase().trim() &&
-        addr.pincode?.trim() === addressForm.pincode.trim()
-      );
+  const handlePincodeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const pin = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setAddressForm(prev => ({ ...prev, pincode: pin }));
 
-      if (isDuplicate) {
-        const existingAddr = savedAddresses.find(addr =>
-          addr.flatHouse?.toLowerCase().trim() === addressForm.flatHouse.toLowerCase().trim() &&
-          addr.areaStreet?.toLowerCase().trim() === addressForm.areaStreet.toLowerCase().trim() &&
-          addr.city?.toLowerCase().trim() === addressForm.city.toLowerCase().trim() &&
-          addr.state?.toLowerCase().trim() === addressForm.state.toLowerCase().trim() &&
-          addr.pincode?.trim() === addressForm.pincode.trim()
-        );
-        setSelectedAddress(existingAddr);
-        setShowAddressForm(false);
-        setError(null);
-        setIsLoading(false);
-        return;
-      }
-
-      // Ensure user exists first
-      let uid = userId;
-      if (!uid) {
-        const userResult = await createOrUpdateUser({ phone });
-        if (userResult.success && userResult.data) {
-          uid = userResult.data.id;
-          setUserId(uid);
-          setUser(userResult.data);
+    if (pin.length === 6) {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === 'Success') {
+          const postOffice = data[0].PostOffice[0];
+          setAddressForm(prev => ({
+            ...prev,
+            city: postOffice.District || postOffice.Region || '',
+            state: postOffice.State || ''
+          }));
         }
+      } catch (err) {
+        console.error('Failed to fetch pincode details', err);
       }
-
-      if (!uid) {
-        throw new Error('Failed to create user');
-      }
-
-      const result = await createAddress(uid, addressForm);
-      if (result.success && result.data) {
-        setSelectedAddress(result.data);
-        setSavedAddresses(prev => [result.data, ...prev]);
-        setShowAddressForm(false);
-        setAddressForm({ type: 'HOME', flatHouse: '', areaStreet: '', city: '', state: '', pincode: '', isDefault: true });
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -453,32 +434,37 @@ export default function CheckoutPage() {
     setFieldErrors({});
 
     if (!customerFirstName.trim()) {
-      setFieldErrors((prev) => ({ ...prev, firstName: 'First name is required' }));
+      setError('Full name is required');
       return;
     }
-    if (!customerLastName.trim()) {
-      setFieldErrors((prev) => ({ ...prev, lastName: 'Last name is required' }));
-      return;
-    }
-    if (!customerEmail.trim() || !customerEmail.includes('@')) {
-      setFieldErrors((prev) => ({ ...prev, email: 'Valid email is required' }));
-      return;
-    }
-    if (!selectedAddress) {
-      setError('Please select or add a delivery address');
+    if (!addressForm.flatHouse || !addressForm.areaStreet || !addressForm.city || !addressForm.state || !addressForm.pincode) {
+      setError('Please fill all delivery address fields');
       return;
     }
 
     setIsLoading(true);
     try {
+      const parts = customerFirstName.trim().split(' ');
+      const fName = parts[0];
+      const lName = parts.slice(1).join(' ') || '';
+
+      // De-duplicate: check if similar address already exists
+      let existingAddr = savedAddresses.find(addr =>
+        addr.flatHouse?.toLowerCase().trim() === addressForm.flatHouse.toLowerCase().trim() &&
+        addr.areaStreet?.toLowerCase().trim() === addressForm.areaStreet.toLowerCase().trim() &&
+        addr.city?.toLowerCase().trim() === addressForm.city.toLowerCase().trim() &&
+        addr.state?.toLowerCase().trim() === addressForm.state.toLowerCase().trim() &&
+        addr.pincode?.trim() === addressForm.pincode.trim()
+      );
+
       // Ensure user exists with details
       let uid = userId;
       if (!uid) {
         const userResult = await createOrUpdateUser({
           phone,
-          email: customerEmail,
-          firstName: customerFirstName,
-          lastName: customerLastName,
+          email: customerEmail || `${phone}@evoc.local`,
+          firstName: fName,
+          lastName: lName,
         });
         if (userResult.success && userResult.data) {
           uid = userResult.data.id;
@@ -486,12 +472,11 @@ export default function CheckoutPage() {
           setUser(userResult.data);
         }
       } else {
-        // Update existing user
         const result = await createOrUpdateUser({
           phone,
-          email: customerEmail,
-          firstName: customerFirstName,
-          lastName: customerLastName,
+          email: customerEmail || `${phone}@evoc.local`,
+          firstName: fName,
+          lastName: lName,
         });
         if (result.success && result.data) {
           setUser(result.data);
@@ -502,12 +487,20 @@ export default function CheckoutPage() {
         throw new Error('Failed to create user');
       }
 
-      if (step === 'payment') {
-        setIsEditingDetails(false);
+      if (existingAddr) {
+        setSelectedAddress(existingAddr);
       } else {
-        setPaymentMethod(null); // Reset payment method when entering payment step
-        setStep('payment');
+        const result = await createAddress(uid, addressForm);
+        if (result.success && result.data) {
+          setSelectedAddress(result.data);
+          setSavedAddresses(prev => [result.data, ...prev]);
+        } else {
+          throw new Error(result.message);
+        }
       }
+      
+      setStep('payment');
+      setIsEditingDetails(false);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -789,142 +782,90 @@ export default function CheckoutPage() {
   const renderDetailsForm = () => {
     const isStepPayment = step === 'payment';
     return (
-      <section className="checkout__section">
-        <div className="checkout__step-header">
-          <CheckCircle2 size={24} />
-          <h2>YOUR DETAILS</h2>
-          <span className="checkout__verified-badge">✓ Verified</span>
-        </div>
-        <p className="checkout__step-desc">We&apos;ll use this to contact you about your order</p>
-
-        <div className="checkout__row">
-          <div className="checkout__field">
-            <label>First Name *</label>
+      <section className="checkout__section checkout__section--new-address">
+        <div className="checkout__new-address-form">
+          <div className="checkout__new-field">
             <input
               type="text"
+              className="checkout__new-input"
               value={customerFirstName}
-              onChange={(e) => {
-                setCustomerFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, ''));
-                setFieldErrors((prev) => ({ ...prev, firstName: '' }));
-              }}
-              className={fieldErrors.firstName ? 'error' : ''}
+              onChange={(e) => setCustomerFirstName(e.target.value)}
+              placeholder=" "
             />
-            {fieldErrors.firstName && <span className="checkout__error">{fieldErrors.firstName}</span>}
+            <label className="checkout__new-label">Full Name*</label>
           </div>
-          <div className="checkout__field">
-            <label>Last Name *</label>
+
+          <div className="checkout__new-field">
             <input
               type="text"
-              value={customerLastName}
-              onChange={(e) => {
-                setCustomerLastName(e.target.value.replace(/[^a-zA-Z\s]/g, ''));
-                setFieldErrors((prev) => ({ ...prev, lastName: '' }));
-              }}
-              className={fieldErrors.lastName ? 'error' : ''}
+              className="checkout__new-input"
+              value={addressForm.flatHouse}
+              onChange={(e) => setAddressForm({ ...addressForm, flatHouse: e.target.value })}
+              placeholder=" "
             />
-            {fieldErrors.lastName && <span className="checkout__error">{fieldErrors.lastName}</span>}
+            <label className="checkout__new-label">House No./ Building Name*</label>
+          </div>
+
+          <div className="checkout__new-field">
+            <input
+              type="text"
+              className="checkout__new-input"
+              value={addressForm.areaStreet}
+              onChange={(e) => setAddressForm({ ...addressForm, areaStreet: e.target.value })}
+              placeholder=" "
+            />
+            <label className="checkout__new-label">Road Name / Area / Colony*</label>
+          </div>
+
+          <div className="checkout__new-field">
+            <input
+              type="text"
+              className="checkout__new-input"
+              value={addressForm.pincode}
+              onChange={handlePincodeChange}
+              maxLength={6}
+              placeholder=" "
+            />
+            <label className="checkout__new-label">Pincode*</label>
+            {addressForm.pincode.length === 6 && addressForm.city && (
+              <CheckCircle2 size={18} className="checkout__new-check" color="#10b981" fill="#d1fae5" />
+            )}
+          </div>
+
+          <div className="checkout__new-row">
+            <div className="checkout__new-field">
+              <input
+                type="text"
+                className={`checkout__new-input ${addressForm.city ? 'checkout__new-input--readonly' : ''}`}
+                value={addressForm.city}
+                readOnly
+                placeholder=" "
+              />
+              <label className="checkout__new-label">City*</label>
+              {addressForm.city && (
+                <CheckCircle2 size={18} className="checkout__new-check" color="#10b981" fill="#d1fae5" />
+              )}
+            </div>
+            <div className="checkout__new-field">
+              <input
+                type="text"
+                className={`checkout__new-input ${addressForm.state ? 'checkout__new-input--readonly' : ''}`}
+                value={addressForm.state}
+                readOnly
+                placeholder=" "
+              />
+              <label className="checkout__new-label">State*</label>
+              {addressForm.state && (
+                <CheckCircle2 size={18} className="checkout__new-check" color="#10b981" fill="#d1fae5" />
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="checkout__field">
-          <label>Email *</label>
-          <input
-            type="email"
-            value={customerEmail}
-            onChange={(e) => {
-              setCustomerEmail(e.target.value);
-              setFieldErrors((prev) => ({ ...prev, email: '' }));
-            }}
-            className={fieldErrors.email ? 'error' : ''}
-          />
-          {fieldErrors.email && <span className="checkout__error">{fieldErrors.email}</span>}
-        </div>
-
-        <div className="checkout__address-section">
-          <h3 className="checkout__address-title">DELIVERY ADDRESS</h3>
-
-          {!showAddressForm && (
-            <button className="checkout__add-address-btn" onClick={() => setShowAddressForm(true)}>
-              + Add New Address
-            </button>
-          )}
-
-          {showAddressForm && (
-            <div className="checkout__address-form">
-              <div className="checkout__address-type-btns">
-                {['HOME', 'WORK', 'OTHER'].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setAddressForm({ ...addressForm, type })}
-                    className={`checkout__address-type-btn ${addressForm.type === type ? 'active' : ''}`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-
-              <div className="checkout__field">
-                <label>House/Flat/Building *</label>
-                <input type="text" value={addressForm.flatHouse} onChange={(e) => setAddressForm({ ...addressForm, flatHouse: e.target.value })} />
-              </div>
-
-              <div className="checkout__field">
-                <label>Street/Area/Landmark *</label>
-                <input type="text" value={addressForm.areaStreet} onChange={(e) => setAddressForm({ ...addressForm, areaStreet: e.target.value })} />
-              </div>
-
-              <div className="checkout__row checkout__row--3">
-                <div className="checkout__field">
-                  <label>City *</label>
-                  <input type="text" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value.replace(/[^a-zA-Z\s]/g, '') })} />
-                </div>
-                <div className="checkout__field">
-                  <label>State *</label>
-                  <select value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}>
-                    <option value="">Select</option>
-                    {indianStates.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div className="checkout__field">
-                  <label>PIN Code *</label>
-                  <input type="text" value={addressForm.pincode} onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })} maxLength={6} />
-                </div>
-              </div>
-
-              <div className="checkout__address-form-actions">
-                <button className="checkout__btn-secondary" onClick={() => setShowAddressForm(false)}>Cancel</button>
-                <button className="checkout__btn-primary" onClick={handleSaveAddress} disabled={isLoading}>
-                  {isLoading ? <Loader2 className="animate-spin" size={16} /> : 'Save Address'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {savedAddresses.length > 0 && (
-            <div className="checkout__saved-addresses">
-              {savedAddresses.map((addr) => (
-                <div
-                  key={addr.id}
-                  className={`checkout__address-card ${selectedAddress?.id === addr.id ? 'selected' : ''}`}
-                  onClick={() => { setSelectedAddress(addr); setShowAddressForm(false); }}
-                >
-                  <div className="checkout__address-card-header">
-                    <span className="checkout__address-type">{addr.type}</span>
-                    {addr.isDefault && <span className="checkout__address-default">Default</span>}
-                    {selectedAddress?.id === addr.id && <CheckCircle2 size={14} className="checkout__address-check" />}
-                  </div>
-                  <p className="checkout__address-detail">{addr.flatHouse}</p>
-                  <p className="checkout__address-detail">{addr.areaStreet}, {addr.city}, {addr.state} - {addr.pincode}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {error && <span className="checkout__error">{error}</span>}
+        {error && <span className="checkout__error" style={{ marginTop: '16px' }}>{error}</span>}
 
         <div className="checkout__mobile-sticky-bottom">
-          <button className="checkout__continue-btn" onClick={handleContinueToPayment} disabled={isLoading || !selectedAddress}>
+          <button className="checkout__continue-btn" onClick={handleContinueToPayment} disabled={isLoading}>
             {isLoading ? <Loader2 className="animate-spin" size={18} /> : isStepPayment ? 'CONFIRM DETAILS' : 'CONTINUE TO PAYMENT'} <ChevronRight size={18} />
           </button>
 
@@ -1004,18 +945,22 @@ export default function CheckoutPage() {
 
       <div className="checkout__steps">
         <div className={`checkout__step ${isStepActive('identify') ? 'active' : ''}`}>
-          <span className="checkout__step-num">1</span>
-          <span className="checkout__step-label">Login</span>
+          <span className="checkout__step-content">
+            <span className="checkout__step-num">1.</span>
+            <span className="checkout__step-label">Login &amp; Verification</span>
+          </span>
         </div>
-        <div className={`checkout__step-line ${isStepActive('details') ? 'active' : isStepActive('identify') ? 'half-active' : ''}`} />
         <div className={`checkout__step ${isStepActive('details') ? 'active' : ''}`}>
-          <span className="checkout__step-num">2</span>
-          <span className="checkout__step-label">Details</span>
+          <span className="checkout__step-content">
+            <span className="checkout__step-num">2.</span>
+            <span className="checkout__step-label">Shipping</span>
+          </span>
         </div>
-        <div className={`checkout__step-line ${isStepActive('payment') ? 'active' : isStepActive('details') ? 'half-active' : ''}`} />
         <div className={`checkout__step ${isStepActive('payment') ? 'active' : ''}`}>
-          <span className="checkout__step-num">3</span>
-          <span className="checkout__step-label">Payment</span>
+          <span className="checkout__step-content">
+            <span className="checkout__step-num">3.</span>
+            <span className="checkout__step-label">Payment</span>
+          </span>
         </div>
       </div>
 
@@ -1042,10 +987,10 @@ export default function CheckoutPage() {
               <div className="checkout__illustration-container">
                 <img src="/otp-illustration.png" alt="Verify Phone" className="checkout__illustration" />
               </div>
-              <h3 className="checkout__verification-title">Verify Your Phone Number</h3>
+              <h3 className="checkout__verification-title">Enter Your Mobile Number</h3>
               <p className="checkout__verification-desc">
-                Secure checkout requires phone verification.<br />
-                We'll send a one-time OTP to continue.
+                Provide your mobile number to begin checkout.<br />
+                You&apos;ll verify via OTP at order confirmation.
               </p>
 
               <div className="checkout__verification-badges">
@@ -1054,8 +999,8 @@ export default function CheckoutPage() {
                     <ShieldCheck size={16} className="checkout__badge-icon" />
                   </div>
                   <div className="checkout__badge-text">
-                    <span>Secure</span>
-                    <span>Verification</span>
+                    <span>Seamless</span>
+                    <span>Checkout</span>
                   </div>
                 </div>
                 <div className="checkout__badge-divider" />
@@ -1074,8 +1019,8 @@ export default function CheckoutPage() {
                     <Lock size={16} className="checkout__badge-icon" />
                   </div>
                   <div className="checkout__badge-text">
-                    <span>OTP Required for</span>
-                    <span>Delivery Updates</span>
+                    <span>Verified</span>
+                    <span>Delivery</span>
                   </div>
                 </div>
               </div>
@@ -1098,8 +1043,8 @@ export default function CheckoutPage() {
               </div>
               {error && <span className="checkout__error" style={{ marginTop: '-16px', marginBottom: '16px' }}>{error}</span>}
 
-              <button className="checkout__send-otp-btn" onClick={handleSendOtp} disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'SEND OTP'} <ArrowRight size={18} />
+              <button className="checkout__send-otp-btn" onClick={handleIdentifySubmit} disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'CONTINUE TO SHIPPING'} <ArrowRight size={18} />
               </button>
               <div className="checkout__powered-by-wrapper" style={{ marginTop: '20px' }}>
                 <div className="checkout__powered-by">
@@ -1141,12 +1086,12 @@ export default function CheckoutPage() {
               {error && <span className="checkout__error" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>{error}</span>}
 
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-                <button className="checkout__resend" onClick={handleSendOtp} disabled={resendTimer > 0 || isLoading}>
+                <button className="checkout__resend" onClick={handleIdentifySubmit} disabled={resendTimer > 0 || isLoading}>
                   {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
                 </button>
               </div>
 
-              <button className="checkout__send-otp-btn" onClick={handleVerifyOtp} disabled={isLoading || otp.join('').length !== 4}>
+              <button className="checkout__send-otp-btn" onClick={handleFinalOtpVerify} disabled={isLoading || otp.join('').length !== 4}>
                 {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'VERIFY & CONTINUE'} <ArrowRight size={18} />
               </button>
               <div className="checkout__powered-by-wrapper" style={{ marginTop: '20px' }}>
@@ -1227,7 +1172,7 @@ export default function CheckoutPage() {
                     ) : (
                       <div className="checkout__payment-actions">
                         <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
-                        <button className="checkout__place-order-btn" onClick={handleCreateCodOrder} disabled={isLoading}>
+                        <button className="checkout__place-order-btn" onClick={() => handleFinalOrderClick('COD')} disabled={isLoading}>
                           {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${(displaySubtotal + codFee - displayDiscountTotal).toLocaleString()}`}
                         </button>
                       </div>
@@ -1241,7 +1186,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
- 
+
               {paymentMethod === 'PAYU' && !payUData && (
                 <div className="checkout__payment-inline-wrapper">
                   <div className="checkout__payment-confirm">
@@ -1252,7 +1197,7 @@ export default function CheckoutPage() {
                     {error && <span className="checkout__error">{error}</span>}
                     <div className="checkout__payment-actions">
                       <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
-                      <button className="checkout__place-order-btn checkout__place-order-btn--online" onClick={handleInitiatePayU} disabled={isLoading}>
+                      <button className="checkout__place-order-btn checkout__place-order-btn--online" onClick={() => handleFinalOrderClick('PAYU')} disabled={isLoading}>
                         {isLoading ? <Loader2 className="animate-spin" size={18} /> : `PAY NOW - ₹${(displaySubtotal - displayDiscountTotal).toLocaleString()}`}
                       </button>
                     </div>
@@ -1267,6 +1212,82 @@ export default function CheckoutPage() {
               )}
               </section>
             </>
+          )}
+
+          {isOtpModalOpen && (
+            <div className="checkout__otp-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsOtpModalOpen(false); }}>
+              <div className="checkout__otp-modal">
+                <button className="checkout__otp-modal-close" onClick={() => setIsOtpModalOpen(false)} type="button">
+                  ×
+                </button>
+
+                <div className="checkout__otp-modal-badge">
+                  <ShieldCheck size={14} /> Security Verification
+                </div>
+
+                <h3 className="checkout__otp-modal-title">Authorize Your Order</h3>
+                <p className="checkout__otp-modal-desc">
+                  We&apos;ve sent a 4-digit security code to{' '}
+                  <span className="checkout__otp-modal-phone">+91 {phone.slice(0, 5)} {phone.slice(5)}</span>
+                  <button
+                    type="button"
+                    className="checkout__otp-modal-change-phone"
+                    onClick={() => { setIsOtpModalOpen(false); setStep('identify'); }}
+                  >
+                    Edit Number
+                  </button>
+                </p>
+
+                <div className="checkout__otp-inputs" style={{ margin: '16px 0 16px' }}>
+                  {[0, 1, 2, 3].map((index) => (
+                    <input
+                      key={index}
+                      ref={(el) => {
+                        if (el) otpRefs.current[index] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={otp[index] || ''}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      onFocus={(e) => e.target.select()}
+                      className={`checkout__otp-digit ${error ? 'error' : ''}`}
+                    />
+                  ))}
+                </div>
+
+                {error && <span className="checkout__error" style={{ marginBottom: '12px', display: 'block', textAlign: 'center' }}>{error}</span>}
+
+                <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                  <button
+                    className="checkout__resend"
+                    onClick={() => handleFinalOrderClick(pendingAction || 'COD')}
+                    disabled={resendTimer > 0 || isLoading}
+                    type="button"
+                  >
+                    {resendTimer > 0 ? `Resend code in ${resendTimer}s` : 'Resend OTP'}
+                  </button>
+                </div>
+
+                <button
+                  className="checkout__send-otp-btn"
+                  onClick={handleFinalOtpVerify}
+                  disabled={isLoading || otp.join('').length !== 4}
+                  type="button"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : (pendingAction === 'PAYU' ? 'VERIFY & PAY NOW' : 'VERIFY & PLACE ORDER')}
+                </button>
+
+                <div className="checkout__powered-by-wrapper" style={{ marginTop: '16px' }}>
+                  <div className="checkout__powered-by">
+                    <span className="checkout__powered-by-text">Powered by</span>
+                    <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
@@ -1284,7 +1305,9 @@ export default function CheckoutPage() {
               <div className="checkout__summary-items">
                 {(orderSummary?.items || cartItems).map((item) => (
                   <div key={`${item.id}-${JSON.stringify(item.variants || {})}`} className="checkout__summary-item">
-                    <img src={item.images?.[0] || 'https://via.placeholder.com/60'} alt={item.name} />
+                    <div className="checkout__summary-item-image-wrapper">
+                      <img src={item.images?.[0] || 'https://via.placeholder.com/60'} alt={item.name} />
+                    </div>
                     <div className="checkout__summary-item-info">
                       <span className="checkout__summary-item-name">{item.name}</span>
                       {item.type === 'BUNDLE' && item.items && (
@@ -1299,9 +1322,21 @@ export default function CheckoutPage() {
                           ))}
                         </div>
                       )}
-                      <span className="checkout__summary-item-qty">Qty: {item.quantity}</span>
+                      {item.variants && Object.keys(item.variants).length > 0 ? (
+                        <span className="checkout__summary-item-variant">
+                          {Object.entries(item.variants)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(', ')}
+                        </span>
+                      ) : (item as any).selectedSize || (item as any).size ? (
+                        <span className="checkout__summary-item-variant">
+                          Size: {(item as any).selectedSize || (item as any).size}
+                        </span>
+                      ) : null}
+                      <span className="checkout__summary-item-pricing">
+                        {item.quantity} x ₹{item.price.toLocaleString('en-IN')}
+                      </span>
                     </div>
-                    <span className="checkout__summary-item-price">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
                   </div>
                 ))}
               </div>
