@@ -18,7 +18,7 @@ import { trackViewContent } from "@/lib/pixel";
 import type { TestimonialSection } from "@/lib/api";
 import "./product.css";
 
-const pad = (num: number) => String(num).padStart(2, '0');
+const pad = (num: number) => String(num).padStart(2, "0");
 
 interface ProductClientProps {
   product: any;
@@ -40,7 +40,11 @@ export default function ProductClient({
   const [activeTab, setActiveTab] = useState("description");
   const [imageLoading, setImageLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [saleTime, setSaleTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [saleTime, setSaleTime] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Update sale countdown every second (resets every 12 hours)
@@ -89,7 +93,7 @@ export default function ProductClient({
 
   const originalPrice =
     selectedVariant?.options?.compareAtPrice !== undefined &&
-      selectedVariant?.options?.compareAtPrice !== null
+    selectedVariant?.options?.compareAtPrice !== null
       ? Number(selectedVariant.options.compareAtPrice)
       : product.compareAtPrice
         ? Number(product.compareAtPrice)
@@ -114,14 +118,14 @@ export default function ProductClient({
   const customOptionKeys =
     product.variants?.length > 0
       ? [
-        ...new Set<string>(
-          product.variants.flatMap((v: any) =>
-            Object.keys(v.options || {}).filter(
-              (k) => !IGNORED_OPTION_KEYS.includes(k),
+          ...new Set<string>(
+            product.variants.flatMap((v: any) =>
+              Object.keys(v.options || {}).filter(
+                (k) => !IGNORED_OPTION_KEYS.includes(k),
+              ),
             ),
           ),
-        ),
-      ]
+        ]
       : [];
 
   const getOptionValues = (key: string) => [
@@ -151,11 +155,11 @@ export default function ProductClient({
     const variantSelection = selectedVariant
       ? customOptionKeys.length > 0
         ? Object.fromEntries(
-          customOptionKeys.map((k) => [
-            k.charAt(0).toUpperCase() + k.slice(1),
-            selectedVariant.options?.[k],
-          ]),
-        )
+            customOptionKeys.map((k) => [
+              k.charAt(0).toUpperCase() + k.slice(1),
+              selectedVariant.options?.[k],
+            ]),
+          )
         : { [optionLabel]: selectedVariant.name }
       : {};
 
@@ -179,11 +183,11 @@ export default function ProductClient({
     const variantSelection = selectedVariant
       ? customOptionKeys.length > 0
         ? Object.fromEntries(
-          customOptionKeys.map((k) => [
-            k.charAt(0).toUpperCase() + k.slice(1),
-            selectedVariant.options?.[k],
-          ]),
-        )
+            customOptionKeys.map((k) => [
+              k.charAt(0).toUpperCase() + k.slice(1),
+              selectedVariant.options?.[k],
+            ]),
+          )
         : { [optionLabel]: selectedVariant.name }
       : {};
 
@@ -266,7 +270,7 @@ export default function ProductClient({
                 {product.images.map((img: string, index: number) => (
                   <button
                     key={index}
-                    className={`product-page__thumb ${index === selectedImageIndex ? 'active' : ''}`}
+                    className={`product-page__thumb ${index === selectedImageIndex ? "active" : ""}`}
                     onClick={() => {
                       setSelectedImageIndex(index);
                       setImageLoading(true);
@@ -283,16 +287,24 @@ export default function ProductClient({
               )}
               {imageLoading && (
                 <div className="product-page__loading-spinner">
-                  <img src="/spinner.svg" alt="Loading..." className="spinner-icon" />
+                  <img
+                    src="/spinner.svg"
+                    alt="Loading..."
+                    className="spinner-icon"
+                  />
                 </div>
               )}
               <img
                 ref={imgRef}
-                src={product.images?.[selectedImageIndex] || product.images?.[0] || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80'}
+                src={
+                  product.images?.[selectedImageIndex] ||
+                  product.images?.[0] ||
+                  "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80"
+                }
                 alt={product.name}
                 onLoad={() => setImageLoading(false)}
                 onError={() => setImageLoading(false)}
-                style={{ borderRadius: '4px', backgroundColor: '#fff' }}
+                style={{ borderRadius: "4px", backgroundColor: "#fff" }}
               />
             </div>
           </div>
@@ -328,7 +340,8 @@ export default function ProductClient({
               <span className="sale-live-badge">Sale Is Live!</span>
               <span className="sale-countdown">
                 <Clock size={13} className="sale-clock-icon" />
-                {pad(saleTime.hours)}H:{pad(saleTime.minutes)}M:{pad(saleTime.seconds)}S
+                {pad(saleTime.hours)}H:{pad(saleTime.minutes)}M:
+                {pad(saleTime.seconds)}S
               </span>
             </div>
 
@@ -403,7 +416,11 @@ export default function ProductClient({
               </button>
               <button className="product-page__buy-now" onClick={handleBuyNow}>
                 <span>Buy Now</span>
-                <img src="/buynow.png" alt="Buy Now" className="product-page__buy-now-img" />
+                <img
+                  src="/buynow.png"
+                  alt="Buy Now"
+                  className="product-page__buy-now-img"
+                />
               </button>
             </div>
 
@@ -444,7 +461,7 @@ export default function ProductClient({
                   <div className="benefit-icon-wrapper">
                     <Truck size={16} />
                   </div>
-                  <span>Free Delivery on orders above ₹499</span>
+                  <span>Free Delivery on orders above ₹999</span>
                 </div>
               </div>
               <div className="product-page__delivery-banner">
@@ -483,26 +500,33 @@ export default function ProductClient({
               {(() => {
                 const parseDescription = (desc: string) => {
                   if (!desc) return [];
-                  const lines = desc.split('\n');
-                  const groups: { type: 'bullet' | 'text'; content: string }[] = [];
-                  let currentGroup: { type: 'bullet' | 'text'; content: string } | null = null;
-                  
+                  const lines = desc.split("\n");
+                  const groups: { type: "bullet" | "text"; content: string }[] =
+                    [];
+                  let currentGroup: {
+                    type: "bullet" | "text";
+                    content: string;
+                  } | null = null;
+
                   for (const line of lines) {
                     const trimmed = line.trim();
                     if (!trimmed) {
                       currentGroup = null;
                       continue;
                     }
-                    const isBulletStart = trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*');
+                    const isBulletStart =
+                      trimmed.startsWith("•") ||
+                      trimmed.startsWith("-") ||
+                      trimmed.startsWith("*");
                     if (isBulletStart) {
-                      const content = trimmed.replace(/^[•\-\*]\s*/, '');
-                      currentGroup = { type: 'bullet', content };
+                      const content = trimmed.replace(/^[•\-\*]\s*/, "");
+                      currentGroup = { type: "bullet", content };
                       groups.push(currentGroup);
                     } else {
                       if (currentGroup) {
-                        currentGroup.content += ' ' + trimmed;
+                        currentGroup.content += " " + trimmed;
                       } else {
-                        currentGroup = { type: 'text', content: trimmed };
+                        currentGroup = { type: "text", content: trimmed };
                         groups.push(currentGroup);
                       }
                     }
@@ -510,36 +534,42 @@ export default function ProductClient({
                   return groups;
                 };
 
-                return parseDescription(product.description).map((group, idx) => {
-                  if (group.type === 'bullet') {
-                    const colonIndex = group.content.indexOf(':');
-                    if (colonIndex > -1) {
-                      const title = group.content.substring(0, colonIndex + 1);
-                      const desc = group.content.substring(colonIndex + 1);
+                return parseDescription(product.description).map(
+                  (group, idx) => {
+                    if (group.type === "bullet") {
+                      const colonIndex = group.content.indexOf(":");
+                      if (colonIndex > -1) {
+                        const title = group.content.substring(
+                          0,
+                          colonIndex + 1,
+                        );
+                        const desc = group.content.substring(colonIndex + 1);
+                        return (
+                          <div key={idx} className="product-page__bullet-box">
+                            <span className="product-page__bullet-dot">•</span>
+                            <div className="product-page__bullet-content">
+                              <strong>{title}</strong>
+                              {desc}
+                            </div>
+                          </div>
+                        );
+                      }
                       return (
                         <div key={idx} className="product-page__bullet-box">
                           <span className="product-page__bullet-dot">•</span>
                           <div className="product-page__bullet-content">
-                            <strong>{title}</strong>{desc}
+                            {group.content}
                           </div>
                         </div>
                       );
                     }
                     return (
-                      <div key={idx} className="product-page__bullet-box">
-                        <span className="product-page__bullet-dot">•</span>
-                        <div className="product-page__bullet-content">
-                          {group.content}
-                        </div>
-                      </div>
+                      <p key={idx} className="product-page__description-text">
+                        {group.content}
+                      </p>
                     );
-                  }
-                  return (
-                    <p key={idx} className="product-page__description-text">
-                      {group.content}
-                    </p>
-                  );
-                });
+                  },
+                );
               })()}
             </div>
           )}
