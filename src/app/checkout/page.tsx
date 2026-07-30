@@ -3,17 +3,15 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Loader2, Phone, CheckCircle2, Truck, ChevronRight, Banknote, CreditCard, ShoppingBag, Lock, RefreshCw, ShieldCheck, PhoneCall, ArrowRight, ChevronDown } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { useAnalytics } from "@/components/AnalyticsProvider";
-import { sendOtp, verifyOtp, createSession, validateSession } from "@/actions/otp-actions";
+import { sendOtp, verifyOtp, createSession } from "@/actions/otp-actions";
 import { getUserByPhone, createOrUpdateUser } from "@/actions/user-actions";
 import {
   createAddress,
   createOrder,
   createCodOrder,
-  getStorefrontCodFee,
-  getStorefrontShippingFee,
 } from "@/actions/order-actions";
 import { initiatePayUPayment } from "@/actions/payment-actions";
 import { validateCouponAction } from "@/actions/coupon-actions";
@@ -24,25 +22,6 @@ import AddressSection from "@/components/AddressSection";
 import PaymentStep from "@/components/PaymentStep";
 import OrderSummary from "@/components/OrderSummary";
 import "./checkout.css";
-
-const IndiaFlag = () => (
-  <svg width="20" height="14" viewBox="0 0 30 20" className="checkout__flag">
-    <rect width="30" height="20" fill="#FFF" />
-    <rect width="30" height="6.67" fill="#FF9933" />
-    <rect y="13.33" width="30" height="6.67" fill="#138808" />
-    <circle cx="15" cy="10" r="2" fill="#000080" />
-    <circle cx="15" cy="10" r="2" fill="none" stroke="#000080" strokeWidth="0.5" />
-    <circle cx="15" cy="10" r="0.4" fill="#000080" />
-  </svg>
-);
-
-const indianStates = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
-  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
-  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Lakshadweep", "Puducherry"
-];
 
 const SuccessStep = dynamic(() => import("@/components/SuccessStep"), {
   ssr: false,
@@ -263,20 +242,12 @@ export default function CheckoutPage() {
             const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
             setSelectedAddress(defaultAddr);
           }
-          if (userResult.data.firstName && userResult.data.lastName && userResult.data.email) {
-            isRecurring = true;
-          }
         }
-        if (isRecurring) {
-          setStep('payment');
-        } else {
-          setStep('details');
-        }
+        setStep(initialData.initialStep);
       } else {
         setStep("identify");
       }
-    };
-    checkSession();
+    });
 
   // Track InitiateCheckout event
   try {
@@ -439,7 +410,7 @@ const handleVerifyOtp = async () => {
   } finally {
     setIsLoading(false);
   }
-};
+}, [otp, phone, sessionId, deviceId]);
 
 const handleSaveAddress = async () => {
   if (!addressForm.flatHouse || !addressForm.areaStreet || !addressForm.city || !addressForm.state || !addressForm.pincode) {
@@ -792,68 +763,7 @@ const handleCreateCodOrder = useCallback(async () => {
   track,
 ]);
 
-const handleFinalOrderClick = async (actionType: 'COD' | 'PAYU') => {
-  if (isSessionVerified) {
-    if (actionType === 'COD') {
-      await handleCreateCodOrder();
-    } else {
-      await handleInitiatePayU();
-    }
-    return;
-  }
-
-  setPendingAction(actionType);
-  setIsLoading(true);
-  setError(null);
-  setOtp(['', '', '', '']);
-  try {
-    const result = await sendOtp({ phone });
-    if (result.success) {
-      setSessionId((result as any).sessionId || null);
-      setResendTimer(120);
-      setIsOtpModalOpen(true);
-      setTimeout(() => otpRefs.current[0]?.focus(), 150);
-    } else {
-      throw new Error(result.message);
-    }
-  } catch (err: any) {
-    setError(err.message);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-const handleFinalOtpVerify = async () => {
-  const otpCode = otp.join('');
-  if (!otpCode || otpCode.length !== 4) {
-    setError('Please enter the 4-digit code');
-    return;
-  }
-  setIsLoading(true);
-  setError(null);
-  try {
-    const result = await verifyOtp({ phone, code: otpCode, sessionId: sessionId || undefined });
-    if (result.success) {
-      await createSession(phone, deviceId);
-      setIsSessionVerified(true);
-      setIsOtpModalOpen(false);
-
-      if (pendingAction === 'COD') {
-        await handleCreateCodOrder();
-      } else if (pendingAction === 'PAYU') {
-        await handleInitiatePayU();
-      }
-    } else {
-      throw new Error(result.message || 'Invalid OTP code');
-    }
-  } catch (err: any) {
-    setError(err.message);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-const handleInitiatePayU = async () => {
+const handleInitiatePayU = useCallback(async () => {
   setIsLoading(true);
   setError(null);
 
@@ -1174,17 +1084,17 @@ return (
     <h1 className="checkout__title">CHECKOUT</h1>
 
     <div className="checkout__steps">
-      <div className={`checkout__step ${isStepActive(step, 'identify') ? 'active' : ''}`}>
+      <div className={`checkout__step ${isStepActive('identify') ? 'active' : ''}`}>
         <span className="checkout__step-num">1</span>
         <span className="checkout__step-label">Login</span>
       </div>
-      <div className={`checkout__step-line ${isStepActive(step, 'details') ? 'active' : isStepActive(step, 'identify') ? 'half-active' : ''}`} />
-      <div className={`checkout__step ${isStepActive(step, 'details') ? 'active' : ''}`}>
+      <div className={`checkout__step-line ${isStepActive('details') ? 'active' : isStepActive('identify') ? 'half-active' : ''}`} />
+      <div className={`checkout__step ${isStepActive('details') ? 'active' : ''}`}>
         <span className="checkout__step-num">2</span>
         <span className="checkout__step-label">Details</span>
       </div>
-      <div className={`checkout__step-line ${isStepActive(step, 'payment') ? 'active' : isStepActive(step, 'details') ? 'half-active' : ''}`} />
-      <div className={`checkout__step ${isStepActive(step, 'payment') ? 'active' : ''}`}>
+      <div className={`checkout__step-line ${isStepActive('payment') ? 'active' : isStepActive('details') ? 'half-active' : ''}`} />
+      <div className={`checkout__step ${isStepActive('payment') ? 'active' : ''}`}>
         <span className="checkout__step-num">3</span>
         <span className="checkout__step-label">Payment</span>
       </div>
