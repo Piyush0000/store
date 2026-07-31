@@ -610,7 +610,7 @@ export default function ProductClient({
             <div className="product-page__shipping-info">
               <h3>Shipping Information</h3>
               <ul>
-                <li>Free shipping on orders above ₹499</li>
+                <li>Free shipping on orders above ₹999</li>
                 <li>Standard delivery: 5-7 business days</li>
                 <li>Express delivery: 2-3 business days</li>
                 <li>Orders are processed within 24 hours</li>
