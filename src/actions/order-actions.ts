@@ -117,8 +117,13 @@ function getCodFailureMessage(responseBody: string, status: number): string {
   const fallbackMessage = `Order could not be placed (HTTP ${status}).`;
 
   try {
-    const parsed = JSON.parse(responseBody) as { message?: string };
-    const message = parsed.message || responseBody || fallbackMessage;
+    const parsed = JSON.parse(responseBody);
+    let message = fallbackMessage;
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].message) {
+      message = parsed[0].message;
+    } else if (parsed && typeof parsed === 'object' && parsed.message) {
+      message = parsed.message;
+    }
 
     if (/insufficient product stock/i.test(message)) {
       return 'Sorry, this item is out of stock right now. Please reduce the quantity or choose a different item.';
@@ -130,7 +135,7 @@ function getCodFailureMessage(responseBody: string, status: number): string {
       return 'Sorry, this item is out of stock right now. Please reduce the quantity or choose a different item.';
     }
 
-    return responseBody || fallbackMessage;
+    return fallbackMessage;
   }
 }
 
