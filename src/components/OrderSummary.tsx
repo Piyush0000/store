@@ -239,9 +239,14 @@ const OrderSummary = React.memo(function OrderSummary({
 
           {/* Free Shipping Banner */}
           {effectiveShippingFee === 0 && (
-            <div className="checkout__free-shipping-banner">
-              <Truck size={16} className="checkout__free-shipping-icon" />
-              <span>Yay! You get FREE shipping 🥳</span>
+            <div className="checkout__free-shipping-banner animate-fade-in">
+              <div className="checkout__free-shipping-icon-container">
+                <Truck size={18} className="checkout__free-shipping-icon" />
+              </div>
+              <div className="checkout__free-shipping-text">
+                <span className="checkout__free-shipping-title">Yay! You get FREE shipping 🥳</span>
+                <span className="checkout__free-shipping-subtitle">Your order qualifies for complimentary delivery.</span>
+              </div>
             </div>
           )}
 

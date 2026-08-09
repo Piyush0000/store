@@ -70,7 +70,35 @@ const isStepActive = (step: Step, s: Step) => {
 
 export default function CheckoutPage() {
   const { track } = useAnalytics();
-  const { cartItems, clearCart, cartTotal } = useCart();
+  const { cartItems: contextCartItems, clearCart: contextClearCart, cartTotal: contextCartTotal } = useCart();
+  const [buyNowItems, setBuyNowItems] = useState<any[] | null>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("buyNow") === "true") {
+        const item = sessionStorage.getItem("buyNowItem");
+        if (item) {
+          try {
+            return [JSON.parse(item)];
+          } catch (e) {
+            console.error("Failed to parse buyNowItem", e);
+          }
+        }
+      }
+    }
+    return null;
+  });
+
+  const cartItems = buyNowItems || contextCartItems;
+  const cartTotal = buyNowItems ? buyNowItems.reduce((acc, item) => acc + item.price * item.quantity, 0) : contextCartTotal;
+  
+  const clearCart = useCallback(() => {
+    if (buyNowItems) {
+      sessionStorage.removeItem("buyNowItem");
+      setBuyNowItems(null);
+    } else {
+      contextClearCart();
+    }
+  }, [buyNowItems, contextClearCart]);
   const [codFee, setCodFee] = useState(0);
   const [shippingConfig, setShippingConfig] = useState({
     shippingFee: 0,
@@ -257,28 +285,39 @@ export default function CheckoutPage() {
     }
     setDeviceId(storedDeviceId);
 
-    // Validate existing session
+    // Validate existing session and fetch storefront settings
     const checkSession = async () => {
-      const sessionResult = await validateSession();
-      if (sessionResult.valid && sessionResult.phone) {
-        setPhone(sessionResult.phone);
-        const userResult = await getUserByPhone(sessionResult.phone);
-        let isRecurring = false;
-        if (userResult.success && userResult.data) {
-          setUser(userResult.data);
-          setUserId(userResult.data.id);
-          const addresses = userResult.data.addresses || [];
-          setSavedAddresses(addresses);
-          if (userResult.data.firstName) setCustomerFirstName(userResult.data.firstName);
-          if (userResult.data.lastName) setCustomerLastName(userResult.data.lastName);
-          if (userResult.data.email) setCustomerEmail(userResult.data.email);
-          if (addresses.length > 0) {
-            const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
-            setSelectedAddress(defaultAddr);
-          }
+      try {
+        const initialState = await getInitialCheckoutState();
+        
+        if (initialState.shippingConfig) {
+          setShippingConfig(initialState.shippingConfig);
         }
-        setStep("details");
-      } else {
+        if (initialState.codFee !== undefined) {
+          setCodFee(initialState.codFee);
+        }
+
+        if (initialState.sessionValid && initialState.phone) {
+          setPhone(initialState.phone);
+          if (initialState.user) {
+            setUser(initialState.user);
+            setUserId(initialState.user.id);
+            setSavedAddresses(initialState.savedAddresses || []);
+            if (initialState.customerFirstName) setCustomerFirstName(initialState.customerFirstName);
+            if (initialState.customerLastName) setCustomerLastName(initialState.customerLastName);
+            if (initialState.customerEmail) setCustomerEmail(initialState.customerEmail);
+            
+            if (initialState.savedAddresses && initialState.savedAddresses.length > 0) {
+              const defaultAddr = initialState.savedAddresses.find((a: any) => a.isDefault) || initialState.savedAddresses[0];
+              setSelectedAddress(defaultAddr);
+            }
+          }
+          setStep(initialState.initialStep);
+        } else {
+          setStep("identify");
+        }
+      } catch (err) {
+        console.error("Failed to load checkout state:", err);
         setStep("identify");
       }
     };
