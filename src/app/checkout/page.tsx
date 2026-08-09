@@ -696,12 +696,12 @@ export default function CheckoutPage() {
     cartItems.forEach((item) => {
       if (item.type === "BUNDLE" && item.items) {
         const regularTotal =
-          item.regularTotal || item.items.reduce((sum, i) => sum + i.price, 0);
+          item.regularTotal || item.items.reduce((sum: number, i: any) => sum + (i.price || 0), 0);
         const discountAmt = item.discountAmount || 0;
         totalBundleDiscount += discountAmt * item.quantity;
         totalRegularSubtotal += regularTotal * item.quantity;
 
-        item.items.forEach((p) => {
+        item.items.forEach((p: any) => {
           orderItems.push({
             productId: p.id,
             name: p.name,
