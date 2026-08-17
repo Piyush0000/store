@@ -38,6 +38,7 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
   useEffect(() => {
     const category = searchParams.get('category') || 'all';
     setSelectedCategory(category);
+    setIsLoading(false);
   }, [searchParams]);
 
   const categoryList = categories.length > 0
@@ -55,6 +56,25 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
     const newQuery = params.toString() ? `?${params.toString()}` : '';
     router.push(`/catalogue${newQuery}`, { scroll: false });
   }, [router, searchParams]);
+
+  const handleCategoryChange = useCallback((categoryId: string) => {
+    if (categoryId === selectedCategory && !searchQueryParam) return;
+    setIsLoading(true);
+    setSelectedCategory(categoryId);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('q');
+    params.delete('search');
+    params.delete('query');
+    if (categoryId === 'all') {
+      params.delete('category');
+    } else {
+      params.set('category', categoryId);
+    }
+
+    const newQuery = params.toString() ? `?${params.toString()}` : '';
+    router.push(`/catalogue${newQuery}`, { scroll: false });
+  }, [router, searchParams, selectedCategory, searchQueryParam]);
 
   const filteredProducts = products.filter(p => {
     // 1. Filter by search query
