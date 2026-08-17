@@ -292,11 +292,11 @@ export async function fetchAnnouncements(subdomain?: string): Promise<Announceme
   try {
     const apiUrl = `${getApiUrl(subdomain)}/announcements`;
     const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) return [];
     const data = await res.json();
-    if (!data.success) throw new Error(data.message || 'Failed to fetch announcements');
+    if (!data.success) return [];
     return data.announcements || [];
   } catch (error) {
-    console.warn('Error fetching announcements:', error);
     return [];
   }
 }
@@ -305,11 +305,11 @@ export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
   try {
     const apiUrl = `${getApiUrl(subdomain)}/legal`;
     const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) return [];
     const data = await res.json();
-    if (!data.success) throw new Error(data.message || 'Failed to fetch legal pages');
+    if (!data.success) return [];
     return data.legalPages || [];
   } catch (error) {
-    console.warn('Error fetching legal pages:', error);
     return [];
   }
 }
@@ -318,11 +318,11 @@ export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
   try {
     const apiUrl = `${getApiUrl(subdomain)}/pages`;
     const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) return [];
     const data = await res.json();
-    if (!data.success) throw new Error(data.message || 'Failed to fetch pages');
+    if (!data.success) return [];
     return data.pages || [];
   } catch (error) {
-    console.warn('Error fetching pages:', error);
     return [];
   }
 }
@@ -331,11 +331,11 @@ export async function fetchPageBySlug(slug: string, subdomain?: string): Promise
   try {
     const apiUrl = `${getApiUrl(subdomain)}/pages/${slug}`;
     const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) return null;
     const data = await res.json();
-    if (!data.success) throw new Error(data.message || `Failed to fetch page ${slug}`);
+    if (!data.success) return null;
     return data.page;
   } catch (error) {
-    console.warn(`Error fetching page ${slug}:`, error);
     return null;
   }
 }

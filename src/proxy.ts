@@ -75,6 +75,16 @@ export async function proxy(request: Request) {
     }
   }
 
+  if (!subdomain) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-subdomain', '');
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
   try {
     const apiBase = (process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public').replace(/\/+$/, '');
     const apiUrl = `${apiBase}/${subdomain}/frontend`;
@@ -86,6 +96,18 @@ export async function proxy(request: Request) {
       const publicApiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
       response = await fetch(`${publicApiBase}/${subdomain}/frontend`, { next: { revalidate: 0 } });
     }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!response.ok || !contentType.includes('application/json')) {
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-subdomain', subdomain);
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    }
+
     const data = await response.json();
 
     if (!data.success) {

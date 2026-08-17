@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, Heart, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from './CartProvider';
@@ -32,12 +33,15 @@ interface HeaderProps {
 }
 
 export default function Header({ initialCustomization, storeName: propStoreName, storeSubdomain }: HeaderProps) {
+  const router = useRouter();
   const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const getInitialLogo = () => {
     let headerStyle = initialCustomization?.headerStyle;
@@ -90,6 +94,9 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   useEffect(() => {
     if (initialCustomization) {
+      if (initialCustomization.products) {
+        setAllProducts(initialCustomization.products);
+      }
       return; // Skip fetch since we have initialCustomization!
     }
 
@@ -98,6 +105,9 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
     fetchStorefront(storeSubdomain)
       .then((data) => {
+        if (data.products) {
+          setAllProducts(data.products);
+        }
         const customization = data.customization;
         let headerStyle = customization?.headerStyle;
         if (headerStyle && typeof headerStyle === 'string') {
@@ -123,7 +133,36 @@ export default function Header({ initialCustomization, storeName: propStoreName,
         }
       })
       .catch((err) => console.warn('[Header] Failed to fetch config:', err));
-  }, [initialCustomization, propStoreName]);
+  }, [initialCustomization, propStoreName, storeSubdomain]);
+
+  useEffect(() => {
+    if (searchOpen && allProducts.length === 0) {
+      fetchStorefront(storeSubdomain).then((data) => {
+        if (data.products) setAllProducts(data.products);
+      }).catch((err) => console.warn('[Header] Failed to fetch products for search:', err));
+    }
+  }, [searchOpen, allProducts.length, storeSubdomain]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSearchOpen(false);
+      }
+    };
+    if (searchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [searchOpen]);
 
   useEffect(() => {
     async function checkBundles() {
@@ -195,6 +234,105 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = searchQuery.trim();
+    if (query) {
+      router.push(`/catalogue?q=${encodeURIComponent(query)}`);
+      setSearchOpen(false);
+    }
+  };
+
+  const handleSearchResultClick = (e: React.SyntheticEvent, queryText: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const q = queryText.trim();
+    if (q) {
+      router.push(`/catalogue?q=${encodeURIComponent(q)}`);
+      setSearchOpen(false);
+    }
+  };
+
+  const liveResults = searchQuery.trim()
+    ? allProducts.filter(p =>
+        p.name?.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
+        p.category?.toLowerCase().includes(searchQuery.toLowerCase().trim())
+      ).slice(0, 5)
+    : [];
+
+  const renderSearchDropdown = () => (
+    <div className="header__search-dropdown" ref={searchRef}>
+      <form onSubmit={handleSearchSubmit} className="header__search-form">
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          autoFocus
+          className="header__search-input"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            className="header__search-clear-btn"
+            onClick={() => setSearchQuery('')}
+            aria-label="Clear search"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </form>
+
+      {searchQuery.trim() !== '' && (
+        <div className="header__search-results">
+          {liveResults.length > 0 ? (
+            <>
+              <div className="header__search-results-list">
+                {liveResults.map((prod) => {
+                  return (
+                    <a
+                      key={prod.id}
+                      href={`/catalogue?q=${encodeURIComponent(prod.name)}`}
+                      className="header__search-result-item"
+                      onMouseDown={(e) => handleSearchResultClick(e, prod.name)}
+                      onClick={(e) => handleSearchResultClick(e, prod.name)}
+                    >
+                      {prod.images?.[0] ? (
+                        <img
+                          src={prod.images[0]}
+                          alt={prod.name}
+                          className="header__search-result-img"
+                        />
+                      ) : (
+                        <div className="header__search-result-img-placeholder" />
+                      )}
+                      <div className="header__search-result-info">
+                        <span className="header__search-result-name">{prod.name}</span>
+                        <span className="header__search-result-price">₹{Number(prod.price).toLocaleString('en-IN')}</span>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                className="header__search-view-all"
+                onMouseDown={(e) => handleSearchResultClick(e, searchQuery)}
+                onClick={(e) => handleSearchResultClick(e, searchQuery)}
+              >
+                View all results for "{searchQuery}" →
+              </button>
+            </>
+          ) : (
+            <div className="header__search-no-results">
+              No products found for "{searchQuery}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <header className={`header ${scrolled ? 'header--scrolled' : ''}`}>
@@ -208,18 +346,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
               >
                 <Search size={20} strokeWidth={1.5} />
               </button>
-              {searchOpen && (
-                <div className="header__search-dropdown">
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    autoFocus
-                    className="header__search-input"
-                  />
-                </div>
-              )}
+              {searchOpen && renderSearchDropdown()}
             </div>
 
             <button
@@ -285,8 +412,6 @@ export default function Header({ initialCustomization, storeName: propStoreName,
             </Link>
           </div>
 
-
-
           <div className="header__right">
             <div className={`header__search ${searchOpen ? 'header__search--open' : ''}`}>
               <button
@@ -296,18 +421,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
               >
                 <Search size={20} strokeWidth={1.5} />
               </button>
-              {searchOpen && (
-                <div className="header__search-dropdown">
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    autoFocus
-                    className="header__search-input"
-                  />
-                </div>
-              )}
+              {searchOpen && renderSearchDropdown()}
             </div>
             <button
               className="header__icon-btn header__cart-btn"
