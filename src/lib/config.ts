@@ -35,8 +35,8 @@ export function getSubdomain(): string {
 }
 
 export function getApiUrl(subdomain?: string): string {
-  const sub = subdomain || getSubdomain();
-  return `${API_BASE}/${sub}/frontend`;
+  const sub = subdomain !== undefined ? subdomain : getSubdomain();
+  return sub ? `${API_BASE}/${sub}/frontend` : `${API_BASE}/demo/frontend`;
 }
 
 export function isSubdomainUrl(): boolean {
