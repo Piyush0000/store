@@ -70,23 +70,9 @@ const isStepActive = (step: Step, s: Step) => {
 
 export default function CheckoutPage() {
   const { track } = useAnalytics();
-  const { cartItems: contextCartItems, clearCart: contextClearCart, cartTotal: contextCartTotal } = useCart();
-  const [buyNowItems, setBuyNowItems] = useState<any[] | null>(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("buyNow") === "true") {
-        const item = sessionStorage.getItem("buyNowItem");
-        if (item) {
-          try {
-            return [JSON.parse(item)];
-          } catch (e) {
-            console.error("Failed to parse buyNowItem", e);
-          }
-        }
-      }
-    }
-    return null;
-  });
+  const { cartItems: contextCartItems, clearCart: contextClearCart, cartTotal: contextCartTotal, isHydrated } = useCart();
+  const [buyNowItems, setBuyNowItems] = useState<any[] | null>(null);
+  const [buyNowChecked, setBuyNowChecked] = useState(false);
 
   const cartItems = buyNowItems || contextCartItems;
   const cartTotal = buyNowItems ? buyNowItems.reduce((acc, item) => acc + item.price * item.quantity, 0) : contextCartTotal;
@@ -99,6 +85,21 @@ export default function CheckoutPage() {
       contextClearCart();
     }
   }, [buyNowItems, contextClearCart]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("buyNow") === "true") {
+      const item = sessionStorage.getItem("buyNowItem");
+      if (item) {
+        try {
+          setBuyNowItems([JSON.parse(item)]);
+        } catch (e) {
+          console.error("Failed to parse buyNowItem", e);
+        }
+      }
+    }
+    setBuyNowChecked(true);
+  }, []);
   const [codFee, setCodFee] = useState(0);
   const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(0);
   const [shippingConfig, setShippingConfig] = useState({
@@ -1200,6 +1201,14 @@ export default function CheckoutPage() {
     );
   };
 
+  if (!buyNowChecked || !isHydrated) {
+    return (
+      <div className="checkout">
+        <h1 className="checkout__title">Checkout</h1>
+      </div>
+    );
+  }
+
   if (cartItems.length === 0 && step !== "success") {
     return (
       <div className="checkout">
@@ -1225,7 +1234,7 @@ export default function CheckoutPage() {
         type="image/webp"
         fetchPriority="high"
       />
-      <h1 className="checkout__title">CHECKOUT</h1>
+      <h1 className="checkout__title">Checkout</h1>
 
       <div className="checkout__steps">
         <div className={`checkout__step ${isStepActive(step, 'identify') ? 'active' : ''}`}>
