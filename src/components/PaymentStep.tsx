@@ -44,7 +44,7 @@ const PaymentStep = React.memo(function PaymentStep({
         <div className="checkout__payment-options">
           <div
             className="checkout__payment-card"
-            onClick={() => onSelectPayment("COD")}
+            onClick={onCreateCodOrder}
           >
             <div className="checkout__payment-header">
               <div className="checkout__payment-info-left">
@@ -57,7 +57,11 @@ const PaymentStep = React.memo(function PaymentStep({
                 </div>
               </div>
               <button className="checkout__payment-select-btn" type="button">
-                Select <ChevronRight size={16} />
+                {isLoading ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  <>Select <ChevronRight size={16} /></>
+                )}
               </button>
             </div>
           </div>
@@ -83,67 +87,8 @@ const PaymentStep = React.memo(function PaymentStep({
               </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {paymentMethod === "COD" && (
-        <div className="checkout__payment-inline-wrapper">
-          <div className="checkout__payment-confirm">
-            <div className="checkout__cod-info">
-              <p>Pay with cash when your order arrives.</p>
-            </div>
-            {error && <span className="checkout__error">{error}</span>}
-            {error &&
-            (error.includes("Unable to verify") || error.includes("stock")) ? (
-              <div className="checkout__payment-actions">
-                <Link href="/catalogue" className="checkout__btn-secondary">
-                  Go Back to Shop
-                </Link>
-                <button
-                  className="checkout__btn-secondary"
-                  onClick={() => {
-                    onClearPaymentMethod();
-                    onClearError();
-                  }}
-                >
-                  Choose Different Payment
-                </button>
-              </div>
-            ) : (
-              <div className="checkout__payment-actions">
-                <button
-                  className="checkout__btn-secondary"
-                  onClick={onClearPaymentMethod}
-                >
-                  Choose Different Payment
-                </button>
-                <button
-                  className="checkout__place-order-btn"
-                  onClick={onCreateCodOrder}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Loader2 className="animate-spin" size={18} />
-                  ) : (
-                    `CONFIRM ORDER - ₹${(displaySubtotal + codFee - displayDiscountTotal).toLocaleString()}`
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-          <div
-            className="checkout__powered-by-wrapper"
-            style={{ marginTop: "24px" }}
-          >
-            <div className="checkout__powered-by">
-              <span>Powered by</span>
-              <img
-                src="/evoc-logo.png"
-                alt="EvocLabs"
-                className="checkout__evoc-logo"
-              />
-            </div>
-          </div>
+          {error && <span className="checkout__error">{error}</span>}
         </div>
       )}
 

@@ -16,6 +16,7 @@ export interface InitialCheckoutState {
   customerLastName: string;
   customerEmail: string;
   codFee: number;
+  onlineDiscountPercent: number;
   shippingConfig: {
     shippingFee: number;
     freeShippingThreshold: number;
@@ -51,6 +52,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
         const shippingSettings = (customization as any).shippingSettings || {};
 
         const codFee = settings.codFee ?? 0;
+        const onlineDiscountPercent = settings.enabledGateways?.payu?.discountPercent ?? 0;
         const shippingFee = Number(shippingSettings.shippingFee ?? (settings as any).shippingFee ?? 0);
         const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? (settings as any).freeShippingThreshold ?? 0);
         const shippingLabel = shippingSettings.shippingLabel || 'Shipment Fee';
@@ -58,6 +60,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
 
         return {
           codFee,
+          onlineDiscountPercent,
           shippingConfig: {
             shippingFee,
             freeShippingThreshold,
@@ -68,6 +71,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       } catch (err) {
         return {
           codFee: 0,
+          onlineDiscountPercent: 0,
           shippingConfig: {
             shippingFee: 0,
             freeShippingThreshold: 0,
@@ -120,6 +124,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       customerLastName,
       customerEmail,
       codFee: storefrontData.codFee,
+      onlineDiscountPercent: storefrontData.onlineDiscountPercent,
       shippingConfig: storefrontData.shippingConfig,
       initialStep,
     };
@@ -134,6 +139,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       customerLastName: "",
       customerEmail: "",
       codFee: 0,
+      onlineDiscountPercent: 0,
       shippingConfig: {
         shippingFee: 0,
         freeShippingThreshold: 0,

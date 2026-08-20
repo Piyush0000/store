@@ -1,4 +1,5 @@
 import { getApiUrl } from './config';
+import { resolveMediaTree } from './media';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -181,7 +182,7 @@ export interface StorefrontData {
     timezone: string;
     contactEmail: string;
     contactPhone: string;
-    enabledGateways: Record<string, { enabled: boolean; keyId: string }>;
+    enabledGateways: Record<string, { enabled: boolean; keyId: string; discountPercent?: number }>;
     codFee?: number;
   };
   announcements: Announcement[];
@@ -253,7 +254,7 @@ const MOCK_STOREFRONT: StorefrontData = {
         id: 'testi-1782338023236',
         date: '',
         name: 'Zainab Alam',
-        image: 'https://res.cloudinary.com/dsj1swlkk/image/upload/v1782338145/orbit-platform/1782338144669-568854731-6543540005_6577680675_a2a3948497248.webp',
+        image: '',
         rating: 5,
         ctaLink: '',
         description: 'Very nice product with great packet\n'
@@ -264,14 +265,17 @@ const MOCK_STOREFRONT: StorefrontData = {
   theme: { id: '1', name: 'default', slug: 'default', category: 'all' }
 };
 
+
 export async function fetchStorefront(subdomain?: string): Promise<StorefrontData> {
   try {
     const apiUrl = getApiUrl(subdomain);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     const data = await res.json();
+
     if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
-    return data;
+    return resolveMediaTree(data);
   } catch (err) {
+    
     return MOCK_STOREFRONT;
   }
 }
@@ -282,7 +286,7 @@ export async function fetchProduct(id: string, subdomain?: string): Promise<Prod
     const res = await fetch(apiUrl, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || `Failed to fetch product ${id}`);
-    return data.product;
+    return resolveMediaTree(data.product);
   } catch (err) {
     return DUMMY_PRODUCTS.find(p => p.id === id) || DUMMY_PRODUCTS[0];
   }
