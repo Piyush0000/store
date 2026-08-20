@@ -33,6 +33,7 @@ export async function createOrUpdateUser(data: z.infer<typeof userSchema>) {
     });
     return { success: true, data: user };
   } catch (error: any) {
+    console.error("[createOrUpdateUser] REAL ERROR:", error);
     return { success: false, message: error.message };
   }
 }

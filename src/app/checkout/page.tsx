@@ -100,6 +100,7 @@ export default function CheckoutPage() {
     }
   }, [buyNowItems, contextClearCart]);
   const [codFee, setCodFee] = useState(0);
+  const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(0);
   const [shippingConfig, setShippingConfig] = useState({
     shippingFee: 0,
     freeShippingThreshold: 0,
@@ -178,7 +179,6 @@ export default function CheckoutPage() {
       ),
     [cartItems],
   );
-  const displayDiscountTotal = discountAmount + bundleDiscountTotal;
 
   const displaySubtotal = useMemo(
     () =>
@@ -193,6 +193,10 @@ export default function CheckoutPage() {
       ),
     [cartItems],
   );
+  const onlineDiscountAmount = paymentMethod === 'PAYU' ? Math.round(displaySubtotal * (onlineDiscountPercent / 100)) : 0;
+  
+  const displayDiscountTotal = discountAmount + bundleDiscountTotal + onlineDiscountAmount;
+  
 
   const effectiveShippingFee = useMemo(() => {
     if (!shippingConfig.enabled) return 0;
@@ -296,7 +300,9 @@ export default function CheckoutPage() {
         if (initialState.codFee !== undefined) {
           setCodFee(initialState.codFee);
         }
-
+        if ((initialState as any).onlineDiscountPercent !== undefined) {
+          setOnlineDiscountPercent((initialState as any).onlineDiscountPercent);
+        }
         if (initialState.sessionValid && initialState.phone) {
           setPhone(initialState.phone);
           if (initialState.user) {
@@ -1386,7 +1392,7 @@ export default function CheckoutPage() {
 
                 {paymentMethod === null && (
                   <div className="checkout__payment-options">
-                    <div className="checkout__payment-card" onClick={() => setPaymentMethod('COD')}>
+                    <div className="checkout__payment-card" onClick={() => handleFinalOrderClick('COD')}>
                       <div className="checkout__payment-header">
                         <div className="checkout__payment-info-left">
                           <div className="checkout__payment-icon">
@@ -1411,7 +1417,12 @@ export default function CheckoutPage() {
                           </div>
                           <div>
                             <p className="checkout__payment-title">Online Payment</p>
-                            <p className="checkout__payment-note">Cards, UPI, Net Banking</p>
+                            <img src="/upi-icons.png" alt="Cards, UPI, Net Banking" style={{ height: '80px', width: 'auto', marginTop: '6px' }} />
+                            {onlineDiscountPercent > 0 && (
+                              <p className="checkout__payment-note" style={{ color: '#16a34a', fontWeight: 600 }}>
+                                🎉 {onlineDiscountPercent}% off
+                              </p>
+                            )}
                           </div>
                         </div>
                         <button className="checkout__payment-select-btn" type="button">
@@ -1462,6 +1473,11 @@ export default function CheckoutPage() {
                       <div className="checkout__online-info">
                         <p>Pay securely via PayU.</p>
                         <p className="checkout__secure-badge">🔒 256-bit SSL Encrypted</p>
+                        {onlineDiscountPercent > 0 && (
+                          <p className="checkout__coupon-success">
+                            🎉 {onlineDiscountPercent}% off applied for online payment!
+                          </p>
+                        )}
                       </div>
                       {error && <span className="checkout__error">{error}</span>}
                       <div className="checkout__payment-actions">

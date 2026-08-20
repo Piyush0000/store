@@ -1,4 +1,4 @@
-// ─── Types ─────────────────────────────────────────────────────────────────────
+import { resolveMediaUrl } from './media';
 
 export interface NormalizedProduct {
   id: string;
@@ -36,7 +36,7 @@ function normalizeProduct(raw: any): NormalizedProduct {
     slug: raw.slug ?? raw.id ?? raw._id ?? '',
     name: raw.name ?? '',
     description: raw.description ?? '',
-    image: images[0] ?? '',
+    image: resolveMediaUrl(images[0] ?? ''),
     price: Number(raw.price ?? 0),
     compareAtPrice: raw.compareAtPrice ? Number(raw.compareAtPrice) : undefined,
     category: raw.category ?? '',
@@ -45,7 +45,7 @@ function normalizeProduct(raw: any): NormalizedProduct {
     isNewArrival: Boolean(raw.isNewArrival),
     averageRating: raw.averageRating ? Number(raw.averageRating) : undefined,
     reviewCount: raw.reviewCount ? Number(raw.reviewCount) : undefined,
-    images,
+    images: images.map((img) => resolveMediaUrl(img)),
   };
 }
 

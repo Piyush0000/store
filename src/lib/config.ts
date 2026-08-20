@@ -1,5 +1,20 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
 
+export function getApiBase(): string {
+  return API_BASE.replace(/\/+$/, '');
+}
+
+export function getBackendOrigin(): string {
+  const explicit = process.env.NEXT_PUBLIC_MEDIA_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (explicit) return explicit.replace(/\/+$/, '');
+  try {
+    const raw = API_BASE.includes('://') ? API_BASE : `https://${API_BASE}`;
+    return new URL(raw).origin;
+  } catch {
+    return 'https://api.evoclabs.com';
+  }
+}
+
 // Extract subdomain from hostname (e.g., store.evoclabs.com -> store)
 export function getSubdomain(): string {
   if (typeof window !== 'undefined') {
