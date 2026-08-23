@@ -14,13 +14,23 @@ interface Reel {
 
 interface ReelsSectionProps {
   reels: Reel[];
+  displayType?: "carousel" | "grid" | "stories" | "pop" | string;
 }
 
-export default function ReelsSection({ reels }: ReelsSectionProps) {
-  const activeReels = (reels || []).filter(reel => reel && typeof reel.videoUrl === 'string' && reel.videoUrl.trim() !== "");
+export default function ReelsSection({
+  reels,
+  displayType = "carousel",
+}: ReelsSectionProps) {
+  const activeReels = (reels || []).filter(
+    (reel) =>
+      reel &&
+      typeof reel.videoUrl === "string" &&
+      reel.videoUrl.trim() !== "",
+  );
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
+  const [isDismissed, setIsDismissed] = useState(false);
   const [windowWidth, setWindowWidth] = useState(1200);
   const [inView, setInView] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
@@ -50,6 +60,52 @@ export default function ReelsSection({ reels }: ReelsSectionProps) {
   }, []);
 
   if (!activeReels || activeReels.length === 0) return null;
+
+  if (displayType === "pop") {
+    if (isDismissed) return null;
+    const currentReel = activeReels[currentIndex] || activeReels[0];
+
+    return (
+      <div className="store-reels-pop">
+        <button
+          className="store-reels-pop__close"
+          onClick={() => setIsDismissed(true)}
+          aria-label="Close video reel"
+        >
+          ×
+        </button>
+        <button
+          className="store-reels-pop__mute"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMuted(!isMuted);
+          }}
+          aria-label="Toggle mute"
+        >
+          {isMuted ? "🔇" : "🔊"}
+        </button>
+        <video
+          src={currentReel.videoUrl}
+          autoPlay
+          muted={isMuted}
+          loop
+          playsInline
+          className="store-reels-pop__video"
+        />
+        {currentReel.ctaLink && (
+          <a
+            href={currentReel.ctaLink}
+            className="store-reels-pop__overlay"
+            title={currentReel.title}
+          >
+            <span className="store-reels-pop__tag">
+              {currentReel.title || "Shop Now"}
+            </span>
+          </a>
+        )}
+      </div>
+    );
+  }
 
   const isMobile = windowWidth <= 640;
   const isTablet = windowWidth > 640 && windowWidth <= 1024;
