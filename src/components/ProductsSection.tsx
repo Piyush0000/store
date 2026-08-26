@@ -23,7 +23,7 @@ export default function ProductsSection({ title, subtitle, products, className =
   };
 
   return (
-    <section className={`products-section animate-slide-up ${className}`}>
+    <section className={`products-section scroll-fade-up ${className}`}>
       <div className="products-section__header">
         <h2 className="products-section__title">{title}</h2>
         {subtitle && <p className="products-section__subtitle">{subtitle}</p>}

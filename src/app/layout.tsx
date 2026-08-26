@@ -11,6 +11,8 @@ import { Inter, Playfair_Display } from "next/font/google";
 import PageLoader from "@/components/PageLoader";
 import FakeSalesPopup from "@/components/FakeSalesPopup";
 import FloatingLogo from "@/components/FloatingLogo";
+import SmoothScroll from "@/components/SmoothScroll";
+import ScrollObserver from "@/components/ScrollObserver";
 
 import { fetchStorefront } from "@/lib/api";
 import { extractPixelId } from "@/lib/pixel";
@@ -108,6 +110,8 @@ export default async function RootLayout({
         )}
       </head>
       <body className={`${inter.variable} ${playfair.variable}`}>
+        <SmoothScroll />
+        <ScrollObserver />
         <PageLoader />
         {pixelId && <MetaPixel pixelId={pixelId} />}
         <PreviewBridge initialCustomization={customization} />

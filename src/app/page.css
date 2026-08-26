@@ -233,6 +233,8 @@
 
 .shop-category__grid {
   display: flex;
+  justify-content: center;
+  justify-content: safe center;
   overflow-x: auto;
   gap: 24px;
   padding: 12px 4px 24px 4px;

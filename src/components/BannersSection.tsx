@@ -24,7 +24,7 @@ export default function BannersSection({ banners, title }: BannersSectionProps) 
   if (activeBanners.length === 0) return null;
 
   return (
-    <section className="banners-section animate-slide-up">
+    <section className="banners-section scroll-fade-up">
       <div className="banners-section__container">
         {title && title.trim() !== "" && (
           <h2 className="banners-section__heading">{title}</h2>

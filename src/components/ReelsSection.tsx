@@ -136,7 +136,7 @@ export default function ReelsSection({
   };
 
   return (
-    <section id="store-reels" ref={sectionRef} className="store-reels">
+    <section id="store-reels" ref={sectionRef} className="store-reels scroll-fade-up">
       <div
         className="store-reels__track"
         onTouchStart={onTouchStart}

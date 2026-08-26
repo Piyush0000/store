@@ -86,7 +86,7 @@ export default function TestimonialsSection({
   };
 
   return (
-    <section className="testimonials-section">
+    <section className="testimonials-section scroll-fade-up">
       <div className="testimonials-section__container">
         <h2 className="testimonials-section__heading">{title}</h2>
         <div className="testimonials-section__view-all-container">

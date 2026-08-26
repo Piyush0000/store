@@ -265,7 +265,7 @@ export default function HomeClient({
     )
       return null;
     return (
-      <section className="hero-carousel animate-slide-up delay-200">
+      <section className="hero-carousel scroll-fade-up">
         <div
           className="hero-carousel__track"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -351,7 +351,7 @@ export default function HomeClient({
     )
       return null;
     return (
-      <section className="shop-category animate-slide-up delay-400">
+      <section className="shop-category scroll-fade-up">
         <h2 className="section-title">SHOP BY CATEGORY</h2>
         <div
           className="shop-category__slider-wrapper"
@@ -406,7 +406,7 @@ export default function HomeClient({
       if (!customizationState?.homePageConfig?.imageUrl) return null;
       return (
         <section
-          className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.bannerOverlay === false ? " brand-video--fullbleed" : ""}${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
+          className={`brand-video scroll-fade-up${customizationState?.homePageConfig?.bannerOverlay === false ? " brand-video--fullbleed" : ""}${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
         >
           <div className="brand-video__wrapper">
             <img
@@ -433,7 +433,7 @@ export default function HomeClient({
       if (!videoUrl) return null;
       return (
         <section
-          className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
+          className={`brand-video scroll-fade-up${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
         >
           <div className="brand-video__wrapper">
             <video
@@ -492,7 +492,7 @@ export default function HomeClient({
       return null;
     if (bestSellers.length > 0) {
       return (
-        <section className="featured-collection animate-slide-up delay-600">
+        <section className="featured-collection scroll-fade-up">
           <h2 className="section-title">ALL PRODUCTS</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
             {bestSellers.map((product, idx) => (
@@ -503,7 +503,7 @@ export default function HomeClient({
       );
     } else {
       return (
-        <section className="featured-collection animate-slide-up delay-600">
+        <section className="featured-collection scroll-fade-up">
           <h2 className="section-title">ALL PRODUCTS</h2>
           <p style={{ textAlign: "center", color: "#888", padding: "40px" }}>
             No products available
