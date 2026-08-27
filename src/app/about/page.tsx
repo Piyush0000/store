@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from 'next/link';
-import { fetchStorefront } from '@/lib/api';
+import { fetchStorefront, fetchPageBySlug } from '@/lib/api';
 import { getServerSubdomain } from '@/lib/server-utils';
 import './about.css';
 
@@ -13,9 +13,21 @@ export default async function AboutPage() {
   const settings = storefront.settings || {};
   const store = storefront.store || { name: 'Our Store' };
 
-  const aboutSection = customization.aboutSection || {
-    title: 'Our Story',
-    content: `At ${store.name}, we believe in delivering quality and value. Founded on a passion for excellence, we bring you products that celebrate true craftsmanship.`,
+  let pageContent = '';
+  let pageTitle = 'About Us';
+  try {
+    const page = await fetchPageBySlug('about', subdomain);
+    if (page && page.content) {
+      pageContent = page.content;
+      pageTitle = page.title;
+    }
+  } catch (err) {
+    console.error('Failed to fetch custom about page:', err);
+  }
+
+  const aboutSection = {
+    title: customization.aboutSection?.title || 'Our Story',
+    content: customization.footerContent?.bio || customization.footerStyle?.bio || customization.aboutSection?.content || `At ${store.name}, we believe in delivering quality and value. Founded on a passion for excellence, we bring you products that celebrate true craftsmanship.`,
   };
 
   const features = customization.features || [
@@ -26,15 +38,21 @@ export default async function AboutPage() {
   return (
     <div className="about">
       <section className="about__hero">
-        <h1>About Us</h1>
+        <h1>{pageTitle}</h1>
         <p className="about__tagline">Discover the story behind our brand</p>
       </section>
 
       <section className="about__content">
-        <div className="about__section">
-          <h2>{aboutSection.title || 'Our Story'}</h2>
-          <p>{aboutSection.content}</p>
-        </div>
+        {pageContent ? (
+          <div className="about__section page-custom-content">
+            <div dangerouslySetInnerHTML={{ __html: pageContent }} />
+          </div>
+        ) : (
+          <div className="about__section">
+            <h2>{aboutSection.title || 'Our Story'}</h2>
+            <p>{aboutSection.content}</p>
+          </div>
+        )}
 
         <div className="about__section">
           <h2>Our Promise</h2>

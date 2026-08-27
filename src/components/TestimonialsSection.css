@@ -69,12 +69,14 @@
 .testimonials-section__card {
   background: #f8f8f8;
   border: 1px solid rgba(0, 0, 0, 0.03);
-  border-radius: 0px; /* Flat luxury branding aesthetic */
+  border-radius: 12px;
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms ease;
+  position: relative;
+  aspect-ratio: 4/5;
 }
 
 .testimonials-section__card:hover {
@@ -82,19 +84,15 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
 }
 
-.testimonials-section__image-container {
-  width: 100%;
-  aspect-ratio: 4/5; /* Rectangular format for product preview */
-  overflow: hidden;
-  position: relative;
-  background: #eaeaea;
-}
-
 .testimonials-section__image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 
 .testimonials-section__card:hover .testimonials-section__image {
@@ -102,19 +100,31 @@
 }
 
 .testimonials-section__content {
-  padding: 20px 18px 22px;
+  padding: 80px 20px 20px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
   flex-grow: 1;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 25%, rgba(255,255,255,0.95) 45%, rgba(255,255,255,1) 100%);
+}
+
+.testimonials-section__quote-icon {
+  color: #1c1c1c;
+  opacity: 0.15;
+  margin-bottom: 8px;
 }
 
 .testimonials-section__name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary, #1c1c1c);
-  margin-bottom: 6px;
+  margin-bottom: 0;
   letter-spacing: -0.01em;
 }
 
@@ -150,13 +160,21 @@
 .testimonials-section__text {
   font-size: 13px;
   line-height: 1.6;
-  color: #555555;
-  font-style: normal;
-  margin-bottom: 16px;
+  color: #333333;
+  font-style: italic;
+  margin-bottom: 12px;
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.testimonials-section__bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: auto;
 }
 
 .testimonials-section__know-more {
@@ -165,7 +183,7 @@
   color: #1c1c1c;
   text-decoration: underline;
   text-transform: lowercase;
-  margin-top: auto;
+  margin-top: 0;
   transition: opacity 0.2s ease;
 }
 

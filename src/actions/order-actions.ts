@@ -1,7 +1,6 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { getServerSubdomain } from '@/lib/server-utils';
 import { fetchStorefront } from '@/lib/api';
@@ -16,6 +15,47 @@ const addressSchema = z.object({
   phone: z.string().optional(),
   isDefault: z.boolean().optional(),
 });
+
+export async function getStorefrontCodFee(): Promise<number> {
+  const subdomain = await getServerSubdomain();
+  const storefront = await fetchStorefront(subdomain);
+  return storefront.settings?.codFee ?? 0;
+}
+
+export async function getStorefrontShippingFee(): Promise<{
+  shippingFee: number;
+  freeShippingThreshold: number;
+  shippingLabel: string;
+  enabled: boolean;
+}> {
+  try {
+    const subdomain = await getServerSubdomain();
+    const storefront = await fetchStorefront(subdomain);
+    const settings = storefront.settings || {};
+    const customization = storefront.customization || {};
+
+    const shippingSettings = (customization as any).shippingSettings || {};
+    const shippingFee = Number(shippingSettings.shippingFee ?? (settings as any).shippingFee ?? 0);
+    const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? (settings as any).freeShippingThreshold ?? 0);
+    const shippingLabel = shippingSettings.shippingLabel || 'Shipment Fee';
+    const enabled = shippingSettings.enabled !== false;
+
+    return {
+      shippingFee,
+      freeShippingThreshold,
+      shippingLabel,
+      enabled,
+    };
+  } catch (error) {
+    console.error('Error fetching storefront shipping fee:', error);
+    return {
+      shippingFee: 0,
+      freeShippingThreshold: 0,
+      shippingLabel: 'Shipment Fee',
+      enabled: false,
+    };
+  }
+}
 
 export async function createAddress(userId: string, data: z.infer<typeof addressSchema>) {
   try {
@@ -70,14 +110,20 @@ const orderInputSchema = z.object({
   payuTxnId: z.string().optional(),
   couponCode: z.string().optional(),
   discountAmount: z.number().optional(),
+  orderNumber: z.string().optional(),
 });
 
 function getCodFailureMessage(responseBody: string, status: number): string {
   const fallbackMessage = `Order could not be placed (HTTP ${status}).`;
 
   try {
-    const parsed = JSON.parse(responseBody) as { message?: string };
-    const message = parsed.message || responseBody || fallbackMessage;
+    const parsed = JSON.parse(responseBody);
+    let message = fallbackMessage;
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].message) {
+      message = parsed[0].message;
+    } else if (parsed && typeof parsed === 'object' && parsed.message) {
+      message = parsed.message;
+    }
 
     if (/insufficient product stock/i.test(message)) {
       return 'Sorry, this item is out of stock right now. Please reduce the quantity or choose a different item.';
@@ -89,7 +135,7 @@ function getCodFailureMessage(responseBody: string, status: number): string {
       return 'Sorry, this item is out of stock right now. Please reduce the quantity or choose a different item.';
     }
 
-    return responseBody || fallbackMessage;
+    return fallbackMessage;
   }
 }
 
@@ -120,7 +166,7 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
       data: {
         userId: orderData.userId,
         storeId: storeId,
-        orderNumber: generateOrderNumber(),
+        orderNumber: orderData.orderNumber || generateOrderNumber(),
         customerEmail: orderData.email,
         customerName: [orderData.firstName, orderData.lastName].filter(Boolean).join(' ') || 'Customer',
         shippingAddress: {
@@ -156,13 +202,13 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
         payuTxnId: orderData.payuTxnId,
         items: {
           create: orderData.items.map(item => {
-            let variantInfo: Prisma.InputJsonValue | undefined = undefined;
+            let variantInfo: any = undefined;
             if (item.variantId) {
-              variantInfo = { variantId: item.variantId, variant: item.variant, image: item.image } as Prisma.InputJsonValue;
+              variantInfo = { variantId: item.variantId, variant: item.variant, image: item.image };
             } else if (item.variant) {
-              variantInfo = { variant: item.variant, image: item.image } as Prisma.InputJsonValue;
+              variantInfo = { variant: item.variant, image: item.image };
             } else if (item.image) {
-              variantInfo = { image: item.image } as Prisma.InputJsonValue;
+              variantInfo = { image: item.image };
             }
             return {
               productId: item.productId,
@@ -199,15 +245,12 @@ export async function createCodOrder(data: {
     state: string;
     pincode: string;
   };
+  couponCode?: string;
+  discountAmount?: number;
 }) {
-  let storeId = data.storeId;
-  if (!storeId) {
-    const subdomain = await getServerSubdomain();
-    const storefront = await fetchStorefront(subdomain);
-    if (storefront.store?.id) {
-      storeId = storefront.store.id;
-    }
-  }
+  const subdomain = await getServerSubdomain();
+  const storefront = await fetchStorefront(subdomain);
+  const storeId = data.storeId || storefront.store?.id;
 
   if (!storeId) {
     return { success: false, message: 'STORE_ID is required to validate COD stock' };
@@ -227,18 +270,21 @@ export async function createCodOrder(data: {
     return { success: false, message: 'Invalid cart total. Please refresh the page and try again.' };
   }
 
-  // Validate total matches items + COD fee (COD_FEE = 40 on frontend)
-  const COD_FEE = 40;
-  const expectedTotal = itemSubtotal + COD_FEE;
+  // Validate total matches items + COD fee - discount
+  const COD_FEE = storefront.settings?.codFee ?? 0;
+  const expectedTotal = itemSubtotal + COD_FEE - (data.discountAmount || 0);
   if (Math.abs(data.totalAmount - expectedTotal) > 1) {
     console.warn('[COD] Total mismatch:', { passed: data.totalAmount, calculated: expectedTotal, itemSubtotal });
   }
 
   const customerName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Customer';
 
+  const localOrderNumber = generateOrderNumber();
+
   // Try external sync first (for stock validation)
   const externalPayload = {
     storeId,
+    orderNumber: localOrderNumber,
     customerName,
     customerEmail: data.email || '',
     shippingAddress: {
@@ -274,6 +320,8 @@ export async function createCodOrder(data: {
     source: 'STOREFRONT',
     paymentStatus: 'PENDING',
     status: 'PENDING',
+    couponCode: data.couponCode || null,
+    discountAmount: data.discountAmount || null,
     items: data.items.map((item) => ({
       productId: item.productId || item.name,
       name: item.name,
@@ -333,6 +381,7 @@ export async function createCodOrder(data: {
   const orderResult = await createOrder({
     userId: data.userId,
     storeId,
+    orderNumber: localOrderNumber,
     items: data.items.map(item => ({
       productId: item.productId || item.name,
       name: item.name,
@@ -352,6 +401,8 @@ export async function createCodOrder(data: {
     email: data.email || '',
     phone: data.phone,
     shippingAddress: data.shippingAddress,
+    couponCode: data.couponCode,
+    discountAmount: data.discountAmount,
   });
 
   if (!orderResult.success) {
@@ -458,13 +509,13 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
       include: { items: true },
     });
 
-    // 2. Sync to backend
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
     const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
 
     const externalPayload = {
       storeId: order.storeId,
       userId: order.userId,
+      orderNumber: order.orderNumber,
       customerName: order.customerName,
       customerEmail: order.customerEmail,
       shippingAddress: {
@@ -500,7 +551,7 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
       source: 'STOREFRONT',
       paymentStatus: 'PAID',
       status: 'CONFIRMED',
-      items: order.items.map((item) => ({
+      items: order.items.map((item: any) => ({
         productId: item.productId,
         name: item.name,
         quantity: item.quantity,

@@ -1,20 +1,38 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { useAnalytics } from './AnalyticsProvider';
 
 export interface CartItem {
   id: string;
   name: string;
   price: number;
+  compareAtPrice?: number;
   quantity: number;
   images?: string[];
   variants?: Record<string, string>;
   variantId?: string;
+  // Bundle support
+  type?: 'PRODUCT' | 'BUNDLE';
+  bundleId?: string;
+  productIds?: string[];
+  items?: Array<{ id: string; name: string; price: number; image?: string }>;
+  discountAmount?: number;
+  discountPercentage?: number;
+  regularTotal?: number;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (product: Omit<CartItem, 'quantity'>, quantity?: number, variants?: Record<string, string>) => void;
+  addBundleToCart: (
+    bundleId: string,
+    title: string,
+    payablePrice: number,
+    items: Array<{ id: string; name: string; price: number; image?: string }>,
+    discountAmount: number,
+    discountPercentage?: number
+  ) => void;
   removeFromCart: (productId: string, variants?: Record<string, string>) => void;
   updateQuantity: (productId: string, variants?: Record<string, string>, quantity?: number) => void;
   clearCart: () => void;
@@ -36,6 +54,7 @@ export function useCart() {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { track } = useAnalytics();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -74,13 +93,69 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       return [...prev, { ...product, quantity, variants }];
     });
+
+    // Track AddToCart event
+    try {
+      track('AddToCart', {
+        content_ids: [product.id],
+        content_name: product.name,
+        content_type: 'product',
+        value: product.price,
+        currency: 'INR'
+      });
+    } catch (e) {
+      console.warn('[Analytics] Failed to track AddToCart:', e);
+    }
+
+    setIsCartOpen(true);
+  };
+
+  const addBundleToCart = (
+    bundleId: string,
+    title: string,
+    payablePrice: number,
+    items: Array<{ id: string; name: string; price: number; image?: string }>,
+    discountAmount: number,
+    discountPercentage?: number
+  ) => {
+    setCartItems((prev) => {
+      const sortedProductIds = items.map(i => i.id).sort();
+      const uniqueId = `bundle_${bundleId}_${sortedProductIds.join('_')}`;
+
+      const existing = prev.find((item) => item.id === uniqueId);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === uniqueId ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+
+      const regularTotal = items.reduce((sum, item) => sum + item.price, 0);
+
+      const bundleItem: CartItem = {
+        id: uniqueId,
+        name: title,
+        price: payablePrice,
+        quantity: 1,
+        images: items.map((i) => i.image).filter(Boolean) as string[],
+        type: 'BUNDLE',
+        bundleId,
+        productIds: sortedProductIds,
+        items,
+        discountAmount,
+        discountPercentage,
+        regularTotal,
+      };
+
+      return [...prev, bundleItem];
+    });
+
     setIsCartOpen(true);
   };
 
   const removeFromCart = (productId: string, variants = {}) => {
     setCartItems((prev) =>
       prev.filter(
-        (item) => !(item.id === productId && JSON.stringify(item.variants) === JSON.stringify(variants))
+        (item) => !(item.id === productId && JSON.stringify(item.variants || {}) === JSON.stringify(variants || {}))
       )
     );
   };
@@ -93,7 +168,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setCartItems((prev) =>
       prev.map((item) =>
-        item.id === productId && JSON.stringify(item.variants) === JSON.stringify(variants)
+        item.id === productId && JSON.stringify(item.variants || {}) === JSON.stringify(variants || {})
           ? { ...item, quantity }
           : item
       )
@@ -119,6 +194,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       value={{
         cartItems,
         addToCart,
+        addBundleToCart,
         removeFromCart,
         updateQuantity,
         clearCart,

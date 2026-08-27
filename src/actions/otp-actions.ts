@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 
 const MAX_OTP_PER_HOUR = 5;
 const RESEND_TIMER_SECONDS = 120;
@@ -191,7 +192,7 @@ const SESSION_DURATION_MS = 60 * 60 * 1000; // 60 minutes
 
 export async function createSession(phone: string, deviceId?: string): Promise<{ success: boolean }> {
   try {
-    const device = deviceId || crypto.randomUUID();
+    const device = deviceId || randomUUID();
 
     // Delete any existing sessions for this phone
     await prisma.checkoutSession.deleteMany({

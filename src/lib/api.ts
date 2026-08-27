@@ -1,4 +1,5 @@
 import { getApiUrl } from './config';
+import { resolveMediaTree } from './media';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,28 +25,59 @@ export interface Customization {
   headerConfig: { showSearch: boolean; showCart: boolean; showWishlist: boolean; storeName: string; logoUrl: string };
   footerConfig: { showAbout: boolean; showContact: boolean; showSocial: boolean; showNewsletter: boolean };
   homePageConfig: { heroEnabled: boolean; featuredEnabled: boolean; categoriesEnabled: boolean; images: string[]; videoUrl?: string };
-  socialLinks: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string };
+  socialLinks: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string; tiktok?: string };
   navLinks: { label: string; href: string }[];
   ctaButtons: any[];
   features: { title: string; description: string; icon: string }[];
-  productSections: { id: string; type: string; title: string; limit: number }[];
+  productSections: { id: string; type: string; title: string; subtitle?: string; categoryFilter?: string; limit: number }[];
   newsletter: { heading: string; subtext: string };
   announcementBar: { text: string };
   metaTitle: string;
   metaDescription: string;
+  metaPixel?: string;
   headerStyle?: any;
   footerStyle?: any;
   footerContent?: any;
   categoryImages?: Record<string, string>;
+  shippingSettings?: {
+    enabled?: boolean;
+    shippingFee?: number;
+    freeShippingThreshold?: number;
+    shippingLabel?: string;
+  };
   reelsSection?: {
     enabled?: boolean;
     reels?: Array<{ id: string; title: string; sub: string; category: string; videoUrl: string; ctaLink?: string }>;
+  };
+  fakeSalesPopup?: {
+    enabled?: boolean;
+    intervalSeconds?: number;
+    delaySeconds?: number;
+  };
+  floatingLogo?: {
+    enabled?: boolean;
+    imageUrl?: string;
+    linkUrl?: string;
   };
   testimonialsSection?: {
     enabled?: boolean;
     title?: string;
     testimonials?: Array<{ id: string; name: string; description: string; image?: string; rating?: number; date?: string; ctaLink?: string }>;
   };
+  bannersSection?: {
+    enabled?: boolean;
+    title?: string;
+    banners?: Array<{
+      id: string;
+      image?: string;
+      link?: string;
+      title?: string;
+      subtitle?: string;
+      buttonText?: string;
+      openInNewTab?: boolean;
+    }>;
+  };
+  homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number }>;
 }
 
 export interface ProductVariant {
@@ -102,6 +134,17 @@ export interface LegalPage {
   content: string;
 }
 
+export interface StorePage {
+  id: string;
+  storeId: string;
+  title: string;
+  slug: string;
+  content: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Store {
   id: string;
   name: string;
@@ -114,6 +157,22 @@ export interface Store {
   createdAt: string;
 }
 
+export interface Testimonial {
+  id: string;
+  date: string;
+  name: string;
+  image: string;
+  rating: number;
+  ctaLink: string;
+  description: string;
+}
+
+export interface TestimonialSection {
+  enabled?: boolean;
+  title?: string;
+  testimonials?: Testimonial[];
+}
+
 export interface StorefrontData {
   success: boolean;
   store: Store;
@@ -123,11 +182,13 @@ export interface StorefrontData {
     timezone: string;
     contactEmail: string;
     contactPhone: string;
-    enabledGateways: Record<string, { enabled: boolean; keyId: string }>;
+    enabledGateways: Record<string, { enabled: boolean; keyId: string; discountPercent?: number }>;
+    codFee?: number;
   };
   announcements: Announcement[];
   legalPages: LegalPage[];
   products: Product[];
+  testimonialsSection?: TestimonialSection;
   categories: string[];
   theme: { id: string; name: string; slug: string; category: string };
 }
@@ -181,22 +242,40 @@ const MOCK_STOREFRONT: StorefrontData = {
   success: true,
   store: { id: 's-1', name: 'Demo Store', subdomain: 'demo', customDomain: null, description: 'Welcome to our generic demo store.', logo: null, category: 'General', theme: 'default', createdAt: '' },
   customization: {} as any,
-  settings: { currency: 'INR', timezone: 'Asia/Kolkata', contactEmail: 'contact@example.com', contactPhone: '', enabledGateways: {} },
+  settings: { currency: 'INR', timezone: 'Asia/Kolkata', contactEmail: 'contact@example.com', contactPhone: '', enabledGateways: {}, codFee: 40 },
   announcements: [],
   legalPages: [],
   products: DUMMY_PRODUCTS,
+  testimonialsSection: {
+    enabled: true,
+    title: 'What Our Customers Say',
+    testimonials: [
+      {
+        id: 'testi-1782338023236',
+        date: '',
+        name: 'Zainab Alam',
+        image: '',
+        rating: 5,
+        ctaLink: '',
+        description: 'Very nice product with great packet\n'
+      }
+    ]
+  },
   categories: ['sample-category', 'featured-items'],
   theme: { id: '1', name: 'default', slug: 'default', category: 'all' }
 };
 
+
 export async function fetchStorefront(subdomain?: string): Promise<StorefrontData> {
   try {
     const apiUrl = getApiUrl(subdomain);
-    const res = await fetch(apiUrl, { next: { revalidate: 60 } });
+    const res = await fetch(apiUrl, { cache: 'no-store' });
     const data = await res.json();
+
     if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
-    return data;
+    return resolveMediaTree(data);
   } catch (err) {
+    
     return MOCK_STOREFRONT;
   }
 }
@@ -207,30 +286,62 @@ export async function fetchProduct(id: string, subdomain?: string): Promise<Prod
     const res = await fetch(apiUrl, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || `Failed to fetch product ${id}`);
-    return data.product;
+    return resolveMediaTree(data.product);
   } catch (err) {
     return DUMMY_PRODUCTS.find(p => p.id === id) || DUMMY_PRODUCTS[0];
   }
 }
 
 export async function fetchAnnouncements(subdomain?: string): Promise<Announcement[]> {
-  const apiUrl = `${getApiUrl(subdomain)}/announcements`;
-
-  const res = await fetch(apiUrl, { cache: 'no-store' });
-  const data = await res.json();
-
-  if (!data.success) throw new Error(data.message || 'Failed to fetch announcements');
-  return data.announcements || [];
+  try {
+    const apiUrl = `${getApiUrl(subdomain)}/announcements`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data.success) return [];
+    return data.announcements || [];
+  } catch (error) {
+    return [];
+  }
 }
 
 export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
-  const apiUrl = `${getApiUrl(subdomain)}/legal`;
+  try {
+    const apiUrl = `${getApiUrl(subdomain)}/legal`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data.success) return [];
+    return data.legalPages || [];
+  } catch (error) {
+    return [];
+  }
+}
 
-  const res = await fetch(apiUrl, { cache: 'no-store' });
-  const data = await res.json();
+export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
+  try {
+    const apiUrl = `${getApiUrl(subdomain)}/pages`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data.success) return [];
+    return data.pages || [];
+  } catch (error) {
+    return [];
+  }
+}
 
-  if (!data.success) throw new Error(data.message || 'Failed to fetch legal pages');
-  return data.legalPages || [];
+export async function fetchPageBySlug(slug: string, subdomain?: string): Promise<StorePage | null> {
+  try {
+    const apiUrl = `${getApiUrl(subdomain)}/pages/${slug}`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.success) return null;
+    return data.page;
+  } catch (error) {
+    return null;
+  }
 }
 
 export async function submitReview(review: {

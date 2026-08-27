@@ -9,11 +9,32 @@ function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
-interface AnnouncementBarProps {
-  initialCustomization?: any;
+function getContrastColor(hexColor: string) {
+  if (!hexColor) return '#ffffff';
+  const hex = hexColor.replace('#', '');
+  if (hex.length !== 6 && hex.length !== 3) return '#ffffff';
+  
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 6) {
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+  } else {
+    r = parseInt(hex.charAt(0) + hex.charAt(0), 16);
+    g = parseInt(hex.charAt(1) + hex.charAt(1), 16);
+    b = parseInt(hex.charAt(2) + hex.charAt(2), 16);
+  }
+  
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#000000' : '#ffffff';
 }
 
-export default function AnnouncementBar({ initialCustomization }: AnnouncementBarProps) {
+interface AnnouncementBarProps {
+  initialCustomization?: any;
+  storeSubdomain?: string;
+}
+
+export default function AnnouncementBar({ initialCustomization, storeSubdomain }: AnnouncementBarProps) {
   const getInitialAnnouncements = () => {
     if (initialCustomization?.announcementBar?.announcements) {
       return initialCustomization.announcementBar.announcements;
@@ -29,6 +50,10 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
 
   const [announcements, setAnnouncements] = useState<any[]>(getInitialAnnouncements);
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 3, seconds: 0 });
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return initialCustomization?.announcementBar?.backgroundColor || '#000000';
+  });
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -38,7 +63,7 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
     hasFetched.current = true;
 
     console.log('[ANNOUNCEMENT] Fetching announcements from API');
-    fetchAnnouncements()
+    fetchAnnouncements(storeSubdomain)
       .then((data) => {
         console.log('[ANNOUNCEMENT] Announcements fetched:', data.length);
         // Map database structure (message/link) to unified list format (text/link)
@@ -48,7 +73,7 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
         })));
       })
       .catch((err) => {
-        console.error('[ANNOUNCEMENT] Failed to fetch:', err);
+        console.warn('[ANNOUNCEMENT] Failed to fetch:', err);
       });
   }, [initialCustomization]);
 
@@ -65,6 +90,9 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
           }]);
         } else {
           setAnnouncements([]);
+        }
+        if (cust?.announcementBar?.backgroundColor) {
+          setBackgroundColor(cust.announcementBar.backgroundColor);
         }
       }
     };
@@ -86,47 +114,66 @@ export default function AnnouncementBar({ initialCustomization }: AnnouncementBa
     return () => clearInterval(interval);
   }, []);
 
+  const timeLeftText = `Limited Time: ${pad(timeLeft.hours)}H:${pad(timeLeft.minutes)}M:${pad(timeLeft.seconds)}S`;
+
   const staticMessages = [
-    { text: 'Extra discounts of Rs.650 at checkout', link: '' },
     { text: 'Hurry Up, Shop Now!', link: '' },
     { text: '50% Off', link: '' },
-    { text: `Limited Time: ${pad(timeLeft.hours)}H:${pad(timeLeft.minutes)}M:${pad(timeLeft.seconds)}S`, link: '' },
+    { text: timeLeftText, link: '' },
     { text: 'Save Min 50% on all orders and get free shipping', link: '' },
   ];
 
   const displayList = announcements.length > 0 ? announcements : staticMessages;
 
-  const barStyle = initialCustomization?.announcementBar?.backgroundColor
-    ? { backgroundColor: initialCustomization.announcementBar.backgroundColor, color: initialCustomization.announcementBar.textColor || '#fff' }
-    : {};
+  // Reset current index if content list length changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [displayList.length]);
 
-  // Duplicate items to ensure smooth continuous infinite scrolling marquee
-  const trackItems = [...displayList, ...displayList, ...displayList, ...displayList];
+  // Autoplay cycle
+  useEffect(() => {
+    if (displayList.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % displayList.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [displayList.length]);
+
+  const textColor = getContrastColor(backgroundColor);
+  const barStyle = {
+    backgroundColor: backgroundColor,
+    color: textColor,
+  };
 
   return (
     <div className="announcement-bar" style={barStyle}>
       <div className="announcement-marquee">
-        <div className="announcement-track">
-          {trackItems.map((ann, i) => {
+        <div 
+          className="announcement-track"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {displayList.map((ann, i) => {
             const itemContent = (
               <span className="announcement-item">
                 <span className="announcement-diamond">◆</span>
-                {ann.text}
+                {ann.text === 'Limited Time: 00H:03M:00S' ? timeLeftText : ann.text}
               </span>
             );
 
-            if (ann.link) {
-              return (
-                <Link key={i} href={ann.link} className="announcement-link hover:underline transition-all">
-                  {itemContent}
-                </Link>
-              );
-            }
-
-            return (
-              <span key={i}>
+            const slideContent = ann.link ? (
+              <Link href={ann.link} className="announcement-link hover:underline transition-all">
+                {itemContent}
+              </Link>
+            ) : (
+              <span>
                 {itemContent}
               </span>
+            );
+
+            return (
+              <div key={i} className="announcement-slide">
+                {slideContent}
+              </div>
             );
           })}
         </div>

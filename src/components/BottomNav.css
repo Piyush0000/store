@@ -1,0 +1,108 @@
+/* Bottom Navigation — mobile only, fixed to bottom */
+.bottom-nav {
+  display: none; /* hidden on desktop */
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: #ffffff;
+    border-top: 1px solid var(--border, #eaeaea);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottom-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+    height: 100%;
+    text-decoration: none;
+    color: var(--text-muted, #7a7a78);
+    transition: color 200ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+  }
+
+  .bottom-nav__item--active {
+    color: var(--gold, #a88a3b);
+  }
+
+  .bottom-nav__item--active .bottom-nav__label {
+    font-weight: 600;
+  }
+
+  /* Ripple-style active indicator above the icon */
+  .bottom-nav__item--active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 2px;
+    background: var(--gold, #a88a3b);
+    border-radius: 0 0 2px 2px;
+  }
+
+  .bottom-nav__icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+  }
+
+  .bottom-nav__icon {
+    transition: transform 160ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+  }
+
+  .bottom-nav__item--active .bottom-nav__icon {
+    transform: translateY(-1px);
+  }
+
+  .bottom-nav__badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: var(--gold, #a88a3b);
+    color: #fff;
+    font-family: var(--font-body, system-ui, sans-serif);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 9999px;
+    pointer-events: none;
+  }
+
+  .bottom-nav__label {
+    font-family: var(--font-body, system-ui, sans-serif);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    line-height: 1;
+  }
+}
+
+/* Push page content above the nav on mobile */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}

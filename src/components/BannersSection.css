@@ -1,0 +1,177 @@
+.banners-section {
+  padding: 60px 0;
+  background: var(--bg-primary, #ffffff);
+  width: 100%;
+}
+
+.banners-section__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.banners-section__heading {
+  font-family: var(--font-heading, serif);
+  font-size: 24px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--text-primary, #1c1c1c);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+}
+
+.banners-section__grid {
+  display: grid;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Dynamic columns layouts */
+.banners-section__grid--cols-1 {
+  grid-template-columns: 1fr;
+}
+
+.banners-section__grid--cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.banners-section__grid--cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.banners-section__link,
+.banners-section__wrapper {
+  display: block;
+  width: 100%;
+  text-decoration: none;
+}
+
+.banners-section__card {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #f4f4f4;
+  aspect-ratio: 16 / 9;
+}
+
+/* Make 1-column banners taller/different aspect ratio for beauty */
+.banners-section__grid--cols-1 .banners-section__card {
+  aspect-ratio: 21 / 9;
+}
+
+.banners-section__image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.banners-section__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.banners-section__card:hover .banners-section__image {
+  transform: scale(1.04);
+}
+
+.banners-section__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.2) 60%, rgba(0, 0, 0, 0.1) 100%);
+  display: flex;
+  align-items: flex-end;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.banners-section__content {
+  color: #ffffff;
+  max-width: 80%;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.banners-section__title {
+  font-family: var(--font-heading, serif);
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.banners-section__subtitle {
+  font-size: 14px;
+  font-weight: 300;
+  margin: 0 0 16px 0;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.banners-section__button {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 8px 16px;
+  background: #ffffff;
+  color: #000000;
+  transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+
+.banners-section__card:hover .banners-section__button {
+  background: var(--gold, #000000);
+  color: #ffffff;
+}
+
+/* Responsive constraints */
+@media (max-width: 1024px) {
+  .banners-section__grid--cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .banners-section {
+    padding: 40px 0;
+  }
+  
+  .banners-section__heading {
+    font-size: 20px;
+    margin-bottom: 24px;
+  }
+
+  .banners-section__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .banners-section__card,
+  .banners-section__grid--cols-1 .banners-section__card {
+    aspect-ratio: 16 / 9;
+  }
+
+  .banners-section__overlay {
+    padding: 20px;
+  }
+
+  .banners-section__title {
+    font-size: 18px;
+  }
+
+  .banners-section__subtitle {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .banners-section__button {
+    font-size: 10px;
+    padding: 6px 12px;
+  }
+}

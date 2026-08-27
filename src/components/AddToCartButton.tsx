@@ -13,6 +13,7 @@ export default function AddToCartButton({ product }: { product: any }) {
       id: product.id,
       name: product.name,
       price: product.price,
+      compareAtPrice: product.compareAtPrice,
       images: product.images,
     }, 1);
     setAdded(true);

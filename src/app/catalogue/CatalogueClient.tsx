@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useCallback } from 'react';
+import { Suspense, useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
 import { ProductGridSkeleton } from './Skeleton';
@@ -34,36 +34,62 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
   const [sortBy, setSortBy] = useState('featured');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Synchronize category state when search parameters change via external navigation (e.g. navbar clicks)
+  useEffect(() => {
+    const category = searchParams.get('category') || 'all';
+    setSelectedCategory(category);
+    setIsLoading(false);
+  }, [searchParams]);
+
   const categoryList = categories.length > 0
     ? [{ id: 'all', label: 'All' }, ...categories.map(c => ({ id: c.toLowerCase().replace(/\s+/g, '-'), label: c }))]
     : [{ id: 'all', label: 'All' }, { id: 'jewellery-sets', label: 'Jewellery Sets' }, { id: 'necklace', label: 'Necklace' }, { id: 'earrings', label: 'Earrings' }];
 
   const selectedStream = searchParams.get('stream') || '';
+  const searchQueryParam = searchParams.get('q') || searchParams.get('search') || searchParams.get('query') || '';
+
+  const handleClearSearch = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('q');
+    params.delete('search');
+    params.delete('query');
+    const newQuery = params.toString() ? `?${params.toString()}` : '';
+    router.push(`/catalogue${newQuery}`, { scroll: false });
+  }, [router, searchParams]);
 
   const handleCategoryChange = useCallback((categoryId: string) => {
+    if (categoryId === selectedCategory && !searchQueryParam) return;
     setIsLoading(true);
     setSelectedCategory(categoryId);
 
-    // Keep stream param if present when changing category
     const params = new URLSearchParams(searchParams.toString());
+    params.delete('q');
+    params.delete('search');
+    params.delete('query');
     if (categoryId === 'all') {
       params.delete('category');
     } else {
       params.set('category', categoryId);
     }
+
     const newQuery = params.toString() ? `?${params.toString()}` : '';
     router.push(`/catalogue${newQuery}`, { scroll: false });
-
-    setTimeout(() => setIsLoading(false), 300);
-  }, [router, searchParams]);
+  }, [router, searchParams, selectedCategory, searchQueryParam]);
 
   const filteredProducts = products.filter(p => {
-    // 1. Filter by category
+    // 1. Filter by search query
+    if (searchQueryParam) {
+      const q = searchQueryParam.toLowerCase().trim();
+      const nameMatch = p.name?.toLowerCase().includes(q);
+      const categoryMatch = p.category?.toLowerCase().includes(q);
+      if (!nameMatch && !categoryMatch) return false;
+    }
+    // 2. Filter by category
     if (selectedCategory !== 'all') {
       const matchCat = p.category?.toLowerCase().replace(/\s+/g, '-') === selectedCategory.toLowerCase();
       if (!matchCat) return false;
     }
-    // 2. Filter by stream
+    // 3. Filter by stream
     if (selectedStream) {
       const s = selectedStream.toLowerCase();
       if (s === 'featured' && !p.isFeatured) return false;
@@ -84,7 +110,9 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
   });
 
   let categoryLabel = categoryList.find(c => c.id === selectedCategory)?.label || 'All Products';
-  if (selectedStream) {
+  if (searchQueryParam) {
+    categoryLabel = `Results for "${searchQueryParam}"`;
+  } else if (selectedStream) {
     const streamName = selectedStream.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     categoryLabel = `${streamName} Products`;
   }
@@ -92,7 +120,25 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
   return (
     <div className="catalogue">
       <div className="catalogue__header">
-        <h1>{categoryLabel.toUpperCase()}</h1>
+        <div>
+          <h1>{categoryLabel.toUpperCase()}</h1>
+          {searchQueryParam && (
+            <button 
+              onClick={handleClearSearch}
+              style={{
+                background: 'none',
+                border: '1px solid rgba(0,0,0,0.2)',
+                borderRadius: '16px',
+                padding: '2px 10px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                marginTop: '4px'
+              }}
+            >
+              Clear search ✕
+            </button>
+          )}
+        </div>
         <span className="catalogue__count">{sortedProducts.length} items</span>
       </div>
 
@@ -106,7 +152,7 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
                   <input
                     type="radio"
                     name="category"
-                    checked={selectedCategory === cat.id}
+                    checked={selectedCategory === cat.id && !searchQueryParam}
                     onChange={() => handleCategoryChange(cat.id)}
                   />
                   <span>{cat.label}</span>
@@ -131,7 +177,23 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
             <ProductGridSkeleton count={6} />
           ) : sortedProducts.length === 0 ? (
             <div className="catalogue__empty">
-              <p>No products found in this category.</p>
+              <p>No products found {searchQueryParam ? `matching "${searchQueryParam}"` : 'in this category'}.</p>
+              {searchQueryParam && (
+                <button 
+                  onClick={handleClearSearch}
+                  style={{
+                    marginTop: '12px',
+                    padding: '8px 16px',
+                    backgroundColor: '#2f4156',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  View All Products
+                </button>
+              )}
             </div>
           ) : (
             <div className="catalogue__grid">

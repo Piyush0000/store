@@ -1,5 +1,19 @@
-// API base URL - subdomain determines which store's data is returned
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+
+export function getApiBase(): string {
+  return API_BASE.replace(/\/+$/, '');
+}
+
+export function getBackendOrigin(): string {
+  const explicit = process.env.NEXT_PUBLIC_MEDIA_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (explicit) return explicit.replace(/\/+$/, '');
+  try {
+    const raw = API_BASE.includes('://') ? API_BASE : `https://${API_BASE}`;
+    return new URL(raw).origin;
+  } catch {
+    return 'https://api.evoclabs.com';
+  }
+}
 
 // Extract subdomain from hostname (e.g., store.evoclabs.com -> store)
 export function getSubdomain(): string {
@@ -18,7 +32,10 @@ export function getSubdomain(): string {
       return storedSub;
     }
 
-    const hostname = window.location.hostname;
+    let hostname = window.location.hostname.toLowerCase();
+    if (hostname.startsWith('www.')) {
+      hostname = hostname.substring(4);
+    }
     // Local development: use environment variable fallback
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
@@ -33,8 +50,8 @@ export function getSubdomain(): string {
 }
 
 export function getApiUrl(subdomain?: string): string {
-  const sub = subdomain || getSubdomain();
-  return `${API_BASE}/${sub}/frontend`;
+  const sub = subdomain !== undefined ? subdomain : getSubdomain();
+  return sub ? `${API_BASE}/${sub}/frontend` : `${API_BASE}/demo/frontend`;
 }
 
 export function isSubdomainUrl(): boolean {

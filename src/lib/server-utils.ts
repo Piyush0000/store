@@ -20,7 +20,11 @@ export async function getServerSubdomain(): Promise<string> {
     }
     if (host) {
       // Strip port if exists
-      const hostname = host.split(':')[0];
+      let hostname = host.split(':')[0].toLowerCase();
+      // Strip www prefix if present
+      if (hostname.startsWith('www.')) {
+        hostname = hostname.substring(4);
+      }
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         console.log('[server-utils] Localhost detected. process.env.NEXT_PUBLIC_SUBDOMAIN:', process.env.NEXT_PUBLIC_SUBDOMAIN);
         return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
@@ -30,7 +34,10 @@ export async function getServerSubdomain(): Promise<string> {
         return parts[0];
       }
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error && (error.digest === 'DYNAMIC_SERVER_USAGE' || String(error.message).includes('Dynamic server usage'))) {
+      throw error;
+    }
     console.warn('[server-utils] Failed to get host header:', error);
   }
   return process.env.NEXT_PUBLIC_SUBDOMAIN || '';

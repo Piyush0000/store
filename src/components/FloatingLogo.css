@@ -1,0 +1,55 @@
+.floating-logo {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 2px solid #ffffff;
+  background-color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+  pointer-events: auto;
+}
+
+.floating-logo:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.floating-logo:active {
+  transform: scale(0.95);
+}
+
+.floating-logo__link {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.floating-logo__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.floating-logo:hover .floating-logo__img {
+  transform: scale(1.05);
+}
+
+@media (max-width: 480px) {
+  .floating-logo {
+    bottom: 76px; /* Avoid overlapping with BottomNav on mobile */
+    right: 12px;
+    width: 50px;
+    height: 50px;
+  }
+}
