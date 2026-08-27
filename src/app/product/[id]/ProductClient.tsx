@@ -24,6 +24,24 @@ import "./product.css";
 
 const pad = (num: number) => String(num).padStart(2, "0");
 
+const decodeAndFormatHtml = (content: string) => {
+  if (!content) return "";
+  let formatted = content;
+  if (formatted.includes("&lt;") && formatted.includes("&gt;")) {
+    formatted = formatted
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, " ");
+  }
+  if (formatted.includes("<")) {
+    return formatted;
+  }
+  return formatted.replace(/\n/g, "<br/>");
+};
+
 interface ProductClientProps {
   product: any;
   relatedProducts: any[];
@@ -633,9 +651,7 @@ export default function ProductClient({
                   <div
                     className="product-page__rich-description"
                     dangerouslySetInnerHTML={{
-                      __html: product.description.includes("<")
-                        ? product.description
-                        : product.description.replace(/\n/g, "<br/>"),
+                      __html: decodeAndFormatHtml(product.description),
                     }}
                   />
                 ) : (
