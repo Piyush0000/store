@@ -66,11 +66,25 @@ export default function ProductClient({
   testimonials,
   reelsSection,
 }: ProductClientProps) {
+  // Safely normalize customFields (handles JSON string from Prisma / API / DB)
+  const customFields: Record<string, any> = (() => {
+    const raw = product?.customFields;
+    if (!raw) return {};
+    if (typeof raw === "object") return raw;
+    if (typeof raw === "string") {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error("Failed to parse customFields in ProductClient:", e);
+      }
+    }
+    return {};
+  })();
   const showReelsSection = Boolean(
-    product.customFields?.showReelsSection ?? true
+    customFields.showReelsSection ?? true
   );
   const showFloatingReel = Boolean(
-    product.customFields?.showFloatingReel ?? false
+    customFields.showFloatingReel ?? false
   );
   const [coupons, setCoupons] = useState<any[]>([]);
 
@@ -93,7 +107,7 @@ export default function ProductClient({
   }, []);
 
   const specifications: Array<{ key: string; value: string }> = (() => {
-    const raw = product.customFields?.specifications || product.specifications;
+    const raw = customFields.specifications || product.specifications;
     if (!raw) return [];
     if (Array.isArray(raw)) {
       return raw.filter(
@@ -111,14 +125,14 @@ export default function ProductClient({
   })();
 
   const isBestseller = Boolean(
-    product.customFields?.showBestsellerBadge ?? product.isBestSeller
+    customFields.showBestsellerBadge ?? product.isBestSeller
   );
   const isFastSelling = Boolean(
-    product.customFields?.showFastSellingBadge ??
-      product.customFields?.isFastSelling
+    customFields.showFastSellingBadge ??
+      customFields.isFastSelling
   );
   const recentSalesCount =
-    product.customFields?.recentSalesCount || product.recentSalesCount;
+    customFields.recentSalesCount || product.recentSalesCount;
   const { addToCart, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const liked = isInWishlist(product.id);

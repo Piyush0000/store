@@ -58,9 +58,11 @@ export default async function ProductPage({ params }: PageProps) {
       .slice(0, 4);
   }
 
+  const normalizedProduct = { ...product, customFields };
+
   return (
     <ProductClient
-      product={product}
+      product={normalizedProduct}
       relatedProducts={relatedProducts}
       testimonials={testimonialSection}
       reelsSection={reelsSection}
