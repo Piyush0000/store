@@ -1240,7 +1240,7 @@ export default function CheckoutPage() {
         <div className={`checkout__step ${isStepActive(step, 'identify') ? 'active' : ''}`}>
           <span className="checkout__step-content">
             <span className="checkout__step-num">1.</span>
-            <span className="checkout__step-label">Login &amp; Verification</span>
+            <span className="checkout__step-label">Login</span>
           </span>
         </div>
         <div className={`checkout__step ${isStepActive(step, 'details') ? 'active' : ''}`}>

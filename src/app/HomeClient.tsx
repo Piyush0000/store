@@ -7,6 +7,7 @@ import ProductsSection from "@/components/ProductsSection";
 import ReelsSection from "@/components/ReelsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import BannersSection from "@/components/BannersSection";
+import FaqSection from "@/components/FaqSection";
 import type { HydratedSection } from "@/lib/products";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "./page.css";
@@ -78,6 +79,18 @@ interface Customization {
       subtitle?: string;
       buttonText?: string;
       openInNewTab?: boolean;
+    }>;
+  };
+  faqSection?: {
+    enabled?: boolean;
+    title?: string;
+    subtitle?: string;
+    displayStyle?: "accordion" | "cards" | "grid";
+    faqs?: Array<{
+      id: string;
+      question: string;
+      answer: string;
+      isActive?: boolean;
     }>;
   };
   homepageSections?: Array<{
@@ -528,6 +541,24 @@ export default function HomeClient({
     );
   };
 
+  const renderFaqSection = () => {
+    const faqData = customizationState?.faqSection;
+    if (
+      faqData?.enabled === false ||
+      !faqData?.faqs ||
+      faqData.faqs.length === 0
+    )
+      return null;
+    return (
+      <FaqSection
+        title={faqData.title}
+        subtitle={faqData.subtitle}
+        faqs={faqData.faqs}
+        displayStyle={faqData.displayStyle}
+      />
+    );
+  };
+
   // Determine active section order (either from customization DB or fallback to default layout order)
   const defaultSections = [
     {
@@ -629,6 +660,8 @@ export default function HomeClient({
               return <div key={sec.id}>{renderFeatured()}</div>;
             case "testimonialsSection":
               return <div key={sec.id}>{renderTestimonials()}</div>;
+            case "faqSection":
+              return <div key={sec.id}>{renderFaqSection()}</div>;
             default:
               return null;
           }

@@ -51,7 +51,7 @@ export default function BottomNav() {
         return pathname.startsWith(href);
     };
 
-    if (pathname?.startsWith('/product')) {
+    if (pathname?.startsWith('/product') || pathname?.startsWith('/checkout')) {
         return null;
     }
 

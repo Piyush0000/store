@@ -77,6 +77,18 @@ export interface Customization {
       openInNewTab?: boolean;
     }>;
   };
+  faqSection?: {
+    enabled?: boolean;
+    title?: string;
+    subtitle?: string;
+    displayStyle?: "accordion" | "cards" | "grid";
+    faqs?: Array<{
+      id: string;
+      question: string;
+      answer: string;
+      isActive?: boolean;
+    }>;
+  };
   homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number }>;
 }
 

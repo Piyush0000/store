@@ -1045,7 +1045,7 @@
 
 @media (max-width: 768px) {
   .checkout {
-    padding: 24px 16px 250px 16px;
+    padding: 24px 16px 40px 16px;
   }
 
   .checkout:has(.checkout__success) {
@@ -1057,14 +1057,13 @@
   }
 
   .checkout__mobile-sticky-bottom {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #fff;
-    padding: 16px;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 100;
+    position: static;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+    z-index: auto;
+    width: 100%;
+    margin-top: 24px;
   }
 
   .checkout__continue-btn {
@@ -1090,19 +1089,13 @@
   }
 
   .checkout__section--sticky {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    top: auto;
+    position: static;
     margin: 0;
-    border-radius: 20px 20px 0 0;
-    border: none;
-    border-top: 1px solid var(--border);
-    z-index: 100;
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.1);
-    padding: 24px;
-    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    border-radius: 20px;
+    border: 1.5px solid #f1f5f9;
+    z-index: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    padding: 24px 20px;
   }
 
   .checkout__modal {
@@ -1926,7 +1919,7 @@
 
 @media (max-width: 600px) {
   .checkout {
-    padding: 40px 16px 100px;
+    padding: 24px 16px 40px 16px;
   }
 
   .checkout__title {
@@ -1980,6 +1973,25 @@
 
   .checkout__step-content {
     gap: 3px;
+    font-size: 11px;
+  }
+
+  @media (max-width: 380px) {
+    .checkout__step {
+      font-size: 10px;
+    }
+    .checkout__step:first-child {
+      padding-left: 10px;
+      padding-right: 8px;
+    }
+    .checkout__step:nth-child(2) {
+      padding-left: 12px;
+      padding-right: 8px;
+    }
+    .checkout__step:last-child {
+      padding-left: 12px;
+      padding-right: 10px;
+    }
   }
 
   .checkout__section {
@@ -2113,19 +2125,6 @@
   }
 
   @keyframes slideDown {
-    to {
-      transform: translateY(0);
-    }
-  }
-
-  /* Bottom bar slides up */
-  .checkout__mobile-sticky-bottom {
-    will-change: transform;
-    animation: slideUp 0.25s ease-out 0.3s forwards;
-    transform: translateY(100%);
-  }
-
-  @keyframes slideUp {
     to {
       transform: translateY(0);
     }
