@@ -8,7 +8,13 @@ import ReelsSection from "@/components/ReelsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import BannersSection from "@/components/BannersSection";
 import FaqSection from "@/components/FaqSection";
+import TickerBar from "@/components/TickerBar";
 import type { HydratedSection } from "@/lib/products";
+import {
+  categoryCardStyleVars,
+  resolveCategoryCardStyle,
+  type CategoryImagesConfig,
+} from "@/lib/category-card-style";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "./page.css";
 
@@ -43,7 +49,7 @@ interface Customization {
   features?: { title: string; description: string; icon: string }[];
   aboutSection?: { title: string; content: string; image: string };
   newsletter?: { heading: string; subtext: string };
-  categoryImages?: Record<string, string>;
+  categoryImages?: CategoryImagesConfig;
   reelsSection?: {
     enabled?: boolean;
     reels?: Array<{
@@ -58,6 +64,7 @@ interface Customization {
   testimonialsSection?: {
     enabled?: boolean;
     title?: string;
+    displayType?: string;
     testimonials?: Array<{
       id: string;
       name: string;
@@ -93,6 +100,7 @@ interface Customization {
       isActive?: boolean;
     }>;
   };
+  tickerBar?: unknown;
   homepageSections?: Array<{
     id: string;
     type: string;
@@ -172,7 +180,9 @@ function buildCategories(
   if (categories && categories.length > 0) {
     return categories.map((cat) => {
       const catKey = cat.toLowerCase().trim();
-      let image = customization?.categoryImages?.[catKey];
+      // categoryImages also contains card-style keys, so only strings are images.
+      const configuredImage = customization?.categoryImages?.[catKey];
+      let image = typeof configuredImage === "string" ? configuredImage : "";
 
       // If no custom image, use first product image in this category as a fallback
       if (!image && bestSellers && bestSellers.length > 0) {
@@ -239,9 +249,6 @@ export default function HomeClient({
     bestSellers,
   );
   const videoUrl = buildVideoUrl(customizationState);
-  const categoryShape =
-    customizationState?.categoryImages?.shape || "rounded-rect";
-
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
   };
@@ -358,6 +365,9 @@ export default function HomeClient({
   };
 
   const renderCategories = () => {
+    const cardStyle = resolveCategoryCardStyle(
+      customizationState?.categoryImages,
+    );
     if (
       customizationState?.homePageConfig?.categoriesEnabled === false ||
       brandCategories.length === 0
@@ -371,14 +381,15 @@ export default function HomeClient({
           style={{ position: "relative" }}
         >
           <div
-            id="category-grid"
-            className={`shop-category__grid shop-category__grid--${categoryShape}`}
+           id="category-grid"
+            className={`shop-category__grid shop-category__grid--${cardStyle.shape}`}
+            style={categoryCardStyleVars(cardStyle)}
           >
             {brandCategories.map((cat) => (
               <Link
                 key={`shop-${cat.name}`}
                 href={cat.path}
-                className={`shop-category__card shop-category__card--${categoryShape}`}
+                className={`shop-category__card shop-category__card--${cardStyle.shape}`}
               >
                 <img
                   src={cat.image}
@@ -537,9 +548,14 @@ export default function HomeClient({
       <TestimonialsSection
         testimonials={customizationState.testimonialsSection.testimonials}
         title={customizationState.testimonialsSection.title}
+        displayType={customizationState.testimonialsSection.displayType}
       />
     );
   };
+
+  const renderTicker = () => (
+    <TickerBar config={customizationState?.tickerBar} />
+  );
 
   const renderFaqSection = () => {
     const faqData = customizationState?.faqSection;
@@ -610,6 +626,12 @@ export default function HomeClient({
       name: "Testimonials",
       enabled: true,
     },
+    {
+      id: "ticker-bar",
+      type: "tickerBar",
+      name: "Scrolling Ticker",
+      enabled: true,
+    },
   ];
 
   const homepageSections =
@@ -660,6 +682,8 @@ export default function HomeClient({
               return <div key={sec.id}>{renderFeatured()}</div>;
             case "testimonialsSection":
               return <div key={sec.id}>{renderTestimonials()}</div>;
+            case "tickerBar":
+              return <div key={sec.id}>{renderTicker()}</div>;
             case "faqSection":
               return <div key={sec.id}>{renderFaqSection()}</div>;
             default:
