@@ -1,5 +1,6 @@
 import { getApiUrl } from './config';
 import { resolveMediaTree } from './media';
+import type { CategoryImagesConfig } from './category-card-style';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ export interface Customization {
   headerStyle?: any;
   footerStyle?: any;
   footerContent?: any;
-  categoryImages?: Record<string, string>;
+  categoryImages?: CategoryImagesConfig;
   shippingSettings?: {
     enabled?: boolean;
     shippingFee?: number;
