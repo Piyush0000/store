@@ -10,9 +10,13 @@ export async function GET(request: Request) {
 
     const apiBase = (process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public').replace(/\/+$/, '');
     
-    // Try multiple possible endpoints for coupons
+    // Try multiple possible endpoints for coupons (including local backend fallbacks)
     const candidateUrls = [
       `${apiBase}/${subdomain}/coupons`,
+      `http://127.0.0.1:5000/api/storefront/public/${subdomain}/coupons`,
+      `http://localhost:5000/api/storefront/public/${subdomain}/coupons`,
+      `http://127.0.0.1:5002/api/storefront/public/${subdomain}/coupons`,
+      `http://localhost:5002/api/storefront/public/${subdomain}/coupons`,
       `${apiBase.replace('/storefront/public', '/coupons/public')}/${subdomain}`,
       `${apiBase.replace('/storefront/public', '/coupons')}/public/${subdomain}`,
       `${apiBase}/coupons/${subdomain}`,

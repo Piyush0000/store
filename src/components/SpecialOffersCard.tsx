@@ -81,7 +81,7 @@ export default function SpecialOffersCard({ coupons = [] }: SpecialOffersCardPro
     <div className="special-offers-card">
       <div className="special-offers-card__header">
         <span className="special-offers-card__title">
-          SPECIAL OFFERS <Sparkles size={14} className="special-offers-sparkle" />
+          SPECIAL OFFERS 🎉 <Sparkles size={14} className="special-offers-sparkle" />
         </span>
         {hasMore && (
           <button
@@ -132,7 +132,7 @@ export default function SpecialOffersCard({ coupons = [] }: SpecialOffersCardPro
                     onClick={() => handleCopy(coupon.code)}
                     title="Click to copy coupon code"
                   >
-                    <span>{isCopied ? "COPIED" : coupon.code}</span>
+                    <span>{isCopied ? "COPIED ✓" : coupon.code}</span>
                     {isCopied ? (
                       <Check size={13} className="special-offers-copy-icon" />
                     ) : (
