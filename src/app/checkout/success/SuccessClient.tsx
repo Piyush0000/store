@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, Truck, ArrowRight, Loader2, Package } from 'lucide-react';
 import { getOrderById, confirmAndSyncPayUOrder } from '@/actions/order-actions';
-import { completeCartSession } from '@/actions/cart-actions';
 import { useCart } from '@/components/CartProvider';
 import { useAnalytics } from '@/components/AnalyticsProvider';
 import '../checkout.css';
@@ -45,12 +44,6 @@ export default function SuccessClient() {
       setLoading(false);
     }
     clearCart();
-
-    const activeCartId = typeof window !== 'undefined' ? sessionStorage.getItem('active_cart_id') : null;
-    if (activeCartId) {
-      completeCartSession(activeCartId).catch(console.error);
-      if (typeof window !== 'undefined') sessionStorage.removeItem('active_cart_id');
-    }
   }, [orderId, txnId, clearCart, track]);
 
 
