@@ -92,6 +92,7 @@ interface Customization {
     enabled?: boolean;
     title?: string;
     subtitle?: string;
+    headingColor?: string;
     displayStyle?: "accordion" | "cards" | "grid";
     faqs?: Array<{
       id: string;
@@ -570,6 +571,7 @@ export default function HomeClient({
         title={faqData.title}
         subtitle={faqData.subtitle}
         faqs={faqData.faqs}
+        headingColor={faqData.headingColor}
         displayStyle={faqData.displayStyle}
       />
     );

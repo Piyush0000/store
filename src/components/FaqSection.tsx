@@ -14,6 +14,7 @@ export interface FaqItem {
 interface FaqSectionProps {
   title?: string;
   subtitle?: string;
+  headingColor?: string;
   faqs?: FaqItem[];
   displayStyle?: "accordion" | "cards" | "grid";
 }
@@ -21,6 +22,7 @@ interface FaqSectionProps {
 export default function FaqSection({
   title = "Frequently Asked Questions",
   subtitle = "Have questions? We're here to help you with everything you need to know.",
+  headingColor,
   faqs = [],
   displayStyle = "accordion",
 }: FaqSectionProps) {
@@ -49,7 +51,14 @@ export default function FaqSection({
             <HelpCircle size={14} className="faq-badge-icon" />
             <span>Got Questions?</span>
           </div>
-          {title && <h2 className="faq-section-title">{title}</h2>}
+          {title && (
+            <h2
+              className="faq-section-title"
+              style={headingColor ? { color: headingColor } : undefined}
+            >
+              {title}
+            </h2>
+          )}
           {subtitle && <p className="faq-section-subtitle">{subtitle}</p>}
         </div>
 

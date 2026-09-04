@@ -37,8 +37,32 @@ export interface Customization {
   metaDescription: string;
   metaPixel?: string;
   headerStyle?: any;
-  footerStyle?: any;
-  footerContent?: any;
+  footerStyle?: {
+    backgroundColor?: string;
+    bio?: string;
+    policyLayout?: "horizontal" | "vertical";
+    policyColumnTitle?: string;
+    [key: string]: any;
+  };
+  footerContent?: {
+    backgroundColor?: string;
+    bio?: string;
+    description?: string;
+    policyLayout?: "horizontal" | "vertical";
+    policyColumnTitle?: string;
+    contact?: {
+      phone?: string;
+      email?: string;
+      address?: string;
+    };
+    socials?: {
+      facebook?: string;
+      instagram?: string;
+      twitter?: string;
+      tiktok?: string;
+    };
+    [key: string]: any;
+  };
   categoryImages?: CategoryImagesConfig;
   shippingSettings?: {
     enabled?: boolean;
@@ -82,6 +106,7 @@ export interface Customization {
     enabled?: boolean;
     title?: string;
     subtitle?: string;
+    headingColor?: string;
     displayStyle?: "accordion" | "cards" | "grid";
     faqs?: Array<{
       id: string;
