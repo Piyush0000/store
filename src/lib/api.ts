@@ -72,6 +72,7 @@ export interface Customization {
   };
   reelsSection?: {
     enabled?: boolean;
+    displayType?: "carousel" | "grid" | "stories" | "pop" | "sales-page" | "ugc";
     reels?: Array<{ id: string; title: string; sub: string; category: string; videoUrl: string; ctaLink?: string }>;
   };
   fakeSalesPopup?: {
