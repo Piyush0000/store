@@ -9,6 +9,8 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import BannersSection from "@/components/BannersSection";
 import FaqSection from "@/components/FaqSection";
 import TickerBar from "@/components/TickerBar";
+import TrustBadgesSection from "@/components/TrustBadgesSection";
+import MostBuySection from "@/components/MostBuySection";
 import type { HydratedSection } from "@/lib/products";
 import {
   categoryCardStyleVars,
@@ -101,6 +103,8 @@ interface Customization {
       isActive?: boolean;
     }>;
   };
+  trustBadgesSection?: any;
+  mostBuySection?: any;
   tickerBar?: unknown;
   homepageSections?: Array<{
     id: string;
@@ -558,6 +562,14 @@ export default function HomeClient({
     <TickerBar config={customizationState?.tickerBar} />
   );
 
+  const renderTrustBadges = () => (
+    <TrustBadgesSection config={customizationState?.trustBadgesSection} />
+  );
+
+  const renderMostBuy = () => (
+    <MostBuySection config={customizationState?.mostBuySection} />
+  );
+
   const renderFaqSection = () => {
     const faqData = customizationState?.faqSection;
     if (
@@ -583,6 +595,12 @@ export default function HomeClient({
       id: "hero-carousel",
       type: "heroSection",
       name: "Hero Banner",
+      enabled: true,
+    },
+    {
+      id: "trust-badges",
+      type: "trustBadgesSection",
+      name: "Trust Badges",
       enabled: true,
     },
     {
@@ -616,6 +634,12 @@ export default function HomeClient({
       enabled: true,
       refIndex: idx,
     })),
+    {
+      id: "most-buy",
+      type: "mostBuySection",
+      name: "Most Buy Product",
+      enabled: true,
+    },
     {
       id: "featured-collection",
       type: "featuredProducts",
@@ -666,6 +690,8 @@ export default function HomeClient({
           switch (sec.type) {
             case "heroSection":
               return <div key={sec.id}>{renderHero()}</div>;
+            case "trustBadgesSection":
+              return <div key={sec.id}>{renderTrustBadges()}</div>;
             case "reelsSection":
               return <div key={sec.id}>{renderReels()}</div>;
             case "categoryImages":
@@ -680,6 +706,8 @@ export default function HomeClient({
                   {renderProductSection(sec.id, sec.refIndex)}
                 </div>
               );
+            case "mostBuySection":
+              return <div key={sec.id}>{renderMostBuy()}</div>;
             case "featuredProducts":
               return <div key={sec.id}>{renderFeatured()}</div>;
             case "tickerBar":

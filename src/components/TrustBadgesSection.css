@@ -1,0 +1,131 @@
+/* Trust Badges Section Styles */
+
+.trust-badges-section {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.trust-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .trust-badges-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.trust-badge-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trust-badge-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.trust-badge-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trust-badge-img {
+  object-fit: contain;
+  display: block;
+}
+
+.trust-badge-placeholder-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(229, 27, 69, 0.1);
+  color: #e51b45;
+  font-weight: bold;
+}
+
+.trust-badge-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.trust-badge-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.trust-badge-desc {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Ticker Animation Mode */
+.trust-badges-marquee-wrap {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+}
+
+.trust-badges-marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: max-content;
+  flex: none;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-duration: 25s;
+  will-change: transform;
+}
+
+.trust-badges-marquee-track.rtl {
+  animation-name: trust-badges-scroll-rtl;
+}
+
+.trust-badges-marquee-track.ltr {
+  animation-name: trust-badges-scroll-ltr;
+}
+
+.trust-badges-marquee-wrap:hover .trust-badges-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes trust-badges-scroll-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes trust-badges-scroll-ltr {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

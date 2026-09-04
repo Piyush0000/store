@@ -115,6 +115,37 @@ export interface Customization {
       isActive?: boolean;
     }>;
   };
+  trustBadgesSection?: {
+    enabled?: boolean;
+    borderColor?: string;
+    borderStyle?: "none" | "solid" | "dashed" | "dotted";
+    borderWidth?: number;
+    animationEnabled?: boolean;
+    animationDirection?: "rightToLeft" | "leftToRight";
+    badgeSize?: number;
+    logoSize?: number;
+    badges?: Array<{
+      id: string;
+      image?: string;
+      imageAlt?: string;
+      title?: string;
+      description?: string;
+    }>;
+  };
+  mostBuySection?: {
+    enabled?: boolean;
+    image?: string;
+    heading?: string;
+    description?: string;
+    buttonText?: string;
+    buttonLink?: string;
+    sectionColor?: string;
+    cardColor?: string;
+    headingColor?: string;
+    descriptionColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
+  };
   homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number }>;
 }
 
