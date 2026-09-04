@@ -586,25 +586,25 @@ export default function HomeClient({
       enabled: true,
     },
     {
-      id: "reels-stories",
+      id: "reels-showcase",
       type: "reelsSection",
-      name: "Reels / Video Stories",
+      name: "Reels Showcase",
       enabled: true,
     },
     {
-      id: "categories-grid",
+      id: "category-circles",
       type: "categoryImages",
-      name: "Category Images",
+      name: "Shop by Category",
       enabled: true,
     },
     {
-      id: "brand-video",
+      id: "brand-video-section",
       type: "brandVideo",
-      name: "Brand Video / Banner",
+      name: "Brand Video",
       enabled: true,
     },
     {
-      id: "banners-section",
+      id: "promo-banners",
       type: "bannersSection",
       name: "Banner Section",
       enabled: true,
@@ -623,15 +623,15 @@ export default function HomeClient({
       enabled: true,
     },
     {
-      id: "testimonials-section",
-      type: "testimonialsSection",
-      name: "Testimonials",
-      enabled: true,
-    },
-    {
       id: "ticker-bar",
       type: "tickerBar",
       name: "Scrolling Ticker",
+      enabled: true,
+    },
+    {
+      id: "testimonials-section",
+      type: "testimonialsSection",
+      name: "Testimonials",
       enabled: true,
     },
   ];
@@ -682,10 +682,10 @@ export default function HomeClient({
               );
             case "featuredProducts":
               return <div key={sec.id}>{renderFeatured()}</div>;
-            case "testimonialsSection":
-              return <div key={sec.id}>{renderTestimonials()}</div>;
             case "tickerBar":
               return <div key={sec.id}>{renderTicker()}</div>;
+            case "testimonialsSection":
+              return <div key={sec.id}>{renderTestimonials()}</div>;
             case "faqSection":
               return <div key={sec.id}>{renderFaqSection()}</div>;
             default:
