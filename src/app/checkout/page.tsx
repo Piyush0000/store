@@ -28,6 +28,7 @@ import {
   createOrder,
   createCodOrder,
 } from "@/actions/order-actions";
+import { initializeCartSession, completeCartSession } from "@/actions/cart-actions";
 import { initiatePayUPayment } from "@/actions/payment-actions";
 import { validateCouponAction } from "@/actions/coupon-actions";
 import { getInitialCheckoutState } from "@/actions/checkout-actions";
@@ -147,6 +148,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [cartSessionId, setCartSessionId] = useState<string | null>(null);
   const [payUData, setPayUData] = useState<any>(null);
   const launchAttemptedRef = useRef(false);
   const [orderSummary, setOrderSummary] = useState<{
@@ -449,6 +451,7 @@ export default function CheckoutPage() {
     setError(null);
     try {
       const userResult = await getUserByPhone(phone);
+      let customerName = 'Customer';
       if (userResult.success && userResult.data) {
         setUser(userResult.data);
         setUserId(userResult.data.id);
@@ -457,11 +460,42 @@ export default function CheckoutPage() {
         if (userResult.data.firstName) setCustomerFirstName(userResult.data.firstName);
         if (userResult.data.lastName) setCustomerLastName(userResult.data.lastName);
         if (userResult.data.email) setCustomerEmail(userResult.data.email);
-        if (addresses.length > 0) {
-          const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
-          setSelectedAddress(defaultAddr);
-        }
+        customerName = [userResult.data.firstName, userResult.data.lastName].filter(Boolean).join(' ') || 'Customer';
       }
+
+      // Initialize abandoned cart session in the background
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      const detectedSubdomain = typeof window !== 'undefined'
+        ? window.location.hostname.split('.')[0].replace(/^www$/i, '')
+        : undefined;
+
+      initializeCartSession({
+        phoneNumber: cleanPhone,
+        customerName,
+        subdomain: detectedSubdomain,
+        items: (cartItems || []).map((item) => ({
+          productId: item.productId || item.id,
+          variantId: item.variantId,
+          name: item.name || 'Item',
+          price: Number(item.price || 0),
+          quantity: Number(item.quantity || 1),
+          image: item.image,
+        })),
+        cartValue: subtotal,
+        totalAmount: subtotal + effectiveShippingFee - displayDiscountTotal,
+      })
+        .then((res: any) => {
+          if (res?.success && res?.cartId) {
+            setCartSessionId(res.cartId);
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem('active_cart_id', res.cartId);
+            }
+          } else {
+            console.warn('[Checkout] Cart tracking init response:', res);
+          }
+        })
+        .catch((e: any) => console.warn('[Checkout] Cart tracking init error:', e));
+
       setStep('details');
     } catch (err: any) {
       setError(err.message);
@@ -849,6 +883,13 @@ export default function CheckoutPage() {
 
         // Clear cart AFTER setting orderSummary
         clearCart();
+
+        // Complete active cart tracking session
+        const activeCartId = cartSessionId || (typeof window !== "undefined" ? sessionStorage.getItem("active_cart_id") : null);
+        if (activeCartId) {
+          completeCartSession(activeCartId).catch(console.error);
+          if (typeof window !== "undefined") sessionStorage.removeItem("active_cart_id");
+        }
 
         // Track Purchase event for Meta Pixel
         try {
