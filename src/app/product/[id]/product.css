@@ -161,10 +161,11 @@
 .badge-capsule--fast-selling {
   background: #ffc4c4;
   color: #5c1818;
+}
 
-  .product-page__nav:hover {
-    background: #fff;
-  }
+.product-page__nav:hover {
+  background: #fff;
+}
 
   .product-page__nav:active {
     transform: translateY(-50%) scale(0.95);
