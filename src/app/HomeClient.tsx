@@ -54,6 +54,7 @@ interface Customization {
   categoryImages?: CategoryImagesConfig;
   reelsSection?: {
     enabled?: boolean;
+    displayType?: "carousel" | "grid" | "stories" | "pop" | "sales-page" | "ugc";
     reels?: Array<{
       id: string;
       title: string;
@@ -366,7 +367,12 @@ export default function HomeClient({
       customizationState.reelsSection.reels.length === 0
     )
       return null;
-    return <ReelsSection reels={customizationState.reelsSection.reels} />;
+    return (
+      <ReelsSection
+        reels={customizationState.reelsSection.reels}
+        displayType={customizationState.reelsSection.displayType || "carousel"}
+      />
+    );
   };
 
   const renderCategories = () => {
