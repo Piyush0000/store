@@ -117,6 +117,7 @@ export interface Customization {
   };
   trustBadgesSection?: {
     enabled?: boolean;
+    layout?: "classic" | "stacked" | "round" | "semicircle" | "matrix" | "minimal" | "horizontal";
     borderColor?: string;
     borderStyle?: "none" | "solid" | "dashed" | "dotted";
     borderWidth?: number;
@@ -124,6 +125,11 @@ export interface Customization {
     animationDirection?: "rightToLeft" | "leftToRight";
     badgeSize?: number;
     logoSize?: number;
+    backgroundColor?: string;
+    badgeColor?: string;
+    titleColor?: string;
+    descriptionColor?: string;
+    iconColor?: string;
     badges?: Array<{
       id: string;
       image?: string;

@@ -14,6 +14,7 @@ export type TrustBadge = {
 export type TrustBadgesConfig = {
   enabled?: boolean;
   badges?: TrustBadge[];
+  layout?: "classic" | "stacked" | "round" | "semicircle" | "matrix" | "minimal" | "horizontal";
   borderColor?: string;
   borderStyle?: "none" | "solid" | "dashed" | "dotted";
   borderWidth?: number;
@@ -21,78 +22,73 @@ export type TrustBadgesConfig = {
   animationDirection?: "rightToLeft" | "leftToRight";
   badgeSize?: number;
   logoSize?: number;
+  backgroundColor?: string;
+  badgeColor?: string;
+  titleColor?: string;
+  descriptionColor?: string;
+  iconColor?: string;
 };
 
-export default function TrustBadgesSection({
-  config,
-}: {
-  config?: TrustBadgesConfig;
-}) {
+const clamp = (value: number | undefined, fallback: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, Number.isFinite(value) ? Number(value) : fallback));
+
+export default function TrustBadgesSection({ config }: { config?: TrustBadgesConfig }) {
   if (!config || config.enabled === false) return null;
 
-  const badges = Array.isArray(config.badges) ? config.badges : [];
-  const visibleBadges = badges.filter(
-    (b) => b && (b.image || b.title || b.description),
+  const visibleBadges = (Array.isArray(config.badges) ? config.badges : []).filter(
+    (badge) => badge && (badge.image || badge.title || badge.description),
   );
-
   if (!visibleBadges.length) return null;
 
-  const borderColor = config.borderColor || "#e51b45";
+  const layout = !config.layout || config.layout === "horizontal" ? "classic" : config.layout;
   const borderStyle = config.borderStyle || "solid";
-  const borderWidth = borderStyle === "none" ? 0 : (config.borderWidth ?? 1);
-  const badgeSize = config.badgeSize ? `${config.badgeSize}px` : "auto";
-  const logoSize = config.logoSize ?? 36;
+  const badgeSize = clamp(config.badgeSize, 150, 96, 320);
+  const logoSize = clamp(config.logoSize, 36, 18, Math.min(120, badgeSize - 28));
+  const borderWidth = clamp(config.borderWidth, 1, 0, 8);
   const isAnimated = config.animationEnabled === true;
   const direction = config.animationDirection === "leftToRight" ? "ltr" : "rtl";
 
-  const cardStyle: CSSProperties = {
-    borderColor,
-    borderStyle,
-    borderWidth: `${borderWidth}px`,
-    minWidth: isAnimated ? `${config.badgeSize || 200}px` : undefined,
-  };
+  const sectionStyle = {
+    "--trust-badge-size": `${badgeSize}px`,
+    "--trust-badge-logo-size": `${logoSize}px`,
+    "--trust-badge-border-color": config.borderColor || "#e51b45",
+    "--trust-badge-border-style": borderStyle,
+    "--trust-badge-border-width": `${borderStyle === "none" ? 0 : borderWidth}px`,
+    "--trust-badges-background": config.backgroundColor || "#ffffff",
+    "--trust-badge-background": config.badgeColor || "#ffffff",
+    "--trust-badge-title-color": config.titleColor || "#202020",
+    "--trust-badge-description-color": config.descriptionColor || "#756963",
+    "--trust-badge-icon-color": config.iconColor || "#e51b45",
+  } as CSSProperties;
 
-  const renderBadge = (badge: TrustBadge, index: number, keyPrefix = "") => (
-    <article
-      key={`${keyPrefix}${badge.id || index}`}
-      style={cardStyle}
-      className="trust-badge-card"
-    >
-      <div className="trust-badge-icon-wrap" style={{ width: logoSize, height: logoSize }}>
+  const renderBadge = (badge: TrustBadge, index: number, copy = false) => (
+    <article className="trust-badge-card" key={`${badge.id || index}-${copy ? "copy" : "original"}`}>
+      <div className="trust-badge-icon-wrap">
         {badge.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={badge.image}
-            alt={badge.imageAlt || badge.title || "Trust Badge"}
-            className="trust-badge-img"
-            style={{ width: logoSize, height: logoSize }}
-          />
+          <img src={badge.image} alt={badge.imageAlt || badge.title || ""} className="trust-badge-img" />
         ) : (
-          <span
-            className="trust-badge-placeholder-icon"
-            style={{ width: logoSize, height: logoSize, fontSize: Math.max(14, logoSize * 0.45) }}
-          >
-            ✓
-          </span>
+          <span className="trust-badge-placeholder-icon" aria-hidden="true">✓</span>
         )}
       </div>
       <div className="trust-badge-content">
         {badge.title ? <strong className="trust-badge-title">{badge.title}</strong> : null}
-        {badge.description ? (
-          <span className="trust-badge-desc">{badge.description}</span>
-        ) : null}
+        {badge.description ? <span className="trust-badge-desc">{badge.description}</span> : null}
       </div>
     </article>
   );
 
+  const sectionClass = `trust-badges-section trust-badges--${layout}${isAnimated ? " trust-badges--scrolling" : ""}`;
   if (isAnimated) {
-    // Double badges for seamless loop
     return (
-      <section className="trust-badges-section" aria-label="Store Benefits">
+      <section className={sectionClass} style={sectionStyle} aria-label="Store Benefits">
         <div className="trust-badges-marquee-wrap">
           <div className={`trust-badges-marquee-track ${direction}`}>
-            {visibleBadges.map((badge, idx) => renderBadge(badge, idx, "orig-"))}
-            {visibleBadges.map((badge, idx) => renderBadge(badge, idx, "dup-"))}
+            {[false, true].map((copy) => (
+              <div className="trust-badges-group" aria-hidden={copy || undefined} key={String(copy)}>
+                {visibleBadges.map((badge, index) => renderBadge(badge, index, copy))}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -100,9 +96,9 @@ export default function TrustBadgesSection({
   }
 
   return (
-    <section className="trust-badges-section" aria-label="Store Benefits">
+    <section className={sectionClass} style={sectionStyle} aria-label="Store Benefits">
       <div className="trust-badges-grid">
-        {visibleBadges.map((badge, idx) => renderBadge(badge, idx))}
+        {visibleBadges.map((badge, index) => renderBadge(badge, index))}
       </div>
     </section>
   );
