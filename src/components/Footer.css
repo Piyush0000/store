@@ -288,7 +288,7 @@
 }
 
 .footer__powered-by {
-  display: inline-inline-flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
