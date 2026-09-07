@@ -281,206 +281,284 @@
   justify-content: center;
   align-items: center;
   margin-top: 40px;
+  padding: 32px 0;
+  border-top: 1px solid var(--footer-border);
+  padding: 32px 0;
+  border-top: 1px solid var(--footer-border);
 }
 
 .footer__powered-by {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 24px 0 24px;
+  gap: 12px;
+  padding: 10px 24px;
+  gap: 12px;
+  padding: 10px 24px;
   font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: #1A6FBF;
   text-decoration: none;
-  transition: filter 0.2s;
+
+  /* Glassmorphism Capsule */
+  background: rgba(26, 111, 191, 0.05);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(26, 111, 191, 0.15);
+  border-radius: 9999px;
+
+  /* Drop shadow & Inner highlight */
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .footer__powered-by:hover {
-  filter: brightness(1.15);
+  background: rgba(26, 111, 191, 0.1);
+  border-color: rgba(26, 111, 191, 0.35);
+  box-shadow:
+    0 8px 30px rgba(26, 111, 191, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.footer__powered-by:active {
+  transform: translateY(0);
+  box-shadow:
+    0 4px 15px rgba(26, 111, 191, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 .footer__evoc-logo {
-  height: 36px;
+  height: 22px;
+  height: 22px;
   width: auto;
+  transition: transform 0.3s ease;
 }
 
-.footer__powered-by-name {
-  font-weight: 700;
-  font-size: 16px;
-  color: #1A6FBF;
+.footer__powered-by:hover .footer__evoc-logo {
+  transform: scale(1.08);
 }
 
 .footer__powered-by-text {
-  font-size: 15px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.footer__powered-by:hover .footer__powered-by-text {
+  color: rgba(255, 255, 255, 0.9);
+  transition: transform 0.3s ease;
+}
+
+.footer__powered-by:hover .footer__evoc-logo {
+  transform: scale(1.08);
+}
+
+.footer__powered-by-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.footer__powered-by:hover .footer__powered-by-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.footer__powered-by-name {
+  font-size: 14px;
+  font-size: 14px;
+  font-weight: 700;
   color: #1A6FBF;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
-/* ── Brand Video Section ─────────────────────────────────────── */
-.brand-video {
-  width: 100%;
-  background: #0a0a0a;
-  position: relative;
-  overflow: hidden;
-}
+.footer__powered-by:hover .footer__powered-by-name {
+  color: #3b9dfa;
+  text-shadow: 0 0 10px rgba(59, 157, 250, 0.4);
 
-.brand-video__wrapper {
-  position: relative;
-  width: 100%;
-  max-height: 65vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.brand-video__player {
-  width: 100%;
-  height: auto;
-  max-height: 65vh;
-  object-fit: contain;
-  display: block;
-  background: #000;
-}
-
-.brand-video__fade {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 120px;
-  pointer-events: none;
-}
-
-.brand-video__fade--top {
-  top: 0;
-  background: linear-gradient(to bottom, #0a0a0a, transparent);
-}
-
-.brand-video__fade--bottom {
-  bottom: 0;
-  background: linear-gradient(to top, var(--bg-primary), transparent);
-}
-
-@media (max-width: 900px) {
-  .footer {
-    padding: 48px 40px 0px;
+  .footer__powered-by:hover .footer__powered-by-name {
+    color: #3b9dfa;
+    text-shadow: 0 0 10px rgba(59, 157, 250, 0.4);
   }
 
-  .footer__powered-by-wrap {
-    margin-left: -40px;
-    margin-right: -40px;
-  }
-
-  .footer__row1 {
-    grid-template-columns: 1fr;
-    gap: 40px;
-  }
-
-  .footer__contact {
-    padding-left: 0;
-    border-left: none;
-    padding-top: 24px;
-    border-top: 1px solid var(--footer-border, #222);
-  }
-
-  .footer__brand-desc {
-    max-width: 100%;
-  }
-
-  .footer__social {
-    margin-top: 16px;
-  }
-
-  .footer--vertical-policies .footer__row1 {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-
-  .footer--vertical-policies .footer__policies-col {
-    padding-left: 0;
-    border-left: none;
-    padding-top: 24px;
-    border-top: 1px solid var(--footer-border, #222);
-  }
-}
-
-@media (max-width: 768px) {
-  .footer {
-    padding: 24px 16px 0px;
-  }
-
-  .footer__powered-by-wrap {
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-bottom: 64px; /* safety offset for mobile bottom nav bar */
-  }
-
-  .footer__row1 {
-    gap: 24px;
-    padding-bottom: 24px;
-  }
-
-  .footer__brand-desc {
-    max-width: 100%;
-    font-size: 13px;
-    margin-bottom: 16px;
-  }
-
-  .footer__row2 {
-    padding: 16px 0;
-  }
-
-  .footer__quick-links {
-    gap: 12px 20px;
-    justify-content: center;
-  }
-
-  .footer__quick-link {
-    font-size: 12px;
-  }
-
-  .footer__row4 {
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 0;
-  }
-
-  .footer__payment-icons {
-    justify-content: center;
-    gap: 12px;
-  }
-
-  .footer__payment-icon {
-    height: 22px;
-  }
-
-  .footer__go-top {
-    width: auto;
-    text-align: center;
-    padding: 10px 24px;
-    font-size: 11px;
-  }
-
-  .footer__powered-by {
-    padding-top: 12px;
-    padding-bottom: 12px;
-    font-size: 13px;
-    gap: 10px;
-  }
-
-  .footer__evoc-logo {
-    height: 26px;
-  }
-
-  .footer__powered-by-name {
-    font-size: 14px;
+  /* ── Brand Video Section ─────────────────────────────────────── */
+  .brand-video {
+    width: 100%;
+    background: #0a0a0a;
+    position: relative;
+    overflow: hidden;
   }
 
   .brand-video__wrapper {
-    max-height: 50vh;
+    position: relative;
+    width: 100%;
+    max-height: 65vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .brand-video__player {
-    max-height: 50vh;
+    width: 100%;
+    height: auto;
+    max-height: 65vh;
+    object-fit: contain;
+    display: block;
+    background: #000;
+  }
+
+  .brand-video__fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 120px;
+    pointer-events: none;
+  }
+
+  .brand-video__fade--top {
+    top: 0;
+    background: linear-gradient(to bottom, #0a0a0a, transparent);
+  }
+
+  .brand-video__fade--bottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--bg-primary), transparent);
+  }
+
+  @media (max-width: 900px) {
+    .footer {
+      padding: 48px 40px 0px;
+    }
+
+    .footer__powered-by-wrap {
+      margin-left: -40px;
+      margin-right: -40px;
+      padding: 24px 0;
+    }
+
+    .footer__row1 {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    .footer__contact {
+      padding-left: 0;
+      border-left: none;
+      padding-top: 24px;
+      border-top: 1px solid var(--footer-border, #222);
+    }
+
+    .footer__brand-desc {
+      max-width: 100%;
+    }
+
+    .footer__social {
+      margin-top: 16px;
+    }
+
+    .footer--vertical-policies .footer__row1 {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .footer--vertical-policies .footer__policies-col {
+      padding-left: 0;
+      border-left: none;
+      padding-top: 24px;
+      border-top: 1px solid var(--footer-border, #222);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .footer {
+      padding: 24px 16px 0px;
+    }
+
+    .footer__powered-by-wrap {
+      margin-left: -20px;
+      margin-right: -20px;
+      padding-bottom: 80px;
+      /* extra space for mobile bottom nav bar */
+    }
+
+    .footer__row1 {
+      gap: 24px;
+      padding-bottom: 24px;
+    }
+
+    .footer__brand-desc {
+      max-width: 100%;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .footer__row2 {
+      padding: 16px 0;
+    }
+
+    .footer__quick-links {
+      gap: 12px 20px;
+      justify-content: center;
+    }
+
+    .footer__quick-link {
+      font-size: 12px;
+    }
+
+    .footer__row4 {
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 0;
+    }
+
+    .footer__payment-icons {
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .footer__payment-icon {
+      height: 22px;
+    }
+
+    .footer__go-top {
+      width: auto;
+      text-align: center;
+      padding: 10px 24px;
+      font-size: 11px;
+    }
+
+    .footer__powered-by {
+      padding: 8px 20px;
+      gap: 10px;
+    }
+
+    .footer__evoc-logo {
+      height: 18px;
+    }
+
+    .footer__powered-by-text {
+      font-size: 12px;
+    }
+
+    .footer__powered-by-name {
+      font-size: 13px;
+    }
+
+    .brand-video__wrapper {
+      max-height: 50vh;
+    }
+
+    .brand-video__player {
+      max-height: 50vh;
+    }
   }
 }
