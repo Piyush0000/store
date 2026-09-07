@@ -129,19 +129,6 @@ function getContrastColor(hexColor: string) {
   return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
-function parseJsonSafe<T = any>(val: any): T | null {
-  if (!val) return null;
-  if (typeof val === "object") return val;
-  if (typeof val === "string") {
-    try {
-      return JSON.parse(val);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
-
 interface FooterProps {
   initialCustomization?: any;
   storeName?: string;
@@ -154,7 +141,12 @@ export default function Footer({
   storeSubdomain,
 }: FooterProps) {
   const getInitialLogo = () => {
-    const headerStyle = parseJsonSafe(initialCustomization?.headerStyle);
+    let headerStyle = initialCustomization?.headerStyle;
+    if (headerStyle && typeof headerStyle === "string") {
+      try {
+        headerStyle = JSON.parse(headerStyle);
+      } catch (err) {}
+    }
     return (
       initialCustomization?.logo ||
       headerStyle?.logoUrl ||
@@ -164,7 +156,12 @@ export default function Footer({
   };
 
   const getInitialStoreName = () => {
-    const headerStyle = parseJsonSafe(initialCustomization?.headerStyle);
+    let headerStyle = initialCustomization?.headerStyle;
+    if (headerStyle && typeof headerStyle === "string") {
+      try {
+        headerStyle = JSON.parse(headerStyle);
+      } catch (err) {}
+    }
     return (
       headerStyle?.storeName ||
       headerStyle?.logoText ||
@@ -178,8 +175,8 @@ export default function Footer({
   const [logoUrl, setLogoUrl] = useState(getInitialLogo);
   const [logoError, setLogoError] = useState(false);
   const [brandDesc, setBrandDesc] = useState(() => {
-    const fc = parseJsonSafe(initialCustomization?.footerContent);
-    const fs = parseJsonSafe(initialCustomization?.footerStyle);
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
     return (
       fc?.bio ||
       fc?.description ||
@@ -189,27 +186,21 @@ export default function Footer({
     );
   });
   const [backgroundColor, setBackgroundColor] = useState(() => {
-    const fc = parseJsonSafe(initialCustomization?.footerContent);
-    const fs = parseJsonSafe(initialCustomization?.footerStyle);
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
     return fc?.backgroundColor || fs?.backgroundColor || "#0a0a0a";
   });
   const [policyLayout, setPolicyLayout] = useState<"horizontal" | "vertical">(() => {
-    const fc = parseJsonSafe(initialCustomization?.footerContent);
-    const fs = parseJsonSafe(initialCustomization?.footerStyle);
-    return (
-      fc?.policyLayout ||
-      fs?.policyLayout ||
-      initialCustomization?.policyLayout ||
-      "horizontal"
-    );
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
+    return fc?.policyLayout || fs?.policyLayout || "horizontal";
   });
   const [policyColumnTitle, setPolicyColumnTitle] = useState<string>(() => {
-    const fc = parseJsonSafe(initialCustomization?.footerContent);
-    const fs = parseJsonSafe(initialCustomization?.footerStyle);
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
     return (
       fc?.policyColumnTitle ||
       fs?.policyColumnTitle ||
-      initialCustomization?.policyColumnTitle ||
       "Quick Links & Policies"
     );
   });
@@ -228,7 +219,8 @@ export default function Footer({
   }, [propStoreName]);
 
   const [contactInfo, setContactInfo] = useState(() => {
-    const fc = parseJsonSafe(initialCustomization?.footerContent);
+    // Support footerContent structure from admin panel
+    const fc = initialCustomization?.footerContent;
     return {
       phone:
         fc?.contact?.phone ||
@@ -245,7 +237,7 @@ export default function Footer({
     };
   });
   const [socialLinks, setSocialLinks] = useState(() => {
-    const fc = parseJsonSafe(initialCustomization?.footerContent);
+    const fc = initialCustomization?.footerContent;
     return {
       facebook:
         fc?.socials?.facebook ||
@@ -295,90 +287,6 @@ export default function Footer({
   }, []);
 
   useEffect(() => {
-    if (!initialCustomization) return;
-    const fc = parseJsonSafe(initialCustomization.footerContent);
-    const fs = parseJsonSafe(initialCustomization.footerStyle);
-    const headerStyle = parseJsonSafe(initialCustomization.headerStyle);
-    const headerConfig = initialCustomization.headerConfig;
-
-    if (initialCustomization.logo) {
-      setLogoUrl(initialCustomization.logo);
-    } else if (headerStyle?.logoUrl) {
-      setLogoUrl(headerStyle.logoUrl);
-    } else if (headerConfig?.logoUrl) {
-      setLogoUrl(headerConfig.logoUrl);
-    }
-
-    if (headerStyle?.storeName || headerStyle?.logoText) {
-      setStoreName(headerStyle.storeName || headerStyle.logoText);
-    } else if (headerConfig?.storeName) {
-      setStoreName(headerConfig.storeName);
-    }
-
-    const desc =
-      fc?.bio ||
-      fc?.description ||
-      fs?.bio ||
-      initialCustomization.aboutSection?.content;
-    if (desc) setBrandDesc(desc);
-
-    const bg = fc?.backgroundColor || fs?.backgroundColor;
-    if (bg) setBackgroundColor(bg);
-
-    const polLayout =
-      fc?.policyLayout ||
-      fs?.policyLayout ||
-      initialCustomization?.footerConfig?.policyLayout ||
-      initialCustomization?.policyLayout;
-    if (polLayout) setPolicyLayout(polLayout);
-
-    const polTitle =
-      fc?.policyColumnTitle ||
-      fs?.policyColumnTitle ||
-      initialCustomization?.footerConfig?.policyColumnTitle ||
-      initialCustomization?.policyColumnTitle;
-    if (polTitle) setPolicyColumnTitle(polTitle);
-
-    if (fc?.contact || initialCustomization.contactInfo) {
-      setContactInfo({
-        phone:
-          fc?.contact?.phone ||
-          initialCustomization.contactInfo?.phone ||
-          DEFAULT_PHONE,
-        email:
-          fc?.contact?.email ||
-          initialCustomization.contactInfo?.email ||
-          DEFAULT_EMAIL,
-        address:
-          fc?.contact?.address ||
-          initialCustomization.contactInfo?.address ||
-          DEFAULT_ADDRESS,
-      });
-    }
-
-    if (fc?.socials || initialCustomization.socialLinks) {
-      setSocialLinks({
-        facebook:
-          fc?.socials?.facebook ||
-          initialCustomization.socialLinks?.facebook ||
-          DEFAULT_FB,
-        instagram:
-          fc?.socials?.instagram ||
-          initialCustomization.socialLinks?.instagram ||
-          DEFAULT_IG,
-        twitter:
-          fc?.socials?.twitter ||
-          initialCustomization.socialLinks?.twitter ||
-          DEFAULT_TWITTER,
-        tiktok:
-          fc?.socials?.tiktok ||
-          initialCustomization.socialLinks?.tiktok ||
-          DEFAULT_TIKTOK,
-      });
-    }
-  }, [initialCustomization]);
-
-  useEffect(() => {
     if (initialCustomization) {
       return; // Skip fetch since we have initialCustomization!
     }
@@ -392,7 +300,12 @@ export default function Footer({
 
         if (store?.name) setStoreName(store.name);
 
-        const headerStyle = parseJsonSafe(customization?.headerStyle);
+        let headerStyle = customization?.headerStyle;
+        if (headerStyle && typeof headerStyle === "string") {
+          try {
+            headerStyle = JSON.parse(headerStyle);
+          } catch (err) {}
+        }
 
         if (customization?.logo) {
           setLogoUrl(customization.logo);
@@ -402,10 +315,9 @@ export default function Footer({
           setLogoUrl(customization.headerConfig.logoUrl);
         }
 
-        const fc = parseJsonSafe(customization?.footerContent);
-        const fs = parseJsonSafe(customization?.footerStyle);
-
-        if (fc) {
+        // Also support footerContent structure from admin panel
+        if (customization?.footerContent) {
+          const fc = customization.footerContent;
           setContactInfo({
             phone:
               fc?.contact?.phone ||
@@ -453,38 +365,47 @@ export default function Footer({
             tiktok: customization.socialLinks.tiktok || DEFAULT_TIKTOK,
           });
         }
-        if (fc?.bio || fc?.description || fs?.bio) {
-          setBrandDesc(fc?.bio || fc?.description || fs?.bio);
+        if (
+          customization?.footerContent?.bio ||
+          customization?.footerContent?.description ||
+          customization?.footerStyle?.bio
+        ) {
+          setBrandDesc(
+            customization.footerContent?.bio ||
+              customization.footerContent?.description ||
+              customization.footerStyle?.bio,
+          );
         } else if (customization?.aboutSection?.content) {
           setBrandDesc(customization.aboutSection.content);
         }
-        const fcBg = fc?.backgroundColor;
-        const fsBg = fs?.backgroundColor;
+        const fcBg = customization?.footerContent?.backgroundColor;
+        const fsBg = customization?.footerStyle?.backgroundColor;
         setBackgroundColor(fcBg || fsBg || "#0a0a0a");
 
-        const fcPolicy = fc?.policyLayout;
-        const fsPolicy = fs?.policyLayout;
-        const cfgPolicy = customization?.footerConfig?.policyLayout;
-        const rootPolicy = customization?.policyLayout;
-        if (fcPolicy || fsPolicy || cfgPolicy || rootPolicy) {
-          setPolicyLayout(fcPolicy || fsPolicy || cfgPolicy || rootPolicy || "horizontal");
+        const fcPolicy = customization?.footerContent?.policyLayout;
+        const fsPolicy = customization?.footerStyle?.policyLayout;
+        if (fcPolicy || fsPolicy) {
+          setPolicyLayout(fcPolicy || fsPolicy || "horizontal");
         }
-        const fcTitle = fc?.policyColumnTitle;
-        const fsTitle = fs?.policyColumnTitle;
-        const cfgTitle = customization?.footerConfig?.policyColumnTitle;
-        const rootTitle = customization?.policyColumnTitle;
-        if (fcTitle || fsTitle || cfgTitle || rootTitle) {
-          setPolicyColumnTitle(fcTitle || fsTitle || cfgTitle || rootTitle || "Quick Links & Policies");
+        const fcTitle = customization?.footerContent?.policyColumnTitle;
+        const fsTitle = customization?.footerStyle?.policyColumnTitle;
+        if (fcTitle || fsTitle) {
+          setPolicyColumnTitle(fcTitle || fsTitle || "Quick Links & Policies");
         }
       })
       .catch((err) => console.warn("[Footer] Failed to fetch config:", err));
-  }, [initialCustomization, storeSubdomain]);
+  }, [initialCustomization]);
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
         const cust = e.data.data;
-        const headerStyle = parseJsonSafe(cust?.headerStyle);
+        let headerStyle = cust?.headerStyle;
+        if (headerStyle && typeof headerStyle === "string") {
+          try {
+            headerStyle = JSON.parse(headerStyle);
+          } catch (err) {}
+        }
 
         if (cust?.logo) {
           setLogoUrl(cust.logo);
@@ -500,10 +421,8 @@ export default function Footer({
           setStoreName(cust.headerConfig.storeName);
         }
 
-        const fc = parseJsonSafe(cust?.footerContent);
-        const fs = parseJsonSafe(cust?.footerStyle);
-
-        if (fc) {
+        if (cust?.footerContent) {
+          const fc = cust.footerContent;
           setContactInfo({
             phone:
               fc?.contact?.phone || cust.contactInfo?.phone || DEFAULT_PHONE,
@@ -543,42 +462,32 @@ export default function Footer({
             tiktok: cust.socialLinks.tiktok || DEFAULT_TIKTOK,
           });
         }
-        if (fc?.bio || fc?.description || fs?.bio) {
-          setBrandDesc(fc?.bio || fc?.description || fs?.bio);
+        if (
+          cust?.footerContent?.bio ||
+          cust?.footerContent?.description ||
+          cust?.footerStyle?.bio
+        ) {
+          setBrandDesc(
+            cust.footerContent?.bio ||
+              cust.footerContent?.description ||
+              cust.footerStyle?.bio,
+          );
         } else if (cust?.aboutSection?.content) {
           setBrandDesc(cust.aboutSection.content);
         }
-        const fcBg = fc?.backgroundColor;
-        const fsBg = fs?.backgroundColor;
+        const fcBg = cust?.footerContent?.backgroundColor;
+        const fsBg = cust?.footerStyle?.backgroundColor;
         setBackgroundColor(fcBg || fsBg || "#0a0a0a");
 
-        const fcPolicy = fc?.policyLayout;
-        const fsPolicy = fs?.policyLayout;
-        const cfgPolicy = cust?.footerConfig?.policyLayout;
-        const rootPolicy = cust?.policyLayout;
-        if (
-          fcPolicy !== undefined ||
-          fsPolicy !== undefined ||
-          cfgPolicy !== undefined ||
-          rootPolicy !== undefined
-        ) {
-          setPolicyLayout(
-            fcPolicy || fsPolicy || cfgPolicy || rootPolicy || "horizontal"
-          );
+        const fcPolicy = cust?.footerContent?.policyLayout;
+        const fsPolicy = cust?.footerStyle?.policyLayout;
+        if (fcPolicy !== undefined || fsPolicy !== undefined) {
+          setPolicyLayout(fcPolicy || fsPolicy || "horizontal");
         }
-        const fcTitle = fc?.policyColumnTitle;
-        const fsTitle = fs?.policyColumnTitle;
-        const cfgTitle = cust?.footerConfig?.policyColumnTitle;
-        const rootTitle = cust?.policyColumnTitle;
-        if (
-          fcTitle !== undefined ||
-          fsTitle !== undefined ||
-          cfgTitle !== undefined ||
-          rootTitle !== undefined
-        ) {
-          setPolicyColumnTitle(
-            fcTitle || fsTitle || cfgTitle || rootTitle || "Quick Links & Policies"
-          );
+        const fcTitle = cust?.footerContent?.policyColumnTitle;
+        const fsTitle = cust?.footerStyle?.policyColumnTitle;
+        if (fcTitle !== undefined || fsTitle !== undefined) {
+          setPolicyColumnTitle(fcTitle || fsTitle || "Quick Links & Policies");
         }
       }
     };

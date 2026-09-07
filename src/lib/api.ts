@@ -24,9 +24,7 @@ export interface Customization {
   aboutSection: { title: string; content: string; image: string };
   contactInfo: { email: string; phone: string; address: string };
   headerConfig: { showSearch: boolean; showCart: boolean; showWishlist: boolean; storeName: string; logoUrl: string };
-  footerConfig: { showAbout: boolean; showContact: boolean; showSocial: boolean; showNewsletter: boolean; policyLayout?: "horizontal" | "vertical"; policyColumnTitle?: string };
-  policyLayout?: "horizontal" | "vertical";
-  policyColumnTitle?: string;
+  footerConfig: { showAbout: boolean; showContact: boolean; showSocial: boolean; showNewsletter: boolean };
   homePageConfig: { heroEnabled: boolean; featuredEnabled: boolean; categoriesEnabled: boolean; images: string[]; videoUrl?: string };
   socialLinks: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string; tiktok?: string };
   navLinks: { label: string; href: string }[];
