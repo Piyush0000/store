@@ -4,13 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { randomInt, randomUUID } from 'crypto';
-import { config as loadEnv } from 'dotenv';
-import path from 'path';
-
-loadEnv({ path: path.resolve(process.cwd(), '.env.local') });
-loadEnv({ path: path.resolve(process.cwd(), '.env') });
-loadEnv({ path: path.resolve(process.cwd(), '../orbit_software/backend/.env') });
+import { randomUUID } from 'crypto';
 
 const MAX_OTP_PER_HOUR = 5;
 const RESEND_TIMER_SECONDS = 120;
@@ -37,24 +31,7 @@ function sanitizePhone(phone: string): string {
 }
 
 // In-memory store for OTPs (use database in production)
-const pendingOtps = new Map<string, { expiresAt: number; sessionId: string; code?: string }>();
-
-const WAPI_OTP_TEMPLATE = 'checkout_otp';
-const WAPI_OTP_LANGUAGE = 'en_US';
-
-function wapiConfig() {
-  return {
-    token: (process.env.WAPI_TOKEN || '').trim(),
-    vendorUid: (process.env.WAPI_VENDOR_UID || '').trim(),
-    baseUrl: (process.env.WAPI_BASE_URL || 'https://app.wapi.in.net/api').replace(/\/+$/, ''),
-  };
-}
-
-function formatWapiPhone(phone: string): string {
-  const clean = String(phone).replace(/\D/g, '');
-  if (clean.length === 10) return `91${clean}`;
-  return clean;
-}
+const pendingOtps = new Map<string, { expiresAt: number; sessionId: string }>();
 
 export async function sendOtp(data: unknown) {
   const { phone } = sendOtpSchema.parse(data);
@@ -136,100 +113,15 @@ export async function sendOtp(data: unknown) {
   }
 }
 
-export async function sendOtpWhatsApp(data: unknown) {
-  const parsed = sendOtpSchema.safeParse(data);
-  if (!parsed.success) {
-    return { success: false, message: "Please enter a valid 10-digit mobile number" };
-  }
-
-  const { phone } = parsed.data;
-  const cleanPhone = phone.replace(/\D/g, "");
-  const { token, vendorUid, baseUrl } = wapiConfig();
-
-  if (!token || !vendorUid) {
-    return { success: false, message: "WhatsApp OTP is not configured (WAPI_TOKEN / WAPI_VENDOR_UID)" };
-  }
-
-  const now = Date.now();
-  for (const [p, entry] of pendingOtps.entries()) {
-    if (entry.expiresAt < now) pendingOtps.delete(p);
-  }
-  const recent = Array.from(pendingOtps.entries()).filter(([p]) => p === cleanPhone);
-  if (recent.length >= MAX_OTP_PER_HOUR) {
-    return {
-      success: false,
-      message: "Too many OTP requests. Please try again after an hour.",
-    };
-  }
-
-  const code = String(randomInt(1000, 10000));
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-  const sessionId = `whatsapp:${cleanPhone}:${Date.now()}`;
-
-  try {
-    const wapiRes = await fetch(`${baseUrl}/${vendorUid}/contact/send-template-message`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        phone_number: formatWapiPhone(cleanPhone),
-        template_name: WAPI_OTP_TEMPLATE,
-        template_language: WAPI_OTP_LANGUAGE,
-        field_1: code,
-        button_0: code,
-      }),
-      cache: 'no-store',
-    });
-
-    const result = await wapiRes.json().catch(() => ({}));
-    if (!wapiRes.ok || result?.success === false) {
-      const message = result?.message || result?.error || `WhatsApp send failed (${wapiRes.status})`;
-      console.error('[OTP] WhatsApp send failed:', message);
-      return { success: false, message };
-    }
-
-    try {
-      await prisma.otpVerification.create({
-        data: {
-          phone: cleanPhone,
-          code,
-          sessionId,
-          expiresAt,
-          verified: false,
-        },
-      });
-    } catch (dbErr) {
-      console.warn('[OTP] Could not persist WhatsApp OTP row, using memory:', dbErr);
-    }
-
-    pendingOtps.set(cleanPhone, {
-      sessionId,
-      expiresAt: expiresAt.getTime(),
-      code,
-    });
-
-    return {
-      success: true,
-      message: "OTP sent on WhatsApp",
-      sessionId,
-      channel: 'whatsapp' as const,
-      resendTimer: RESEND_TIMER_SECONDS,
-    };
-  } catch (error: any) {
-    console.error('[OTP] WhatsApp send error:', error);
-    return {
-      success: false,
-      message: error.message || "Failed to send WhatsApp OTP",
-    };
-  }
-}
-
 export async function verifyOtp(data: unknown) {
-  const { phone, code } = verifyOtpSchema.parse(data);
+  const { phone, code, sessionId } = verifyOtpSchema.parse(data);
   const cleanPhone = phone.replace(/\D/g, "");
 
+  if (!process.env.TWO_FACTOR_API_KEY) {
+    return { success: false, message: "OTP service not configured" };
+  }
+
+  // Use database OTP instead of in-memory Map (serverless-safe)
   const dbOtp = await prisma.otpVerification.findFirst({
     where: {
       phone: cleanPhone,
@@ -239,36 +131,13 @@ export async function verifyOtp(data: unknown) {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Fallback to in-memory for dev/testing if no DB record exists
   const pending = pendingOtps.get(cleanPhone);
   if (!dbOtp && !pending) {
     return { success: false, message: "No OTP found. Please request a new one." };
   }
 
-  const localCode = dbOtp?.code || pending?.code;
-  if (localCode) {
-    const localExpires = dbOtp?.expiresAt?.getTime() || pending?.expiresAt;
-    if (localExpires && localExpires < Date.now()) {
-      if (dbOtp) await prisma.otpVerification.delete({ where: { id: dbOtp.id } });
-      pendingOtps.delete(cleanPhone);
-      return { success: false, message: "OTP has expired. Please request a new one." };
-    }
-    if (String(localCode) !== String(code)) {
-      return { success: false, message: "Invalid OTP" };
-    }
-    if (dbOtp) {
-      await prisma.otpVerification.update({
-        where: { id: dbOtp.id },
-        data: { verified: true },
-      });
-    }
-    pendingOtps.delete(cleanPhone);
-    return { success: true, message: "OTP verified successfully" };
-  }
-
-  if (!process.env.TWO_FACTOR_API_KEY) {
-    return { success: false, message: "OTP service not configured" };
-  }
-
+  // Check expiry using DB record if available, else in-memory
   const expiresAt = dbOtp?.expiresAt?.getTime() || pending?.expiresAt;
   if (expiresAt && expiresAt < Date.now()) {
     if (dbOtp) await prisma.otpVerification.delete({ where: { id: dbOtp.id } });
