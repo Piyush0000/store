@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { useAnalytics } from "@/components/AnalyticsProvider";
-import { sendOtp, sendOtpWhatsApp, verifyOtp, createSession, validateSession } from "@/actions/otp-actions";
+import { sendOtp, verifyOtp, createSession, validateSession } from "@/actions/otp-actions";
 import { getUserByPhone, createOrUpdateUser } from "@/actions/user-actions";
 import {
   createAddress,
@@ -127,8 +127,6 @@ export default function CheckoutPage() {
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [isSessionVerified, setIsSessionVerified] = useState(false);
   const [pendingAction, setPendingAction] = useState<'COD' | 'PAYU' | null>(null);
-  const [otpChannel, setOtpChannel] = useState<'whatsapp' | 'sms' | null>(null);
-  const [otpVerified, setOtpVerified] = useState(false);
 
   const [customerFirstName, setCustomerFirstName] = useState("");
   const [customerLastName, setCustomerLastName] = useState("");
@@ -425,42 +423,16 @@ export default function CheckoutPage() {
     }
     setIsLoading(true);
     setError(null);
-    setOtp(['', '', '', '']);
+    setOtp(['', '', '', '']); // Reset OTP inputs
     try {
       const result = await sendOtp({ phone });
       if (result.success) {
         setSessionId((result as any).sessionId || null);
-        setOtpChannel('sms');
         setResendTimer(120);
-        setStep((current) => (current === 'identify' ? 'verify' : current));
+        setStep('verify');
+        // Focus first OTP input after step change
         setTimeout(() => otpRefs.current[0]?.focus(), 100);
       } else {
-        throw new Error(result.message);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSendWhatsAppOtp = async () => {
-    if (!phone || phone.length < 10) {
-      setError("Please enter a valid phone number");
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    setOtp(['', '', '', '']);
-    setOtpChannel('whatsapp');
-    try {
-      const result = await sendOtpWhatsApp({ phone });
-      if (result.success) {
-        setSessionId((result as any).sessionId || null);
-        setResendTimer(120);
-        setTimeout(() => otpRefs.current[0]?.focus(), 100);
-      } else {
-        setOtpChannel('sms');
         throw new Error(result.message);
       }
     } catch (err: any) {
@@ -802,7 +774,7 @@ export default function CheckoutPage() {
     return { orderItems, totalBundleDiscount, totalRegularSubtotal };
   }, [cartItems]);
 
-  const handleCreateCodOrder = useCallback(async (): Promise<boolean> => {
+  const handleCreateCodOrder = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -810,14 +782,14 @@ export default function CheckoutPage() {
     if (!cartItems || cartItems.length === 0) {
       setError("Your cart is empty. Please add items before checkout.");
       setIsLoading(false);
-      return false;
+      return;
     }
 
     // Validate prices
     if (subtotal <= 0) {
       setError("Invalid cart total. Please refresh the page and try again.");
       setIsLoading(false);
-      return false;
+      return;
     }
 
     // Log price issues for debugging
@@ -938,13 +910,11 @@ export default function CheckoutPage() {
         if (process.env.NODE_ENV === "development") {
           console.log("[Checkout] Step changed to success");
         }
-        return true;
       } else {
-        throw new Error(result.message || "Failed to place order");
+        throw new Error(result.message);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to place order");
-      return false;
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -966,7 +936,7 @@ export default function CheckoutPage() {
     track,
   ]);
 
-  const handleInitiatePayU = useCallback(async (): Promise<boolean> => {
+  const handleInitiatePayU = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -974,13 +944,13 @@ export default function CheckoutPage() {
     if (!cartItems || cartItems.length === 0) {
       setError("Your cart is empty. Please add items before checkout.");
       setIsLoading(false);
-      return false;
+      return;
     }
 
     if (subtotal <= 0) {
       setError("Invalid cart total. Please refresh the page and try again.");
       setIsLoading(false);
-      return false;
+      return;
     }
 
     try {
@@ -1054,14 +1024,11 @@ export default function CheckoutPage() {
       });
 
       if (payUResult.success && payUResult.data) {
+        // Store the data for the SDK to use
         setPayUData(payUResult.data);
-        return true;
       } else {
         throw new Error(payUResult.message || "Failed to initiate payment");
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to initiate payment");
-      return false;
     } finally {
       setIsLoading(false);
     }
@@ -1079,7 +1046,6 @@ export default function CheckoutPage() {
 
   const handleFinalOrderClick = async (action: 'COD' | 'PAYU') => {
     setPendingAction(action);
-    if (action === 'COD') setPaymentMethod('COD');
     if (isSessionVerified) {
       if (action === 'COD') {
         handleCreateCodOrder();
@@ -1088,18 +1054,14 @@ export default function CheckoutPage() {
       }
       return;
     }
-    setError(null);
-    setOtp(['', '', '', '']);
-    setOtpChannel('sms');
-    setOtpVerified(false);
-    setIsOtpModalOpen(true);
     setIsLoading(true);
+    setError(null);
     try {
       const res = await sendOtp({ phone });
       if (res.success) {
         if (res.sessionId) setSessionId(res.sessionId);
+        setIsOtpModalOpen(true);
         setResendTimer(30);
-        setTimeout(() => otpRefs.current[0]?.focus(), 100);
       } else {
         setError(res.message || 'Failed to send verification code');
       }
@@ -1120,25 +1082,20 @@ export default function CheckoutPage() {
     setError(null);
     try {
       const result = await verifyOtp({ phone, code: otpCode, sessionId: sessionId || undefined });
-      if (!result.success) {
-        setError(result.message || 'Invalid OTP code');
-        return;
-      }
-      await createSession(phone, deviceId);
-      setIsSessionVerified(true);
-      setOtpVerified(true);
-
-      let placed = false;
-      if (pendingAction === 'COD') {
-        placed = await handleCreateCodOrder();
-      } else if (pendingAction === 'PAYU') {
-        placed = await handleInitiatePayU();
-      }
-      if (placed) {
+      if (result.success) {
+        await createSession(phone, deviceId);
+        setIsSessionVerified(true);
         setIsOtpModalOpen(false);
+        if (pendingAction === 'COD') {
+          await handleCreateCodOrder();
+        } else if (pendingAction === 'PAYU') {
+          await handleInitiatePayU();
+        }
+      } else {
+        setError(result.message || 'Invalid OTP code');
       }
     } catch (err: any) {
-      setError(err.message || 'Verification failed. Please try again.');
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -1482,9 +1439,6 @@ export default function CheckoutPage() {
                   <h2>PAYMENT METHOD</h2>
                 </div>
                 <p className="checkout__step-desc">Select your preferred way to pay</p>
-                {error && paymentMethod === null && (
-                  <span className="checkout__error" style={{ display: 'block', marginBottom: '12px' }}>{error}</span>
-                )}
 
                 {paymentMethod === null && (
                   <div className="checkout__payment-options">
@@ -1513,11 +1467,7 @@ export default function CheckoutPage() {
                           </div>
                           <div>
                             <p className="checkout__payment-title">Online Payment</p>
-                            <img
-                              className="checkout__payment-logos"
-                              src="/upi-icons.png"
-                              alt="Google Pay, PhonePe, Paytm and UPI"
-                            />
+                            <img src="/upi-icons.png" alt="Cards, UPI, Net Banking" style={{ height: '80px', width: 'auto', marginTop: '6px' }} />
                             {onlineDiscountPercent > 0 && (
                               <p className="checkout__payment-note" style={{ color: '#16a34a', fontWeight: 600 }}>
                                 🎉 {onlineDiscountPercent}% off
@@ -1600,14 +1550,9 @@ export default function CheckoutPage() {
           )}
 
           {isOtpModalOpen && (
-            <div className="checkout__otp-modal-overlay" onClick={(e) => {
-              if (e.target === e.currentTarget && !otpVerified) {
-                setIsOtpModalOpen(false);
-                setOtpChannel(null);
-              }
-            }}>
+            <div className="checkout__otp-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsOtpModalOpen(false); }}>
               <div className="checkout__otp-modal">
-                <button className="checkout__otp-modal-close" onClick={() => { setIsOtpModalOpen(false); setOtpChannel(null); setOtpVerified(false); }} type="button">
+                <button className="checkout__otp-modal-close" onClick={() => setIsOtpModalOpen(false)} type="button">
                   ×
                 </button>
 
@@ -1615,64 +1560,41 @@ export default function CheckoutPage() {
                   <ShieldCheck size={14} /> Security Verification
                 </div>
 
-                <h3 className="checkout__otp-modal-title">
-                  {otpVerified ? 'Phone Verified' : 'Authorize Your Order'}
-                </h3>
+                <h3 className="checkout__otp-modal-title">Authorize Your Order</h3>
                 <p className="checkout__otp-modal-desc">
-                  {otpVerified
-                    ? (error
-                      ? 'Your number is verified, but the order could not be placed.'
-                      : 'OTP verified. Placing your order…')
-                    : otpChannel === 'whatsapp'
-                      ? 'We sent a 4-digit code on WhatsApp to '
-                      : 'We\'ve sent a 4-digit security code to '}
-                  {!otpVerified && (
-                    <>
-                      <span className="checkout__otp-modal-phone">+91 {phone.slice(0, 5)} {phone.slice(5)}</span>
-                      <button
-                        type="button"
-                        className="checkout__otp-modal-change-phone"
-                        onClick={() => { setIsOtpModalOpen(false); setOtpChannel(null); setOtpVerified(false); setStep('identify'); }}
-                      >
-                        Edit Number
-                      </button>
-                    </>
-                  )}
+                  We&apos;ve sent a 4-digit security code to{' '}
+                  <span className="checkout__otp-modal-phone">+91 {phone.slice(0, 5)} {phone.slice(5)}</span>
+                  <button
+                    type="button"
+                    className="checkout__otp-modal-change-phone"
+                    onClick={() => { setIsOtpModalOpen(false); setStep('identify'); }}
+                  >
+                    Edit Number
+                  </button>
                 </p>
 
-                {otpVerified && !error && (
-                  <div className="checkout__otp-verified">
-                    <CheckCircle2 size={28} color="#16a34a" />
-                    <span>OTP verified successfully</span>
-                  </div>
-                )}
-
-                {!otpVerified && (
-                  <div className="checkout__otp-inputs" style={{ margin: '16px 0 16px' }}>
-                    {[0, 1, 2, 3].map((index) => (
-                      <input
-                        key={index}
-                        ref={(el) => {
-                          if (el) otpRefs.current[index] = el;
-                        }}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={otp[index] || ''}
-                        onChange={(e) => handleOtpChange(index, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        onFocus={(e) => e.target.select()}
-                        className={`checkout__otp-digit ${error ? 'error' : ''}`}
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="checkout__otp-inputs" style={{ margin: '16px 0 16px' }}>
+                  {[0, 1, 2, 3].map((index) => (
+                    <input
+                      key={index}
+                      ref={(el) => {
+                        if (el) otpRefs.current[index] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={otp[index] || ''}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      onFocus={(e) => e.target.select()}
+                      className={`checkout__otp-digit ${error ? 'error' : ''}`}
+                    />
+                  ))}
+                </div>
 
                 {error && <span className="checkout__error" style={{ marginBottom: '12px', display: 'block', textAlign: 'center' }}>{error}</span>}
 
-                {!otpVerified && (
-                <>
-                <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                <div style={{ marginBottom: '20px', textAlign: 'center' }}>
                   <button
                     className="checkout__resend"
                     onClick={() => handleFinalOrderClick(pendingAction || 'COD')}
@@ -1684,54 +1606,13 @@ export default function CheckoutPage() {
                 </div>
 
                 <button
-                  className="checkout__whatsapp-otp-btn"
-                  onClick={handleSendWhatsAppOtp}
-                  disabled={isLoading}
-                  type="button"
-                >
-                  {isLoading && otpChannel === 'whatsapp' ? (
-                    <Loader2 className="animate-spin" size={18} />
-                  ) : (
-                    <>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                        <path d="M12.05 2.003C6.495 2.003 2 6.477 2 12.004c0 1.766.463 3.42 1.27 4.86L2 22l5.27-1.247A9.96 9.96 0 0 0 12.05 22C17.604 22 22.1 17.526 22.1 12S17.604 2.003 12.05 2.003zm0 18.13a8.13 8.13 0 0 1-4.14-1.134l-.297-.176-3.127.74.745-3.05-.193-.313A8.1 8.1 0 0 1 3.86 12.004c0-4.51 3.68-8.17 8.19-8.17 4.51 0 8.19 3.66 8.19 8.17 0 4.511-3.68 8.129-8.19 8.129z" />
-                      </svg>
-                      {otpChannel === 'whatsapp' ? 'Resend OTP on WhatsApp' : 'Get OTP on WhatsApp'}
-                    </>
-                  )}
-                </button>
-                </>
-                )}
-
-                <button
                   className="checkout__send-otp-btn"
-                  onClick={otpVerified && error
-                    ? () => {
-                        setError(null);
-                        (async () => {
-                          setIsLoading(true);
-                          const placed = pendingAction === 'PAYU'
-                            ? await handleInitiatePayU()
-                            : await handleCreateCodOrder();
-                          if (placed) setIsOtpModalOpen(false);
-                          setIsLoading(false);
-                        })();
-                      }
-                    : handleFinalOtpVerify}
-                  disabled={isLoading || (!otpVerified && otp.join('').length !== 4) || (otpVerified && !error)}
+                  onClick={handleFinalOtpVerify}
+                  disabled={isLoading || otp.join('').length !== 4}
                   type="button"
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
-                  {isLoading ? (
-                    <><Loader2 className="animate-spin" size={18} /> {otpVerified ? 'PLACING ORDER…' : 'VERIFYING…'}</>
-                  ) : otpVerified && error ? (
-                    'TRY AGAIN'
-                  ) : otpVerified ? (
-                    <><Loader2 className="animate-spin" size={18} /> PLACING ORDER…</>
-                  ) : (
-                    pendingAction === 'PAYU' ? 'VERIFY & PAY NOW' : 'VERIFY & PLACE ORDER'
-                  )}
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : (pendingAction === 'PAYU' ? 'VERIFY & PAY NOW' : 'VERIFY & PLACE ORDER')}
                 </button>
 
                 <div className="checkout__powered-by-wrapper" style={{ marginTop: '16px' }}>
