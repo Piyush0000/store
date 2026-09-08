@@ -869,6 +869,14 @@
   margin: 0;
 }
 
+.checkout__payment-logos {
+  display: block;
+  width: 112px;
+  height: auto;
+  margin: 5px 0 3px;
+  object-fit: contain;
+}
+
 .checkout__payment-content {
   margin-top: 20px;
   padding-top: 20px;
@@ -2549,6 +2557,60 @@
   margin-left: 6px;
   text-decoration: underline;
   padding: 0;
+}
+
+.checkout__otp-verified {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 15px;
+  margin: 8px 0 16px;
+}
+
+.checkout__whatsapp-otp-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin: 0 0 16px;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.checkout__whatsapp-otp-btn:hover:not(:disabled) {
+  background: #1ebe57;
+}
+
+.checkout__whatsapp-otp-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.checkout__otp-sms-fallback {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 4px 0;
+}
+
+.checkout__otp-sms-fallback:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
