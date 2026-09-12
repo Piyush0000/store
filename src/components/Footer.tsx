@@ -129,6 +129,38 @@ function getContrastColor(hexColor: string) {
   return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
+const FOOTER_VARIANTS = [
+  "classic", "columns", "centered", "compact", "contrast", "cta",
+];
+
+function readFooterSettings(customization: any) {
+  const fc = customization?.footerContent;
+  let fs = customization?.footerStyle;
+  if (fs && typeof fs === "string") {
+    try {
+      fs = JSON.parse(fs);
+    } catch {
+      fs = undefined;
+    }
+  }
+  return { fc, fs };
+}
+
+function resolveFooterVariant(customization: any): string {
+  const { fc, fs } = readFooterSettings(customization);
+  const variant = fc?.footerVariant || fs?.footerVariant;
+  return FOOTER_VARIANTS.includes(variant) ? variant : "classic";
+}
+
+function resolveFooterColors(customization: any) {
+  const { fc, fs } = readFooterSettings(customization);
+  return {
+    text: fc?.textColor || fs?.textColor || "",
+    accent: fc?.accentColor || fs?.accentColor || "",
+    linkHover: fc?.linkHoverColor || fs?.linkHoverColor || "",
+  };
+}
+
 interface FooterProps {
   initialCustomization?: any;
   storeName?: string;
@@ -190,6 +222,12 @@ export default function Footer({
     const fs = initialCustomization?.footerStyle;
     return fc?.backgroundColor || fs?.backgroundColor || "#0a0a0a";
   });
+  const [footerVariant, setFooterVariant] = useState(() =>
+    resolveFooterVariant(initialCustomization),
+  );
+  const [footerColors, setFooterColors] = useState(() =>
+    resolveFooterColors(initialCustomization),
+  );
   const [policyLayout, setPolicyLayout] = useState<"horizontal" | "vertical">(() => {
     const fc = initialCustomization?.footerContent;
     const fs = initialCustomization?.footerStyle;
@@ -381,6 +419,8 @@ export default function Footer({
         const fcBg = customization?.footerContent?.backgroundColor;
         const fsBg = customization?.footerStyle?.backgroundColor;
         setBackgroundColor(fcBg || fsBg || "#0a0a0a");
+        setFooterVariant(resolveFooterVariant(customization));
+        setFooterColors(resolveFooterColors(customization));
 
         const fcPolicy = customization?.footerContent?.policyLayout;
         const fsPolicy = customization?.footerStyle?.policyLayout;
@@ -478,6 +518,8 @@ export default function Footer({
         const fcBg = cust?.footerContent?.backgroundColor;
         const fsBg = cust?.footerStyle?.backgroundColor;
         setBackgroundColor(fcBg || fsBg || "#0a0a0a");
+        setFooterVariant(resolveFooterVariant(cust));
+        setFooterColors(resolveFooterColors(cust));
 
         const fcPolicy = cust?.footerContent?.policyLayout;
         const fsPolicy = cust?.footerStyle?.policyLayout;
@@ -497,14 +539,16 @@ export default function Footer({
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  const txtColor = getContrastColor(backgroundColor);
+  const txtColor = footerColors.text || getContrastColor(backgroundColor);
   const secondaryTxtColor = txtColor === "#000000" ? "#555555" : "#999999";
   const borderColor =
     txtColor === "#000000" ? "rgba(0, 0, 0, 0.15)" : "#222222";
 
   return (
     <footer
-      className={`footer ${policyLayout === "vertical" ? "footer--vertical-policies" : ""}`}
+      className={`footer footer--${footerVariant} ${
+        policyLayout === "vertical" ? "footer--vertical-policies" : ""
+      }`}
       style={
         {
           backgroundColor: backgroundColor,
@@ -512,6 +556,8 @@ export default function Footer({
           "--footer-text": txtColor,
           "--footer-text-secondary": secondaryTxtColor,
           "--footer-border": borderColor,
+          "--footer-accent": footerColors.accent || txtColor,
+          "--footer-link-hover": footerColors.linkHover || footerColors.accent || txtColor,
         } as React.CSSProperties
       }
     >
