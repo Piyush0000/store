@@ -26,6 +26,29 @@ const DEFAULT_NAV_LINKS = [
 
 const DEFAULT_LOGO = '';
 
+function resolveLogoPosition(customization: any): string {
+  let style = customization?.headerStyle;
+  if (typeof style === 'string') {
+    try { style = JSON.parse(style); } catch { style = undefined; }
+  }
+  const position = style?.logoPosition;
+  return ['left', 'middle', 'right', 'above', 'bottom'].includes(position) ? position : 'middle';
+}
+
+const NAV_VARIANTS = [
+  'classic', 'underline', 'pill', 'boxed', 'floating',
+  'transparent', 'minimal', 'bold', 'gradient', 'left',
+];
+
+function resolveNavVariant(customization: any): string {
+  let style = customization?.headerStyle;
+  if (typeof style === 'string') {
+    try { style = JSON.parse(style); } catch { style = undefined; }
+  }
+  const variant = style?.navVariant;
+  return NAV_VARIANTS.includes(variant) ? variant : 'classic';
+}
+
 interface HeaderProps {
   initialCustomization?: any;
   storeName?: string;
@@ -70,6 +93,8 @@ export default function Header({ initialCustomization, storeName: propStoreName,
   };
 
   const [logoUrl, setLogoUrl] = useState(getInitialLogo);
+  const [logoPosition, setLogoPosition] = useState(() => resolveLogoPosition(initialCustomization));
+  const [navVariant, setNavVariant] = useState(() => resolveNavVariant(initialCustomization));
   const [logoError, setLogoError] = useState(false);
   const [storeName, setStoreName] = useState(getInitialStoreName);
   const [navLinks, setNavLinks] = useState<{ label: string; path: string }[]>(getInitialNavLinks);
@@ -109,6 +134,8 @@ export default function Header({ initialCustomization, storeName: propStoreName,
           setAllProducts(data.products);
         }
         const customization = data.customization;
+        setLogoPosition(resolveLogoPosition(customization));
+        setNavVariant(resolveNavVariant(customization));
         let headerStyle = customization?.headerStyle;
         if (headerStyle && typeof headerStyle === 'string') {
           try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
@@ -197,6 +224,8 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
         const cust = e.data.data;
+        setLogoPosition(resolveLogoPosition(cust));
+        setNavVariant(resolveNavVariant(cust));
         let headerStyle = cust?.headerStyle;
         if (headerStyle && typeof headerStyle === 'string') {
           try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
@@ -333,9 +362,26 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     </div>
   );
 
+  const separateLogoRow = logoPosition === 'above' || logoPosition === 'bottom';
+  const renderLogo = () => (
+    <Link href="/" className="header__logo">
+      {logoError || !logoUrl || !(logoUrl.startsWith('http://') || logoUrl.startsWith('https://') || logoUrl.startsWith('/')) ? (
+        <span className="header__logo-text">{storeName.toUpperCase()}</span>
+      ) : (
+        <img
+          src={logoUrl}
+          alt={storeName}
+          className="header__logo-img"
+          onError={() => setLogoError(true)}
+        />
+      )}
+    </Link>
+  );
+
   return (
     <>
-      <header className={`header ${scrolled ? 'header--scrolled' : ''}`}>
+      <header className={`header header--logo-${logoPosition} header--nav-${navVariant} ${scrolled ? 'header--scrolled' : ''}`}>
+        {logoPosition === 'above' && <div className="header__logo-row">{renderLogo()}</div>}
         <div className="header__main">
           <div className="header__left">
             <div className={`header__search ${searchOpen ? 'header__search--open' : ''}`}>
@@ -358,18 +404,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
             </button>
           </div>
 
-          <Link href="/" className="header__logo">
-            {logoError || !logoUrl || !(logoUrl.startsWith('http://') || logoUrl.startsWith('https://') || logoUrl.startsWith('/')) ? (
-              <span className="header__logo-text">{storeName.toUpperCase()}</span>
-            ) : (
-              <img
-                src={logoUrl}
-                alt={storeName}
-                className="header__logo-img"
-                onError={() => setLogoError(true)}
-              />
-            )}
-          </Link>
+          {!separateLogoRow && renderLogo()}
 
           <div className="header__right">
             <Link href="/orders" className="header__icon-btn" aria-label="Orders">
@@ -398,19 +433,9 @@ export default function Header({ initialCustomization, storeName: propStoreName,
             >
               <Menu size={24} />
             </button>
-            <Link href="/" className="header__logo">
-              {logoError || !logoUrl ? (
-                <span className="header__logo-text">{storeName.toUpperCase()}</span>
-              ) : (
-                <img
-                  src={logoUrl}
-                  alt={storeName}
-                  className="header__logo-img"
-                  onError={() => setLogoError(true)}
-                />
-              )}
-            </Link>
           </div>
+
+          {!separateLogoRow && renderLogo()}
 
           <div className="header__right">
             <div className={`header__search ${searchOpen ? 'header__search--open' : ''}`}>
@@ -446,6 +471,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
              ))}
            </div>
          </nav>
+        {logoPosition === 'bottom' && <div className="header__logo-row">{renderLogo()}</div>}
       </header>
 
       {/* Mobile Overlay Menu */}

@@ -57,8 +57,8 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  background: var(--gold-light);
-  color: #fff;
+  background: var(--pc-badge-bg, var(--gold-light));
+  color: var(--pc-badge-text, #fff);
   font-family: var(--font-body);
   font-size: 10px;
   font-weight: 700;
@@ -195,7 +195,7 @@
   font-family: var(--font-body);
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--pc-price, #1a1a1a);
 }
 
 .product-card__original-price {
@@ -209,8 +209,8 @@
   width: 100%;
   margin-top: 12px;
   padding: 10px 16px;
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--pc-btn-bg, #1a1a1a);
+  color: var(--pc-btn-text, #fff);
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
@@ -296,4 +296,163 @@
 .product-card__slider-dot.active {
   background: #fff;
   transform: scale(1.2);
+}
+
+/* ==========================================================================
+   Product card styles
+   Chosen in the storefront editor (productCard.variant) and applied by
+   PreviewBridge as data-product-card on <body>, so every grid that renders
+   ProductCard picks it up. "classic" is the default above and is untouched.
+   ========================================================================== */
+
+/* ── 2. Minimal ── image on the page, chrome only on hover ── */
+body[data-product-card="minimal"] .product-card {
+  background: transparent;
+  border-radius: 0;
+}
+
+body[data-product-card="minimal"] .product-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+body[data-product-card="minimal"] .product-card__image-wrap {
+  border-radius: 2px;
+  background: transparent;
+}
+
+body[data-product-card="minimal"] .product-card__info {
+  padding: 14px 2px 0;
+}
+
+body[data-product-card="minimal"] .product-card__name {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body[data-product-card="minimal"] .product-card__rating {
+  display: none;
+}
+
+body[data-product-card="minimal"] .product-card__add-btn {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out),
+    background 160ms var(--ease-out);
+}
+
+body[data-product-card="minimal"] .product-card:hover .product-card__add-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── 3. Retail ── bordered card, ribbon badge, outlined pill button ── */
+body[data-product-card="retail"] .product-card {
+  border: 1px solid #e8e4dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+body[data-product-card="retail"] .product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+  border-color: #ddd6c9;
+}
+
+body[data-product-card="retail"] .product-card__badge {
+  top: 0;
+  left: 0;
+  border-radius: 0 0 10px 0;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+body[data-product-card="retail"] .product-card__info {
+  padding: 14px;
+}
+
+body[data-product-card="retail"] .product-card__add-btn {
+  background: transparent;
+  color: var(--pc-btn-bg, #1a1a1a);
+  border: 1.5px solid var(--pc-btn-bg, #1a1a1a);
+  border-radius: 999px;
+}
+
+body[data-product-card="retail"] .product-card__add-btn:hover {
+  background: var(--pc-btn-bg, #1a1a1a);
+  color: var(--pc-btn-text, #fff);
+}
+
+/* ── 4. Overlay ── name and price sit on the image ── */
+body[data-product-card="overlay"] .product-card__image-wrap {
+  padding-bottom: 135%;
+}
+
+body[data-product-card="overlay"] .product-card__info {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 40px 16px 16px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+
+body[data-product-card="overlay"] .product-card__name,
+body[data-product-card="overlay"] .product-card__price {
+  color: #fff;
+  pointer-events: auto;
+}
+
+body[data-product-card="overlay"] .product-card__original-price {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body[data-product-card="overlay"] .product-card__rating,
+body[data-product-card="overlay"] .product-card__overlay {
+  display: none;
+}
+
+body[data-product-card="overlay"] .product-card__add-btn {
+  width: auto;
+  margin-top: 10px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: auto;
+  transition: opacity 200ms var(--ease-out);
+}
+
+body[data-product-card="overlay"] .product-card:hover .product-card__add-btn {
+  opacity: 1;
+}
+
+/* ── 5. Compact ── tighter card, more products per screen ── */
+body[data-product-card="compact"] .product-card__image-wrap {
+  padding-bottom: 100%;
+}
+
+body[data-product-card="compact"] .product-card__info {
+  padding: 10px 8px;
+}
+
+body[data-product-card="compact"] .product-card__name {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+body[data-product-card="compact"] .product-card__rating {
+  display: none;
+}
+
+body[data-product-card="compact"] .product-card__price {
+  font-size: 14px;
+}
+
+body[data-product-card="compact"] .product-card__add-btn {
+  margin-top: 8px;
+  padding: 7px 12px;
+  font-size: 10px;
 }
