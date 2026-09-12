@@ -231,6 +231,20 @@ export default function Footer({
   const [footerColors, setFooterColors] = useState(() =>
     resolveFooterColors(initialCustomization),
   );
+  const [policyLayout, setPolicyLayout] = useState<"horizontal" | "vertical">(() => {
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
+    return fc?.policyLayout || fs?.policyLayout || "horizontal";
+  });
+  const [policyColumnTitle, setPolicyColumnTitle] = useState<string>(() => {
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
+    return (
+      fc?.policyColumnTitle ||
+      fs?.policyColumnTitle ||
+      "Quick Links & Policies"
+    );
+  });
 
   const [links, setLinks] =
     useState<{ label: string; path: string }[]>(quickLinks);
@@ -410,6 +424,17 @@ export default function Footer({
         setBackgroundColor(fcBg || fsBg || "#0a0a0a");
         setFooterVariant(resolveFooterVariant(customization));
         setFooterColors(resolveFooterColors(customization));
+
+        const fcPolicy = customization?.footerContent?.policyLayout;
+        const fsPolicy = customization?.footerStyle?.policyLayout;
+        if (fcPolicy || fsPolicy) {
+          setPolicyLayout(fcPolicy || fsPolicy || "horizontal");
+        }
+        const fcTitle = customization?.footerContent?.policyColumnTitle;
+        const fsTitle = customization?.footerStyle?.policyColumnTitle;
+        if (fcTitle || fsTitle) {
+          setPolicyColumnTitle(fcTitle || fsTitle || "Quick Links & Policies");
+        }
       })
       .catch((err) => console.warn("[Footer] Failed to fetch config:", err));
   }, [initialCustomization]);
@@ -498,6 +523,17 @@ export default function Footer({
         setBackgroundColor(fcBg || fsBg || "#0a0a0a");
         setFooterVariant(resolveFooterVariant(cust));
         setFooterColors(resolveFooterColors(cust));
+
+        const fcPolicy = cust?.footerContent?.policyLayout;
+        const fsPolicy = cust?.footerStyle?.policyLayout;
+        if (fcPolicy !== undefined || fsPolicy !== undefined) {
+          setPolicyLayout(fcPolicy || fsPolicy || "horizontal");
+        }
+        const fcTitle = cust?.footerContent?.policyColumnTitle;
+        const fsTitle = cust?.footerStyle?.policyColumnTitle;
+        if (fcTitle !== undefined || fsTitle !== undefined) {
+          setPolicyColumnTitle(fcTitle || fsTitle || "Quick Links & Policies");
+        }
       }
     };
     window.addEventListener("message", handleMessage);
@@ -513,8 +549,12 @@ export default function Footer({
     txtColor === "#000000" ? "rgba(0, 0, 0, 0.15)" : "#222222";
 
   return (
-    <footer
-      className={`footer footer--${footerVariant}`}
+  <footer
+    className={`footer footer--${footerVariant} ${
+      policyLayout === "vertical" ? "footer--vertical-policies" : ""
+    }`}
+  >
+
       style={
         {
           backgroundColor: backgroundColor,
@@ -602,6 +642,21 @@ export default function Footer({
           </div>
         </div>
 
+        {policyLayout === "vertical" && (
+          <div className="footer__policies-col">
+            <h4 className="footer__policies-heading">{policyColumnTitle}</h4>
+            <ul className="footer__policies-list">
+              {links.map((link) => (
+                <li key={link.path}>
+                  <Link href={link.path} className="footer__policies-link">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="footer__contact">
           <h4 className="footer__contact-heading">Contact Us</h4>
           <ul className="footer__contact-list">
@@ -619,21 +674,25 @@ export default function Footer({
         </div>
       </div>
 
-      <div className="footer__divider" />
+      {policyLayout !== "vertical" && (
+        <>
+          <div className="footer__divider" />
 
-      <div className="footer__row2">
-        <div className="footer__quick-links">
-          {links.map((link) => (
-            <Link
-              key={link.path}
-              href={link.path}
-              className="footer__quick-link"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </div>
+          <div className="footer__row2">
+            <div className="footer__quick-links">
+              {links.map((link) => (
+                <Link
+                  key={link.path}
+                  href={link.path}
+                  className="footer__quick-link"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="footer__divider" />
 

@@ -150,6 +150,54 @@
   color: #c9a84c;
 }
 
+/* ── Vertical Policies Layout ─────────────────────────────────── */
+.footer--vertical-policies .footer__row1 {
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 40px;
+}
+
+.footer__policies-col {
+  padding-left: 20px;
+  border-left: 1px solid var(--footer-border, #222);
+}
+
+.footer__policies-heading {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--footer-text, #fff);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--footer-border, #222);
+}
+
+.footer__policies-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer__policies-list li {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--footer-text-secondary, #ccc);
+  line-height: 2.2;
+}
+
+.footer__policies-link {
+  color: var(--footer-text-secondary, #ccc);
+  text-decoration: none;
+  display: inline-block;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.footer__policies-link:hover {
+  color: var(--gold, #c9a84c);
+  transform: translateX(2px);
+}
+
 .footer__row2 {
   padding: 32px 0;
 }
@@ -340,6 +388,18 @@
 
   .footer__social {
     margin-top: 16px;
+  }
+
+  .footer--vertical-policies .footer__row1 {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .footer--vertical-policies .footer__policies-col {
+    padding-left: 0;
+    border-left: none;
+    padding-top: 24px;
+    border-top: 1px solid var(--footer-border, #222);
   }
 }
 

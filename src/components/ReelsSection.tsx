@@ -12,9 +12,11 @@ interface Reel {
   ctaLink?: string;
 }
 
+export type ReelDisplayType = 'grid' | 'carousel' | 'stories' | 'pop' | 'sales-page' | 'ugc';
+
 interface ReelsSectionProps {
   reels: Reel[];
-  displayType?: "carousel" | "grid" | "stories" | "pop" | string;
+  displayType?: ReelDisplayType;
 }
 
 export default function ReelsSection({
@@ -30,12 +32,12 @@ export default function ReelsSection({
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
-  const [isDismissed, setIsDismissed] = useState(false);
   const [windowWidth, setWindowWidth] = useState(1200);
   const [inView, setInView] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isPopOpen, setIsPopOpen] = useState(true);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -60,52 +62,6 @@ export default function ReelsSection({
   }, []);
 
   if (!activeReels || activeReels.length === 0) return null;
-
-  if (displayType === "pop") {
-    if (isDismissed) return null;
-    const currentReel = activeReels[currentIndex] || activeReels[0];
-
-    return (
-      <div className="store-reels-pop">
-        <button
-          className="store-reels-pop__close"
-          onClick={() => setIsDismissed(true)}
-          aria-label="Close video reel"
-        >
-          ×
-        </button>
-        <button
-          className="store-reels-pop__mute"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsMuted(!isMuted);
-          }}
-          aria-label="Toggle mute"
-        >
-          {isMuted ? "🔇" : "🔊"}
-        </button>
-        <video
-          src={currentReel.videoUrl}
-          autoPlay
-          muted={isMuted}
-          loop
-          playsInline
-          className="store-reels-pop__video"
-        />
-        {currentReel.ctaLink && (
-          <a
-            href={currentReel.ctaLink}
-            className="store-reels-pop__overlay"
-            title={currentReel.title}
-          >
-            <span className="store-reels-pop__tag">
-              {currentReel.title || "Shop Now"}
-            </span>
-          </a>
-        )}
-      </div>
-    );
-  }
 
   const isMobile = windowWidth <= 640;
   const isTablet = windowWidth > 640 && windowWidth <= 1024;
@@ -135,8 +91,92 @@ export default function ReelsSection({
     if (distance < -minSwipeDistance) handlePrev();
   };
 
+  if (displayType === 'grid') {
+    return (
+      <section id="store-reels" ref={sectionRef} className="store-reels store-reels--gallery">
+        <ReelsHeading eyebrow="Shop the videos" title="Watch, discover and shop" />
+        <div className="store-reels__grid">
+          {activeReels.map((reel) => <GalleryReel key={reel.id} reel={reel} />)}
+        </div>
+      </section>
+    );
+  }
+
+  if (displayType === 'stories') {
+    const activeReel = activeReels[currentIndex];
+    return (
+      <section id="store-reels" ref={sectionRef} className="store-reels store-reels--stories">
+        <ReelsHeading eyebrow="New stories" title="See what is happening" />
+        <div className="store-reels__story-picker" aria-label="Video stories">
+          {activeReels.map((reel, idx) => (
+            <button key={reel.id} type="button" className={`store-reels__story${idx === currentIndex ? ' store-reels__story--active' : ''}`} onClick={() => setCurrentIndex(idx)}>
+              <span className="store-reels__story-ring"><video src={reel.videoUrl} muted playsInline preload="metadata" /></span>
+              <span>{reel.sub || reel.category || `Story ${idx + 1}`}</span>
+            </button>
+          ))}
+        </div>
+        <div className="store-reels__story-player">
+          <video key={activeReel.id} src={activeReel.videoUrl} controls autoPlay muted loop playsInline />
+          <VideoDetails reel={activeReel} />
+        </div>
+      </section>
+    );
+  }
+
+  if (displayType === 'pop') {
+    const activeReel = activeReels[currentIndex];
+    return (
+      <section id="store-reels" ref={sectionRef} className="store-reels store-reels--pop">
+        <ReelsHeading eyebrow="Featured video" title="See it in action" />
+        <p className="store-reels__pop-copy">Watch our latest product video while you continue shopping.</p>
+        {isPopOpen ? (
+          <aside className="store-reels__pop-card" aria-label="Featured shopping video">
+            <button type="button" className="store-reels__pop-close" onClick={() => setIsPopOpen(false)} aria-label="Close video">×</button>
+            <video key={activeReel.id} src={activeReel.videoUrl} controls autoPlay muted loop playsInline />
+            <VideoDetails reel={activeReel} compact />
+            {activeReels.length > 1 && <button type="button" className="store-reels__pop-next" onClick={handleNext}>Next video ›</button>}
+          </aside>
+        ) : (
+          <button type="button" className="store-reels__pop-reopen" onClick={() => setIsPopOpen(true)}>▶ Watch video</button>
+        )}
+      </section>
+    );
+  }
+
+  if (displayType === 'sales-page') {
+    const activeReel = activeReels[currentIndex];
+    return (
+      <section id="store-reels" ref={sectionRef} className="store-reels store-reels--sales">
+        <div className="store-reels__sales-player"><video key={activeReel.id} src={activeReel.videoUrl} controls autoPlay muted loop playsInline /></div>
+        <div className="store-reels__sales-content">
+          <ReelsHeading eyebrow={activeReel.sub || 'Video shopping'} title={activeReel.title || 'Watch it. Love it. Shop it.'} />
+          {activeReel.category && <a className="store-reels__cta" href={activeReel.ctaLink || '/catalogue'}>Shop {activeReel.category}</a>}
+          <div className="store-reels__sales-thumbs">
+            {activeReels.map((reel, idx) => (
+              <button key={reel.id} type="button" className={idx === currentIndex ? 'is-active' : ''} onClick={() => setCurrentIndex(idx)}>
+                <video src={reel.videoUrl} muted playsInline preload="metadata" /><span>{reel.title || `Video ${idx + 1}`}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (displayType === 'ugc') {
+    return (
+      <section id="store-reels" ref={sectionRef} className="store-reels store-reels--ugc">
+        <div className="store-reels__ugc-intro">
+          <span className="store-reels__ugc-icon">＋</span><p className="store-reels__eyebrow">Community spotlight</p>
+          <h2>Real stories from our customers</h2><p>Explore product reviews, unboxings and everyday inspiration shared by our community.</p>
+        </div>
+        <div className="store-reels__ugc-grid">{activeReels.map((reel) => <GalleryReel key={reel.id} reel={reel} compact />)}</div>
+      </section>
+    );
+  }
+
   return (
-    <section id="store-reels" ref={sectionRef} className="store-reels scroll-fade-up">
+    <section id="store-reels" ref={sectionRef} className="store-reels">
       <div
         className="store-reels__track"
         onTouchStart={onTouchStart}
@@ -252,6 +292,27 @@ export default function ReelsSection({
         )}
       </div>
     </section>
+  );
+}
+
+function ReelsHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return <header className="store-reels__heading"><p className="store-reels__eyebrow">{eyebrow}</p><h2>{title}</h2></header>;
+}
+
+function VideoDetails({ reel, compact = false }: { reel: Reel; compact?: boolean }) {
+  return (
+    <div className={`store-reels__details${compact ? ' store-reels__details--compact' : ''}`}>
+      {reel.sub && <span>{reel.sub}</span>}{reel.title && <h3>{reel.title}</h3>}
+      {reel.category && <a href={reel.ctaLink || '/catalogue'}>Shop {reel.category}</a>}
+    </div>
+  );
+}
+
+function GalleryReel({ reel, compact = false }: { reel: Reel; compact?: boolean }) {
+  return (
+    <article className={`store-reels__gallery-card${compact ? ' store-reels__gallery-card--compact' : ''}`}>
+      <video src={reel.videoUrl} controls muted loop playsInline preload="metadata" /><VideoDetails reel={reel} compact={compact} />
+    </article>
   );
 }
 

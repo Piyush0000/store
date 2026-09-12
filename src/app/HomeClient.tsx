@@ -9,6 +9,8 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import BannersSection from "@/components/BannersSection";
 import FaqSection from "@/components/FaqSection";
 import TickerBar from "@/components/TickerBar";
+import TrustBadgesSection from "@/components/TrustBadgesSection";
+import MostBuySection from "@/components/MostBuySection";
 import type { HydratedSection } from "@/lib/products";
 import {
   categoryCardStyleVars,
@@ -52,6 +54,7 @@ interface Customization {
   categoryImages?: CategoryImagesConfig;
   reelsSection?: {
     enabled?: boolean;
+    displayType?: "carousel" | "grid" | "stories" | "pop" | "sales-page" | "ugc";
     reels?: Array<{
       id: string;
       title: string;
@@ -92,6 +95,7 @@ interface Customization {
     enabled?: boolean;
     title?: string;
     subtitle?: string;
+    headingColor?: string;
     displayStyle?: "accordion" | "cards" | "grid";
     faqs?: Array<{
       id: string;
@@ -100,6 +104,8 @@ interface Customization {
       isActive?: boolean;
     }>;
   };
+  trustBadgesSection?: any;
+  mostBuySection?: any;
   tickerBar?: unknown;
   homepageSections?: Array<{
     id: string;
@@ -361,7 +367,12 @@ export default function HomeClient({
       customizationState.reelsSection.reels.length === 0
     )
       return null;
-    return <ReelsSection reels={customizationState.reelsSection.reels} />;
+    return (
+      <ReelsSection
+        reels={customizationState.reelsSection.reels}
+        displayType={customizationState.reelsSection.displayType || "carousel"}
+      />
+    );
   };
 
   const renderCategories = () => {
@@ -557,6 +568,14 @@ export default function HomeClient({
     <TickerBar config={customizationState?.tickerBar} />
   );
 
+  const renderTrustBadges = () => (
+    <TrustBadgesSection config={customizationState?.trustBadgesSection} />
+  );
+
+  const renderMostBuy = () => (
+    <MostBuySection config={customizationState?.mostBuySection} />
+  );
+
   const renderFaqSection = () => {
     const faqData = customizationState?.faqSection;
     if (
@@ -570,6 +589,7 @@ export default function HomeClient({
         title={faqData.title}
         subtitle={faqData.subtitle}
         faqs={faqData.faqs}
+        headingColor={faqData.headingColor}
         displayStyle={faqData.displayStyle}
       />
     );
@@ -584,25 +604,31 @@ export default function HomeClient({
       enabled: true,
     },
     {
-      id: "reels-stories",
+      id: "trust-badges",
+      type: "trustBadgesSection",
+      name: "Trust Badges",
+      enabled: true,
+    },
+    {
+      id: "reels-showcase",
       type: "reelsSection",
-      name: "Reels / Video Stories",
+      name: "Reels Showcase",
       enabled: true,
     },
     {
-      id: "categories-grid",
+      id: "category-circles",
       type: "categoryImages",
-      name: "Category Images",
+      name: "Shop by Category",
       enabled: true,
     },
     {
-      id: "brand-video",
+      id: "brand-video-section",
       type: "brandVideo",
-      name: "Brand Video / Banner",
+      name: "Brand Video",
       enabled: true,
     },
     {
-      id: "banners-section",
+      id: "promo-banners",
       type: "bannersSection",
       name: "Banner Section",
       enabled: true,
@@ -615,21 +641,27 @@ export default function HomeClient({
       refIndex: idx,
     })),
     {
+      id: "most-buy",
+      type: "mostBuySection",
+      name: "Most Buy Product",
+      enabled: true,
+    },
+    {
       id: "featured-collection",
       type: "featuredProducts",
       name: "All Products",
       enabled: true,
     },
     {
-      id: "testimonials-section",
-      type: "testimonialsSection",
-      name: "Testimonials",
-      enabled: true,
-    },
-    {
       id: "ticker-bar",
       type: "tickerBar",
       name: "Scrolling Ticker",
+      enabled: true,
+    },
+    {
+      id: "testimonials-section",
+      type: "testimonialsSection",
+      name: "Testimonials",
       enabled: true,
     },
   ];
@@ -664,6 +696,8 @@ export default function HomeClient({
           switch (sec.type) {
             case "heroSection":
               return <div key={sec.id}>{renderHero()}</div>;
+            case "trustBadgesSection":
+              return <div key={sec.id}>{renderTrustBadges()}</div>;
             case "reelsSection":
               return <div key={sec.id}>{renderReels()}</div>;
             case "categoryImages":
@@ -678,12 +712,14 @@ export default function HomeClient({
                   {renderProductSection(sec.id, sec.refIndex)}
                 </div>
               );
+            case "mostBuySection":
+              return <div key={sec.id}>{renderMostBuy()}</div>;
             case "featuredProducts":
               return <div key={sec.id}>{renderFeatured()}</div>;
-            case "testimonialsSection":
-              return <div key={sec.id}>{renderTestimonials()}</div>;
             case "tickerBar":
               return <div key={sec.id}>{renderTicker()}</div>;
+            case "testimonialsSection":
+              return <div key={sec.id}>{renderTestimonials()}</div>;
             case "faqSection":
               return <div key={sec.id}>{renderFaqSection()}</div>;
             default:

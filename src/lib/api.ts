@@ -37,8 +37,32 @@ export interface Customization {
   metaDescription: string;
   metaPixel?: string;
   headerStyle?: any;
-  footerStyle?: any;
-  footerContent?: any;
+  footerStyle?: {
+    backgroundColor?: string;
+    bio?: string;
+    policyLayout?: "horizontal" | "vertical";
+    policyColumnTitle?: string;
+    [key: string]: any;
+  };
+  footerContent?: {
+    backgroundColor?: string;
+    bio?: string;
+    description?: string;
+    policyLayout?: "horizontal" | "vertical";
+    policyColumnTitle?: string;
+    contact?: {
+      phone?: string;
+      email?: string;
+      address?: string;
+    };
+    socials?: {
+      facebook?: string;
+      instagram?: string;
+      twitter?: string;
+      tiktok?: string;
+    };
+    [key: string]: any;
+  };
   categoryImages?: CategoryImagesConfig;
   shippingSettings?: {
     enabled?: boolean;
@@ -48,6 +72,7 @@ export interface Customization {
   };
   reelsSection?: {
     enabled?: boolean;
+    displayType?: "carousel" | "grid" | "stories" | "pop" | "sales-page" | "ugc";
     reels?: Array<{ id: string; title: string; sub: string; category: string; videoUrl: string; ctaLink?: string }>;
   };
   fakeSalesPopup?: {
@@ -82,6 +107,7 @@ export interface Customization {
     enabled?: boolean;
     title?: string;
     subtitle?: string;
+    headingColor?: string;
     displayStyle?: "accordion" | "cards" | "grid";
     faqs?: Array<{
       id: string;
@@ -89,6 +115,43 @@ export interface Customization {
       answer: string;
       isActive?: boolean;
     }>;
+  };
+  trustBadgesSection?: {
+    enabled?: boolean;
+    layout?: "classic" | "stacked" | "round" | "semicircle" | "matrix" | "minimal" | "horizontal";
+    borderColor?: string;
+    borderStyle?: "none" | "solid" | "dashed" | "dotted";
+    borderWidth?: number;
+    animationEnabled?: boolean;
+    animationDirection?: "rightToLeft" | "leftToRight";
+    badgeSize?: number;
+    logoSize?: number;
+    backgroundColor?: string;
+    badgeColor?: string;
+    titleColor?: string;
+    descriptionColor?: string;
+    iconColor?: string;
+    badges?: Array<{
+      id: string;
+      image?: string;
+      imageAlt?: string;
+      title?: string;
+      description?: string;
+    }>;
+  };
+  mostBuySection?: {
+    enabled?: boolean;
+    image?: string;
+    heading?: string;
+    description?: string;
+    buttonText?: string;
+    buttonLink?: string;
+    sectionColor?: string;
+    cardColor?: string;
+    headingColor?: string;
+    descriptionColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
   };
   homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number }>;
 }
