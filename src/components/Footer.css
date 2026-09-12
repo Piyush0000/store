@@ -472,6 +472,13 @@
     height: 26px;
   }
 
+  /* Variant layouts are desktop-only; on phones every variant stacks. */
+  .footer--compact .footer__brand {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
   .footer__powered-by-name {
     font-size: 14px;
   }
@@ -483,4 +490,169 @@
   .brand-video__player {
     max-height: 50vh;
   }
+}
+
+/* ==========================================================================
+   Footer variants
+   Chosen in the storefront editor (footerContent.footerVariant) and applied
+   as a footer--{variant} class. Colours come from custom properties set
+   inline by Footer.tsx, so an unconfigured store keeps its current look.
+   Layout changes are gated to desktop; below 900px every variant stacks.
+   ========================================================================== */
+
+/* Shared colour hooks - accent drives headings, link-hover drives link states. */
+.footer .footer__contact-heading {
+  color: var(--footer-accent, var(--footer-text, #fff));
+}
+
+.footer .footer__quick-link:hover,
+.footer .footer__contact-list a:hover {
+  color: var(--footer-link-hover, #c9a84c);
+}
+
+/* 1. Classic - the current two-column layout, no overrides needed. */
+
+@media (min-width: 901px) {
+  /* 2. Columns - brand, contact and links sit side by side.
+     display:contents lifts row1's children up so they become columns of the
+     footer grid alongside the links block, which lives in a different row. */
+  .footer--columns {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    column-gap: 60px;
+    align-items: start;
+  }
+
+  .footer--columns .footer__row1 {
+    display: contents;
+  }
+
+  .footer--columns .footer__row2 {
+    padding: 0;
+  }
+
+  .footer--columns .footer__quick-links {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 14px;
+  }
+
+  .footer--columns .footer__divider,
+  .footer--columns .footer__row4,
+  .footer--columns .footer__powered-by-wrap {
+    grid-column: 1 / -1;
+  }
+
+  /* 3. Centered - one centred column. */
+  .footer--centered .footer__row1 {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    gap: 28px;
+  }
+
+  .footer--centered .footer__brand {
+    align-items: center;
+  }
+
+  .footer--centered .footer__brand-desc {
+    max-width: 620px;
+  }
+
+  .footer--centered .footer__contact {
+    border-left: none;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .footer--centered .footer__contact-heading {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .footer--centered .footer__row4 {
+    justify-content: center;
+  }
+
+  /* 4. Compact - one slim row; description and contact are hidden. */
+  .footer--compact {
+    padding-top: 28px;
+  }
+
+  .footer--compact .footer__row1 {
+    grid-template-columns: 1fr;
+    padding-bottom: 20px;
+  }
+
+  .footer--compact .footer__brand {
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .footer--compact .footer__brand-name {
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .footer--compact .footer__brand-desc,
+  .footer--compact .footer__contact {
+    display: none;
+  }
+
+  .footer--compact .footer__social {
+    margin: 0 0 0 auto;
+  }
+
+  .footer--compact .footer__row2 {
+    padding: 18px 0;
+  }
+
+  /* 6. CTA - the contact block becomes a highlighted card. */
+  .footer--cta .footer__row1 {
+    grid-template-columns: 1.3fr 0.9fr;
+    align-items: start;
+  }
+
+  .footer--cta .footer__contact {
+    border-left: none;
+    padding: 28px 30px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--footer-accent, #c9a84c) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--footer-accent, #c9a84c) 32%, transparent);
+  }
+
+  .footer--cta .footer__contact-heading {
+    border-bottom: none;
+    padding-bottom: 0;
+    font-size: 13px;
+  }
+
+  .footer--cta .footer__contact-list li {
+    font-size: 15px;
+    line-height: 2;
+  }
+}
+
+/* 5. Contrast band - the top block sits on a tinted panel.
+   The tint is mixed from the footer text colour, so it stays visible whether
+   the merchant picked a light or a dark background. */
+.footer--contrast .footer__row1 {
+  background: color-mix(in srgb, var(--footer-text, #fff) 8%, transparent);
+  border-radius: 18px;
+  padding: 40px;
+  margin-bottom: 8px;
+}
+
+.footer--contrast .footer__contact {
+  border-left: 1px solid color-mix(in srgb, var(--footer-text, #fff) 18%, transparent);
+}
+
+.footer--contrast .footer__contact-heading {
+  border-bottom: 1px solid color-mix(in srgb, var(--footer-text, #fff) 18%, transparent);
+}
+
+.footer--contrast .footer__divider {
+  display: none;
 }

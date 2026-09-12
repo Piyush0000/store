@@ -62,6 +62,16 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  /**
+   * ProductCard renders in several grids that never receive customization, so
+   * the chosen style is published as a data attribute on <body> and the card
+   * CSS keys off it. Kept in an effect so it also follows live preview updates.
+   */
+  useEffect(() => {
+    const variant = customization?.productCard?.variant || 'classic';
+    document.body.dataset.productCard = variant;
+  }, [customization?.productCard?.variant]);
+
   const bodyFont = useMemo(() => {
     return customization?.typography?.bodyFont || customization?.typography?.fontFamily;
   }, [customization?.typography?.bodyFont, customization?.typography?.fontFamily]);
@@ -93,6 +103,22 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
     const headerBg = headerStyle?.backgroundColor;
     const isLight = headerBg ? isLightColor(headerBg) : false;
 
+    // Nav bar look and its own colour overrides.
+    const navVariant = headerStyle?.navVariant || 'classic';
+    const navBg = headerStyle?.navBackgroundColor;
+    const navText = headerStyle?.navTextColor;
+    const navAccent = headerStyle?.navAccentColor;
+    // These variants paint their own surface, so the header background must
+    // not be forced onto .header__nav or they would look identical to classic.
+    const navOwnsBackground = ['floating', 'transparent', 'gradient'].includes(navVariant);
+    const navBarSelector = navOwnsBackground ? '.header' : '.header, .header__nav';
+
+    const productCard = customization?.productCard;
+    const pcBadge = productCard?.badgeColor;
+    const pcButton = productCard?.buttonColor;
+    const pcButtonText = productCard?.buttonTextColor;
+    const pcPrice = productCard?.priceColor;
+
     return `
       :root {
         ${primaryColor ? `
@@ -118,7 +144,7 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
         ` : ''}
       }
       ${headerBg ? `
-        .header, .header__nav {
+        ${navBarSelector} {
           background: ${headerBg} !important;
         }
         ${isLight ? `
@@ -167,12 +193,55 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
           }
         `}
       ` : ''}
+      ${navBg || navText || navAccent ? `
+        /* Nav-specific colours. Emitted after the header block above so they
+           win on source order for stores that set them explicitly. */
+        .header {
+          ${navBg ? `--nav-bg: ${navBg};` : ''}
+          ${navText ? `--nav-text: ${navText};` : ''}
+          ${navAccent ? `
+            --nav-accent: ${navAccent};
+            --nav-on-accent: ${isLightColor(navAccent) ? '#14181f' : '#ffffff'};
+          ` : ''}
+        }
+        ${navBg && !navOwnsBackground ? `
+          .header__nav { background: ${navBg} !important; }
+        ` : ''}
+        ${navText ? `
+          .header .header__nav-link { color: ${navText} !important; }
+        ` : ''}
+        ${navAccent ? `
+          .header .header__nav-link:hover,
+          .header .header__nav-link--active { color: ${navAccent} !important; }
+          .header .header__nav-link::after { background: ${navAccent} !important; }
+          .header--nav-pill .header__nav-link:hover,
+          .header--nav-pill .header__nav-link--active,
+          .header--nav-boxed .header__nav-link:hover,
+          .header--nav-boxed .header__nav-link--active {
+            background: ${navAccent} !important;
+            color: ${isLightColor(navAccent) ? '#14181f' : '#ffffff'} !important;
+          }
+        ` : ''}
+      ` : ''}
+      ${pcBadge || pcButton || pcButtonText || pcPrice ? `
+        /* Product card colours. Each falls back to the card's own default. */
+        body {
+          ${pcBadge ? `
+            --pc-badge-bg: ${pcBadge};
+            --pc-badge-text: ${isLightColor(pcBadge) ? '#14181f' : '#ffffff'};
+          ` : ''}
+          ${pcButton ? `--pc-btn-bg: ${pcButton};` : ''}
+          ${pcButtonText ? `--pc-btn-text: ${pcButtonText};` : ''}
+          ${pcPrice ? `--pc-price: ${pcPrice};` : ''}
+        }
+      ` : ''}
     `;
   }, [
     customization?.brandColors?.primary,
     customization?.brandColors?.accent,
     customization?.brandColors?.secondary,
     customization?.headerStyle,
+    customization?.productCard,
     bodyFont,
     headingFont
   ]);

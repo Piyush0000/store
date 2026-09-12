@@ -22,9 +22,75 @@
   display: none;
 }
 
+.header__main,
+.header__main__mobile {
+  position: relative;
+}
+
+.header--logo-left .header__logo,
+.header--logo-right .header__logo,
+.header__logo-row .header__logo {
+  position: static;
+  left: auto;
+  transform: none;
+  min-width: 0;
+}
+
+.header--logo-left .header__logo {
+  order: -1;
+  margin-right: auto;
+  align-items: flex-start;
+}
+
+.header--logo-right .header__logo {
+  order: 3;
+  margin-left: auto;
+  align-items: flex-end;
+}
+
+.header--logo-left .header__main,
+.header--logo-left .header__main__mobile,
+.header--logo-right .header__main,
+.header--logo-right .header__main__mobile {
+  gap: 8px;
+}
+
+.header__logo-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 72px;
+  padding: 12px 24px;
+}
+
+.header .header__logo {
+  max-width: calc(100% - 160px);
+}
+
+.header--logo-middle .header__logo {
+  max-width: calc(100% - 288px);
+}
+
+.header .header__logo-row .header__logo {
+  width: auto;
+  max-width: 100%;
+}
+
+.header .header__logo-img {
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.header .header__logo-text {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .header__left,
 .header__right {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 4px;
 }
@@ -407,6 +473,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .header--logo-middle .header__logo {
+    max-width: calc(100% - 208px);
+  }
+
   .header__main {
     display: none;
     
@@ -458,3 +528,190 @@
   }
 }
 
+/* ==========================================================================
+   Navigation styles
+   Selected in the storefront editor (headerStyle.navVariant) and applied as
+   a header--nav-{variant} class. Colors come from three custom properties
+   that PreviewBridge sets from the merchant's picks; each falls back to the
+   previous hard-coded look so an unconfigured store is unchanged.
+   The nav row is hidden under 768px, so these are desktop-only.
+   ========================================================================== */
+
+.header .header__nav-link {
+  color: var(--nav-text, #fff);
+}
+
+.header .header__nav-link::after {
+  background: var(--nav-accent, var(--gold-light));
+}
+
+.header .header__nav-link:hover,
+.header .header__nav-link--active {
+  color: var(--nav-accent, var(--gold-light));
+}
+
+/* 1. Classic - the original bar, no overrides needed. */
+
+/* 2. Underline - marker grows from the centre instead of the left edge. */
+.header--nav-underline .header__nav-link::after {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -6px;
+  height: 2px;
+}
+
+/* 3. Pill - links sit in a rounded track, active link is a filled capsule. */
+.header--nav-pill .header__nav-inner {
+  width: fit-content;
+  gap: 4px;
+  height: auto;
+  margin: 10px auto;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.header--nav-pill .header__nav-link {
+  padding: 9px 18px;
+  border-radius: 999px;
+  transition: background 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+
+.header--nav-pill .header__nav-link::after {
+  display: none;
+}
+
+.header--nav-pill .header__nav-link:hover,
+.header--nav-pill .header__nav-link--active {
+  background: var(--nav-accent, var(--gold-light));
+  color: var(--nav-on-accent, #14181f);
+}
+
+/* 4. Boxed - outlined container with a divider between each link. */
+.header--nav-boxed .header__nav-inner {
+  width: fit-content;
+  gap: 0;
+  height: 44px;
+  margin: 10px auto;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.header--nav-boxed .header__nav-link {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 22px;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  transition: background 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+
+.header--nav-boxed .header__nav-link:last-child {
+  border-right: none;
+}
+
+.header--nav-boxed .header__nav-link::after {
+  display: none;
+}
+
+.header--nav-boxed .header__nav-link:hover,
+.header--nav-boxed .header__nav-link--active {
+  background: var(--nav-accent, var(--gold-light));
+  color: var(--nav-on-accent, #14181f);
+}
+
+/* 5. Floating - detached rounded card sitting over the page. */
+.header--nav-floating .header__nav {
+  background: transparent;
+  border-top: none;
+  border-bottom: none;
+}
+
+.header--nav-floating .header__nav-inner {
+  width: fit-content;
+  height: 50px;
+  margin: 12px auto;
+  padding: 0 30px;
+  border-radius: 16px;
+  background: var(--nav-bg, rgba(255, 255, 255, 0.1));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+/* 6. Transparent - see-through until the page is scrolled, then it solidifies. */
+.header--nav-transparent .header__nav {
+  background: transparent;
+  border-top: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 250ms var(--ease-out);
+}
+
+.header--nav-transparent.header--scrolled .header__nav {
+  background: var(--nav-bg, rgba(17, 20, 26, 0.82));
+  backdrop-filter: blur(12px);
+}
+
+/* 7. Minimal - airy, wide letter spacing, no underline marker. */
+.header--nav-minimal .header__nav {
+  border-top: none;
+}
+
+.header--nav-minimal .header__nav-inner {
+  gap: 56px;
+  height: 46px;
+}
+
+.header--nav-minimal .header__nav-link {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  opacity: 0.82;
+  transition: opacity 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+
+.header--nav-minimal .header__nav-link::after {
+  display: none;
+}
+
+.header--nav-minimal .header__nav-link:hover,
+.header--nav-minimal .header__nav-link--active {
+  opacity: 1;
+}
+
+/* 8. Bold - larger, heavier, sentence case rather than all caps. */
+.header--nav-bold .header__nav-inner {
+  gap: 36px;
+  height: 62px;
+}
+
+.header--nav-bold .header__nav-link {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: capitalize;
+}
+
+.header--nav-bold .header__nav-link::after {
+  height: 3px;
+  bottom: -8px;
+}
+
+/* 9. Gradient - the bar fades from the nav colour into the accent. */
+.header--nav-gradient .header__nav {
+  background: linear-gradient(
+    90deg,
+    var(--nav-bg, #2f4156) 0%,
+    var(--nav-accent, var(--gold-light)) 100%
+  );
+  border-top: none;
+  border-bottom: none;
+}
+
+/* 10. Left aligned - links start at the container edge instead of centred. */
+.header--nav-left .header__nav-inner {
+  justify-content: flex-start;
+  gap: 34px;
+}
