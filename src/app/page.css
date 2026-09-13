@@ -1,6 +1,7 @@
 
 .home {
   min-height: 100vh;
+  background-color: var(--page-background, var(--bg-primary));
 }
 
 /* Hero Carousel */

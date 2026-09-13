@@ -107,6 +107,7 @@ interface Customization {
   trustBadgesSection?: any;
   mostBuySection?: any;
   tickerBar?: unknown;
+  productSections?: Array<Partial<HydratedSection> & { id?: string }>;
   homepageSections?: Array<{
     id: string;
     type: string;
@@ -236,6 +237,16 @@ export default function HomeClient({
 }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [customizationState, setCustomizationState] = useState(customization);
+
+  const liveProductSections = productSections.map((section, index) => {
+    const configuredSections = Array.isArray(customizationState?.productSections)
+      ? customizationState.productSections
+      : customizationState?.productSections
+        ? [customizationState.productSections]
+        : [];
+    const liveConfig = configuredSections.find((item: any) => item?.id === section.id) || configuredSections[index];
+    return liveConfig ? { ...section, ...liveConfig, products: section.products } : section;
+  });
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
@@ -505,10 +516,10 @@ export default function HomeClient({
   const renderProductSection = (sectionId: string, index?: number) => {
     let section = null;
     if (sectionId) {
-      section = productSections.find((s) => s.id === sectionId);
+      section = liveProductSections.find((s) => s.id === sectionId);
     }
     if (!section && typeof index === "number") {
-      section = productSections[index];
+      section = liveProductSections[index];
     }
     if (!section) return null;
     return (
@@ -517,7 +528,23 @@ export default function HomeClient({
         title={section.title}
         subtitle={section.subtitle}
         products={section.products}
+        layout={section.layout}
         sliderMode={section.sliderMode}
+        backgroundColor={section.backgroundColor}
+        titleColor={section.titleColor}
+        textColor={section.textColor}
+        accentColor={section.accentColor}
+        headingAlignment={section.headingAlignment}
+        desktopColumns={section.desktopColumns}
+        mobileColumns={section.mobileColumns}
+        showViewAll={section.showViewAll}
+        viewAllLabel={section.viewAllLabel}
+        viewAllUrl={section.viewAllUrl}
+        editorialEyebrow={section.editorialEyebrow}
+        editorialTitle={section.editorialTitle}
+        editorialImage={section.editorialImage}
+        editorialCtaLabel={section.editorialCtaLabel}
+        editorialCtaUrl={section.editorialCtaUrl}
       />
     );
   };
@@ -633,7 +660,7 @@ export default function HomeClient({
       name: "Banner Section",
       enabled: true,
     },
-    ...productSections.map((sec, idx) => ({
+    ...liveProductSections.map((sec, idx) => ({
       id: sec.id || `prod-sec-${idx}`,
       type: "productSections",
       name: `Product Section: ${sec.title || "Untitled"}`,
@@ -672,7 +699,7 @@ export default function HomeClient({
   // In case of dynamic sync updates where new productSections are added/removed but homepageSections is not yet saved,
   // ensure we dynamically include any productSections not present in homepageSections at the bottom
   const syncedSections = [...homepageSections];
-  productSections.forEach((sec, idx) => {
+  liveProductSections.forEach((sec, idx) => {
     const exists = syncedSections.some(
       (s: any) =>
         s.type === "productSections" && (s.id === sec.id || s.refIndex === idx),

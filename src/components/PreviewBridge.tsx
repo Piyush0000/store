@@ -93,6 +93,7 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
     const primaryColor = customization?.brandColors?.primary;
     const accentColor = customization?.brandColors?.accent;
     const secondaryColor = customization?.brandColors?.secondary;
+    const pageBackground = customization?.brandColors?.background;
 
     let headerStyle = customization?.headerStyle;
     if (headerStyle && typeof headerStyle === 'string') {
@@ -136,6 +137,10 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
         ${secondaryColor ? `
           --color-accent-coral: ${secondaryColor} !important;
         ` : ''}
+        ${pageBackground ? `
+          --page-background: ${pageBackground};
+          --bg-primary: ${pageBackground};
+        ` : ''}
         ${bodyFont ? `
           --font-body: "${bodyFont}", var(--font-inter), system-ui, sans-serif !important;
         ` : ''}
@@ -143,6 +148,11 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
           --font-heading: "${headingFont}", var(--font-playfair), serif !important;
         ` : ''}
       }
+      ${pageBackground ? `
+        html, body, .home {
+          background-color: var(--page-background) !important;
+        }
+      ` : ''}
       ${headerBg ? `
         ${navBarSelector} {
           background: ${headerBg} !important;
@@ -240,6 +250,7 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
     customization?.brandColors?.primary,
     customization?.brandColors?.accent,
     customization?.brandColors?.secondary,
+    customization?.brandColors?.background,
     customization?.headerStyle,
     customization?.productCard,
     bodyFont,

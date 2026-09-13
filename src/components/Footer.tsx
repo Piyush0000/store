@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { fetchStorefront, fetchPages } from "@/lib/api";
 import "./Footer.css";
+import FooterDesign, { FOOTER_DESIGNS, footerSettings } from "./FooterDesign";
+import { resolveMediaUrl } from "@/lib/media";
 
 const DEFAULT_SLUGS = [
   "about",
@@ -130,7 +132,7 @@ function getContrastColor(hexColor: string) {
 }
 
 const FOOTER_VARIANTS = [
-  "classic", "columns", "centered", "compact", "contrast", "cta",
+  "classic", "columns", "centered", "compact", "contrast", "cta", ...FOOTER_DESIGNS,
 ];
 
 function readFooterSettings(customization: any) {
@@ -172,6 +174,8 @@ export default function Footer({
   storeName: propStoreName,
   storeSubdomain,
 }: FooterProps) {
+  const [footerCustomization, setFooterCustomization] = useState(initialCustomization || {});
+  useEffect(() => { if (initialCustomization) setFooterCustomization(initialCustomization); }, [initialCustomization]);
   const getInitialLogo = () => {
     let headerStyle = initialCustomization?.headerStyle;
     if (headerStyle && typeof headerStyle === "string") {
@@ -335,6 +339,7 @@ export default function Footer({
     fetchStorefront(storeSubdomain)
       .then((data) => {
         const { customization, store } = data;
+        setFooterCustomization(customization || {});
 
         if (store?.name) setStoreName(store.name);
 
@@ -440,6 +445,7 @@ export default function Footer({
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
         const cust = e.data.data;
+        setFooterCustomization((previous: any) => ({ ...previous, ...cust }));
         let headerStyle = cust?.headerStyle;
         if (headerStyle && typeof headerStyle === "string") {
           try {
@@ -539,6 +545,14 @@ export default function Footer({
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
+  const currentSettings = footerSettings(footerCustomization);
+  const currentVariant = currentSettings.footerVariant || footerVariant;
+  const footerLogo = resolveMediaUrl(currentSettings.footerBanner ?? footerCustomization?.footerBanner ?? logoUrl);
+  useEffect(() => setLogoError(false), [footerLogo]);
+  if (FOOTER_DESIGNS.includes(currentVariant)) {
+    return <FooterDesign customization={{ ...footerCustomization, footerContent: { ...currentSettings, backgroundColor: currentSettings.backgroundColor || "#0a0a0a", textColor: currentSettings.textColor || getContrastColor(currentSettings.backgroundColor || "#0a0a0a") } }} storeName={storeName} defaultLogo={logoUrl} links={links} />;
+  }
+
   const txtColor = footerColors.text || getContrastColor(backgroundColor);
   const secondaryTxtColor = txtColor === "#000000" ? "#555555" : "#999999";
   const borderColor =
@@ -565,18 +579,18 @@ export default function Footer({
         <div className="footer__brand">
           <div className="footer__logo-wrap">
             {logoError ||
-            !logoUrl ||
+            !footerLogo ||
             !(
-              logoUrl.startsWith("http://") ||
-              logoUrl.startsWith("https://") ||
-              logoUrl.startsWith("/")
+              footerLogo.startsWith("http://") ||
+              footerLogo.startsWith("https://") ||
+              footerLogo.startsWith("/")
             ) ? (
               <span className="footer__logo-text">
                 {storeName.toUpperCase()}
               </span>
             ) : (
               <Image
-                src={logoUrl}
+                src={footerLogo}
                 alt={storeName}
                 className="footer__logo"
                 width={150}
@@ -728,6 +742,7 @@ export default function Footer({
         </button>
       </div>
 
+      {currentSettings.copyright && <p className="footer__copyright">{currentSettings.copyright}</p>}
       <div className="footer__powered-by-wrap">
         <a
           href="https://evoclabs.com"
