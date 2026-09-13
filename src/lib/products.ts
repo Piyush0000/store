@@ -23,7 +23,23 @@ export interface HydratedSection {
   subtitle?: string;
   categoryFilter?: string;
   limit?: number;
+  layout?: 'curated' | 'editorial' | 'spotlight' | 'shelf' | 'category-tabs';
   sliderMode?: boolean;
+  backgroundColor?: string;
+  titleColor?: string;
+  textColor?: string;
+  accentColor?: string;
+  headingAlignment?: 'left' | 'center';
+  desktopColumns?: number;
+  mobileColumns?: number;
+  showViewAll?: boolean;
+  viewAllLabel?: string;
+  viewAllUrl?: string;
+  editorialEyebrow?: string;
+  editorialTitle?: string;
+  editorialImage?: string;
+  editorialCtaLabel?: string;
+  editorialCtaUrl?: string;
   products: NormalizedProduct[];
 }
 
@@ -113,7 +129,23 @@ export async function buildSectionData(
     categoryFilter?: string;
     limit?: number;
     type?: string;
+    layout?: HydratedSection['layout'];
     sliderMode?: boolean;
+    backgroundColor?: string;
+    titleColor?: string;
+    textColor?: string;
+    accentColor?: string;
+    headingAlignment?: HydratedSection['headingAlignment'];
+    desktopColumns?: number;
+    mobileColumns?: number;
+    showViewAll?: boolean;
+    viewAllLabel?: string;
+    viewAllUrl?: string;
+    editorialEyebrow?: string;
+    editorialTitle?: string;
+    editorialImage?: string;
+    editorialCtaLabel?: string;
+    editorialCtaUrl?: string;
   }> | undefined,
   subdomain: string
 ): Promise<HydratedSection[]> {
@@ -155,7 +187,23 @@ export async function buildSectionData(
         subtitle: section.subtitle,
         categoryFilter: section.categoryFilter,
         limit,
+        layout: section.layout || (section.sliderMode ? 'shelf' : 'curated'),
         sliderMode: Boolean(section.sliderMode),
+        backgroundColor: section.backgroundColor,
+        titleColor: section.titleColor,
+        textColor: section.textColor,
+        accentColor: section.accentColor,
+        headingAlignment: section.headingAlignment,
+        desktopColumns: section.desktopColumns,
+        mobileColumns: section.mobileColumns,
+        showViewAll: section.showViewAll,
+        viewAllLabel: section.viewAllLabel,
+        viewAllUrl: section.viewAllUrl,
+        editorialEyebrow: section.editorialEyebrow,
+        editorialTitle: section.editorialTitle,
+        editorialImage: section.editorialImage ? resolveMediaUrl(section.editorialImage) : undefined,
+        editorialCtaLabel: section.editorialCtaLabel,
+        editorialCtaUrl: section.editorialCtaUrl,
         products: sorted.slice(0, limit),
       } satisfies HydratedSection;
     })

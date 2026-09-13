@@ -1,13 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, Heart, ShoppingBag, User, Menu, X } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense, type CSSProperties } from 'react';
 import { useCart } from './CartProvider';
 import { fetchStorefront } from '@/lib/api';
 import { getSubdomain } from '@/lib/config';
 import './Header.css';
+import NavigationLinks from './NavigationLinks';
+import { readHeaderStyle, usesBannerBackground, boundedNumber } from '@/lib/navigation-style';
 
 const HomeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -37,7 +39,7 @@ function resolveLogoPosition(customization: any): string {
 
 const NAV_VARIANTS = [
   'classic', 'underline', 'pill', 'boxed', 'floating',
-  'transparent', 'minimal', 'bold', 'gradient', 'left',
+  'dropdown', 'transparent', 'minimal', 'bold', 'gradient', 'left',
 ];
 
 function resolveNavVariant(customization: any): string {
@@ -57,6 +59,24 @@ interface HeaderProps {
 
 export default function Header({ initialCustomization, storeName: propStoreName, storeSubdomain }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const [navigationConfig, setNavigationConfig] = useState(initialCustomization || {});
+  const navigationStyle = readHeaderStyle(navigationConfig);
+  const bannerBackground = usesBannerBackground(navigationConfig, pathname);
+  const customBackground = navigationStyle.navBackgroundMode === 'image' && navigationStyle.navBackgroundImage;
+  const navMenus = Array.isArray(navigationStyle.navMenus) ? navigationStyle.navMenus : [];
+  const navVariables = {
+    '--nav-gradient-end': navigationStyle.navGradientEndColor || navigationStyle.navAccentColor || 'var(--gold-light)',
+    '--nav-height': `${boundedNumber(navigationStyle.navHeight, 60, 44, 100)}px`,
+    '--nav-radius': `${boundedNumber(navigationStyle.navRadius, 16, 0, 48)}px`,
+    '--nav-width': `${boundedNumber(navigationStyle.navWidth, 1120, 600, 1600)}px`,
+    '--nav-margin': `${boundedNumber(navigationStyle.navFloatingMargin, 20, 0, 64)}px`,
+    '--nav-image': customBackground ? `url(${JSON.stringify(customBackground)})` : 'none',
+    '--nav-image-position': navigationStyle.navImagePosition || 'center',
+    '--nav-overlay': `rgba(${navigationStyle.navOverlayTone === 'light' ? '255, 255, 255' : '0, 0, 0'}, ${boundedNumber(navigationStyle.navOverlayOpacity, 15, 0, 80) / 100})`,
+    '--nav-hover-bg': navigationStyle.navHoverBackgroundColor || 'rgba(127,127,127,0.14)',
+    '--nav-hover-text': navigationStyle.navHoverTextColor || navigationStyle.navAccentColor || navigationStyle.navTextColor || '#ffffff',
+  } as CSSProperties;
   const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
   const [scrolled, setScrolled] = useState(false);
@@ -119,6 +139,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   useEffect(() => {
     if (initialCustomization) {
+      setNavigationConfig(initialCustomization);
       if (initialCustomization.products) {
         setAllProducts(initialCustomization.products);
       }
@@ -134,6 +155,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
           setAllProducts(data.products);
         }
         const customization = data.customization;
+        setNavigationConfig(customization || {});
         setLogoPosition(resolveLogoPosition(customization));
         setNavVariant(resolveNavVariant(customization));
         let headerStyle = customization?.headerStyle;
@@ -224,6 +246,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
         const cust = e.data.data;
+        setNavigationConfig((previous: any) => ({ ...previous, ...cust }));
         setLogoPosition(resolveLogoPosition(cust));
         setNavVariant(resolveNavVariant(cust));
         let headerStyle = cust?.headerStyle;
@@ -254,7 +277,8 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -380,7 +404,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   return (
     <>
-      <header className={`header header--logo-${logoPosition} header--nav-${navVariant} ${scrolled ? 'header--scrolled' : ''}`}>
+      <header style={navVariables} data-nav-hover={navigationStyle.navHoverEffect || 'default'} className={`header ${bannerBackground ? 'header--banner-nav' : ''} ${customBackground ? 'header--image-nav' : ''} ${navigationStyle.navSticky === false ? 'header--not-sticky' : ''} header--logo-${logoPosition} header--nav-${navVariant} ${scrolled ? 'header--scrolled' : ''}`}>
         {logoPosition === 'above' && <div className="header__logo-row">{renderLogo()}</div>}
         <div className="header__main">
           <div className="header__left">
@@ -460,15 +484,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
         </div>
          <nav className="header__nav">
            <div className="header__nav-inner">
-             {renderedLinks.map((link) => (
-               <Link
-                 key={link.path || link.label}
-                 href={link.path}
-                 className="header__nav-link"
-               >
-                 {link.label}
-               </Link>
-             ))}
+             <Suspense fallback={null}><NavigationLinks links={renderedLinks} menus={navMenus} /></Suspense>
            </div>
          </nav>
         {logoPosition === 'bottom' && <div className="header__logo-row">{renderLogo()}</div>}
@@ -484,11 +500,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
                 <X size={24} />
               </button>
             </div>
-             {renderedLinks.map((link) => (
-               <Link key={`mobile-${link.path || link.label}`} href={link.path} className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>
-                 {link.label}
-               </Link>
-             ))}
+             <Suspense fallback={null}><NavigationLinks links={renderedLinks} menus={navMenus} mobile onNavigate={() => setMobileMenuOpen(false)} /></Suspense>
             <Link href="/orders" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>MY ORDERS</Link>
             <Link href="/wishlist" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>WISHLIST</Link>
           </div>

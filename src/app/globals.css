@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --page-background: #FFFFFF;
   --bg-primary: #FFFFFF;
   --bg-secondary: #FAF9F6;
   --bg-card: #FFFFFF;
@@ -58,7 +59,7 @@ html {
 
 body {
   font-family: var(--font-inter), system-ui, sans-serif;
-  background-color: var(--bg-primary);
+  background-color: var(--page-background, var(--bg-primary));
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;

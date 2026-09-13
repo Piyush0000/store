@@ -8,6 +8,7 @@ export interface BrandColors {
   primary: string;
   secondary: string;
   accent: string;
+  background?: string;
   headerBackground: string;
   headerText: string;
   footerBackground: string;
