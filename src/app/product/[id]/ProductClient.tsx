@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Star,
   Heart,
@@ -71,13 +71,6 @@ export default function ProductClient({
     return () => clearInterval(interval);
   }, []);
 
-  // Check if image is already loaded (e.g. from cache) upon mounting or changing image index
-  useEffect(() => {
-    if (imgRef.current && imgRef.current.complete) {
-      setImageLoading(false);
-    }
-  }, [selectedImageIndex]);
-
   useEffect(() => {
     if (product.variants?.length > 0) {
       setSelectedVariant(product.variants[0]);
@@ -113,16 +106,28 @@ export default function ProductClient({
     "stock",
     "id",
     "name",
+    "images",
   ];
+
+  const getVariantImages = (variant: any): string[] => {
+    const options = variant?.options && typeof variant.options === "object" ? variant.options : {};
+    const raw = Array.isArray(variant?.images)
+      ? variant.images
+      : Array.isArray(options.images)
+        ? options.images
+        : [];
+    return raw.filter((url: unknown) => typeof url === "string" && url.trim());
+  };
 
   const customOptionKeys =
     product.variants?.length > 0
       ? [
           ...new Set<string>(
             product.variants.flatMap((v: any) =>
-              Object.keys(v.options || {}).filter(
-                (k) => !IGNORED_OPTION_KEYS.includes(k),
-              ),
+              Object.keys(v.options || {}).filter((k) => {
+                if (IGNORED_OPTION_KEYS.includes(k)) return false;
+                return typeof v.options?.[k] === "string";
+              }),
             ),
           ),
         ]
@@ -130,9 +135,26 @@ export default function ProductClient({
 
   const getOptionValues = (key: string) => [
     ...new Set<string>(
-      product.variants.map((v: any) => v.options?.[key]).filter(Boolean),
+      product.variants
+        .map((v: any) => v.options?.[key])
+        .filter((value: unknown) => typeof value === "string" && value.trim()),
     ),
   ];
+
+  const galleryImages: string[] = useMemo(() => {
+    const variantImages = getVariantImages(selectedVariant);
+    if (variantImages.length) return variantImages;
+    return Array.isArray(product.images) ? product.images : [];
+  }, [selectedVariant, product.images]);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      setImageLoading(false);
+      return;
+    }
+    setImageLoading(true);
+  }, [selectedVariant?.id, selectedImageIndex, galleryImages[0]]);
 
   const handleOptionChange = (key: string, value: string) => {
     const match = product.variants.find(
@@ -169,7 +191,7 @@ export default function ProductClient({
         name: product.name,
         price: displayPrice,
         compareAtPrice: originalPrice || undefined,
-        images: product.images,
+        images: galleryImages.length ? galleryImages : product.images,
         variantId: selectedVariant?.id,
       },
       quantity,
@@ -196,7 +218,7 @@ export default function ProductClient({
       name: product.name,
       price: displayPrice,
       compareAtPrice: originalPrice || undefined,
-      images: product.images,
+      images: galleryImages.length ? galleryImages : product.images,
       variantId: selectedVariant?.id,
       quantity,
       variants: variantSelection,
@@ -252,24 +274,27 @@ export default function ProductClient({
     );
   };
 
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [selectedVariant?.id]);
+
   // Auto-play slideshow loop
   useEffect(() => {
-    if (!product.images || product.images.length <= 1) return;
+    if (!galleryImages || galleryImages.length <= 1) return;
     const timer = setInterval(() => {
-      setSelectedImageIndex((prev) => (prev + 1) % product.images.length);
-      setImageLoading(true);
+      setSelectedImageIndex((prev) => (prev + 1) % galleryImages.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, [product.images, selectedImageIndex]);
+  }, [galleryImages]);
 
   return (
     <>
       <section className="product-page">
         <div className="product-page__container">
           <div className="product-page__gallery">
-            {product.images.length > 1 && (
+            {galleryImages.length > 1 && (
               <div className="product-page__thumbnails">
-                {product.images.map((img: string, index: number) => (
+                {galleryImages.map((img: string, index: number) => (
                   <button
                     key={index}
                     className={`product-page__thumb ${index === selectedImageIndex ? "active" : ""}`}
@@ -299,8 +324,8 @@ export default function ProductClient({
               <img
                 ref={imgRef}
                 src={
-                  product.images?.[selectedImageIndex] ||
-                  product.images?.[0] ||
+                  galleryImages?.[selectedImageIndex] ||
+                  galleryImages?.[0] ||
                   "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80"
                 }
                 alt={product.name}
@@ -375,15 +400,19 @@ export default function ProductClient({
                       {optionLabel}: <strong>{selectedVariant?.name}</strong>
                     </label>
                     <div className="product-page__variant-options">
-                      {product.variants.map((v: any) => (
-                        <button
-                          key={v.id}
-                          className={`product-page__variant-btn ${selectedVariant?.id === v.id ? "active" : ""}`}
-                          onClick={() => setSelectedVariant(v)}
-                        >
-                          {v.name}
-                        </button>
-                      ))}
+                      {product.variants.map((v: any) => {
+                        const thumb = getVariantImages(v)[0];
+                        return (
+                          <button
+                            key={v.id}
+                            className={`product-page__variant-btn ${selectedVariant?.id === v.id ? "active" : ""}`}
+                            onClick={() => setSelectedVariant(v)}
+                          >
+                            {thumb ? <img src={thumb} alt="" /> : null}
+                            {v.name}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -433,7 +462,7 @@ export default function ProductClient({
                   id: product.id,
                   name: product.name,
                   price: displayPrice,
-                  images: product.images,
+                  images: galleryImages.length ? galleryImages : product.images,
                 })
               }
             >
