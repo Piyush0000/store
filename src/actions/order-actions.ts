@@ -95,7 +95,7 @@ const orderInputSchema = z.object({
   subtotal: z.number().optional(),
   tax: z.number().optional(),
   shipping: z.number().optional(),
-  paymentMethod: z.enum(['COD', 'PAYU']),
+  paymentMethod: z.enum(['COD', 'PAYU', 'RAZORPAY', 'CASHFREE']),
   firstName: z.string(),
   lastName: z.string(),
   email: z.string(),
@@ -477,7 +477,15 @@ export async function getOrdersByUser(userId: string) {
   }
 }
 
-export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, payuStatus?: string, payuResponse?: any) {
+type OnlinePaymentMethod = 'PAYU' | 'RAZORPAY' | 'CASHFREE';
+
+export async function confirmAndSyncOnlineOrder(
+  orderId: string,
+  paymentMethod: OnlinePaymentMethod,
+  transactionId?: string,
+  providerStatus?: string,
+  providerResponse?: any,
+) {
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -502,9 +510,10 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
       data: {
         paymentStatus: 'PAID',
         status: 'CONFIRMED',
-        payuTxnId: txnId || undefined,
-        ...(payuStatus && { payuStatus }),
-        ...(payuResponse && { payuResponse: payuResponse as any }),
+        paymentMethod,
+        ...(paymentMethod === 'PAYU' && transactionId && { payuTxnId: transactionId }),
+        ...(paymentMethod === 'PAYU' && providerStatus && { payuStatus: providerStatus }),
+        ...(paymentMethod === 'PAYU' && providerResponse && { payuResponse: providerResponse as any }),
       },
       include: { items: true },
     });
@@ -550,6 +559,7 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
       tax: order.tax,
       source: 'STOREFRONT',
       paymentStatus: 'PAID',
+      paymentMethod,
       status: 'CONFIRMED',
       items: order.items.map((item: any) => ({
         productId: item.productId,
@@ -575,7 +585,11 @@ export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, pa
 
     return { success: true, data: updatedOrder };
   } catch (error: any) {
-    console.error('[confirmAndSyncPayUOrder] Error:', error);
+    console.error('[confirmAndSyncOnlineOrder] Error:', error);
     return { success: false, message: error.message };
   }
+}
+
+export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, payuStatus?: string, payuResponse?: any) {
+  return confirmAndSyncOnlineOrder(orderId, 'PAYU', txnId, payuStatus, payuResponse);
 }
