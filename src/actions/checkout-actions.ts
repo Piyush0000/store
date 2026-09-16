@@ -17,6 +17,7 @@ export interface InitialCheckoutState {
   customerEmail: string;
   codFee: number;
   onlineDiscountPercent: number;
+  onlineGateway: "PAYU" | "RAZORPAY" | "CASHFREE" | null;
   shippingConfig: {
     shippingFee: number;
     freeShippingThreshold: number;
@@ -52,7 +53,15 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
         const shippingSettings = (customization as any).shippingSettings || {};
 
         const codFee = settings.codFee ?? 0;
-        const onlineDiscountPercent = settings.enabledGateways?.payu?.discountPercent ?? 0;
+        const gateways = settings.enabledGateways || {};
+        const selectedGateway = gateways.payu?.enabled
+          ? { name: "PAYU" as const, config: gateways.payu }
+          : gateways.razorpay?.enabled
+            ? { name: "RAZORPAY" as const, config: gateways.razorpay }
+            : gateways.cashfree?.enabled
+              ? { name: "CASHFREE" as const, config: gateways.cashfree }
+              : null;
+        const onlineDiscountPercent = selectedGateway?.config.discountPercent ?? 0;
         const shippingFee = Number(shippingSettings.shippingFee ?? (settings as any).shippingFee ?? 0);
         const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? (settings as any).freeShippingThreshold ?? 0);
         const shippingLabel = shippingSettings.shippingLabel || 'Shipment Fee';
@@ -61,6 +70,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
         return {
           codFee,
           onlineDiscountPercent,
+          onlineGateway: selectedGateway?.name ?? null,
           shippingConfig: {
             shippingFee,
             freeShippingThreshold,
@@ -72,6 +82,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
         return {
           codFee: 0,
           onlineDiscountPercent: 0,
+          onlineGateway: null,
           shippingConfig: {
             shippingFee: 0,
             freeShippingThreshold: 0,
@@ -125,6 +136,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       customerEmail,
       codFee: storefrontData.codFee,
       onlineDiscountPercent: storefrontData.onlineDiscountPercent,
+      onlineGateway: storefrontData.onlineGateway,
       shippingConfig: storefrontData.shippingConfig,
       initialStep,
     };
@@ -140,6 +152,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       customerEmail: "",
       codFee: 0,
       onlineDiscountPercent: 0,
+      onlineGateway: null,
       shippingConfig: {
         shippingFee: 0,
         freeShippingThreshold: 0,
