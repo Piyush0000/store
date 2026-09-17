@@ -270,11 +270,25 @@ export async function createCodOrder(data: {
     return { success: false, message: 'Invalid cart total. Please refresh the page and try again.' };
   }
 
-  // Validate total matches items + COD fee - discount
+  // Validate total matches items + COD fee + shipping - discount
   const COD_FEE = storefront.settings?.codFee ?? 0;
-  const expectedTotal = itemSubtotal + COD_FEE - (data.discountAmount || 0);
+  const shippingSettings = (storefront.customization as any)?.shippingSettings || {};
+  const configuredShippingFee = Number(
+    shippingSettings.shippingFee ?? (storefront.settings as any)?.shippingFee ?? 0
+  );
+  const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 0);
+  const shippingEnabled = shippingSettings.enabled !== false;
+  const shippingFee =
+    !shippingEnabled
+      ? 0
+      : freeShippingThreshold > 0 && itemSubtotal < freeShippingThreshold
+        ? 0
+        : Number.isFinite(configuredShippingFee) && configuredShippingFee > 0
+          ? configuredShippingFee
+          : 0;
+  const expectedTotal = itemSubtotal + COD_FEE + shippingFee - (data.discountAmount || 0);
   if (Math.abs(data.totalAmount - expectedTotal) > 1) {
-    console.warn('[COD] Total mismatch:', { passed: data.totalAmount, calculated: expectedTotal, itemSubtotal });
+    console.warn('[COD] Total mismatch:', { passed: data.totalAmount, calculated: expectedTotal, itemSubtotal, shippingFee });
   }
 
   const customerName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Customer';
@@ -315,7 +329,7 @@ export async function createCodOrder(data: {
     },
     subtotal: itemSubtotal,
     total: data.totalAmount,
-    shipping: 0,
+    shipping: shippingFee,
     tax: 0,
     source: 'STOREFRONT',
     paymentStatus: 'PENDING',
@@ -394,7 +408,7 @@ export async function createCodOrder(data: {
     totalAmount: data.totalAmount,
     subtotal: itemSubtotal,
     tax: 0,
-    shipping: 0,
+    shipping: shippingFee,
     paymentMethod: 'COD',
     firstName: data.firstName || '',
     lastName: data.lastName || '',
