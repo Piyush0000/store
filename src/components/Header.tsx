@@ -42,6 +42,14 @@ const NAV_VARIANTS = [
   'dropdown', 'transparent', 'minimal', 'bold', 'gradient', 'left',
 ];
 
+const MOBILE_HEADER_VARIANTS = [
+  'transparent-hero', 'frosted-glass', 'floating-capsule', 'minimal-white', 'brand-color',
+];
+
+const MOBILE_MENU_VARIANTS = [
+  'classic-list', 'rounded-links', 'catalog-drawer', 'glass-panel', 'fullscreen',
+];
+
 function resolveNavVariant(customization: any): string {
   let style = customization?.headerStyle;
   if (typeof style === 'string') {
@@ -65,6 +73,18 @@ export default function Header({ initialCustomization, storeName: propStoreName,
   const bannerBackground = usesBannerBackground(navigationConfig, pathname);
   const customBackground = navigationStyle.navBackgroundMode === 'image' && navigationStyle.navBackgroundImage;
   const navMenus = Array.isArray(navigationStyle.navMenus) ? navigationStyle.navMenus : [];
+  const mobileHeaderVariant = MOBILE_HEADER_VARIANTS.includes(navigationStyle.mobileHeaderVariant)
+    ? navigationStyle.mobileHeaderVariant
+    : 'legacy';
+  const mobileMenuVariant = MOBILE_MENU_VARIANTS.includes(navigationStyle.mobileMenuVariant)
+    ? navigationStyle.mobileMenuVariant
+    : 'legacy';
+  const firstEnabledSection = navigationConfig?.homepageSections?.find((section: any) => section.enabled !== false);
+  const mobileHeaderOverHero = navigationStyle.mobileTransparentOverHero === true
+    && ['transparent-hero', 'frosted-glass', 'floating-capsule'].includes(mobileHeaderVariant)
+    && pathname === '/'
+    && navigationConfig?.homePageConfig?.heroEnabled !== false
+    && (!firstEnabledSection || firstEnabledSection.type === 'heroSection');
   const navVariables = {
     '--nav-gradient-end': navigationStyle.navGradientEndColor || navigationStyle.navAccentColor || 'var(--gold-light)',
     '--nav-height': `${boundedNumber(navigationStyle.navHeight, 60, 44, 100)}px`,
@@ -76,6 +96,16 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     '--nav-overlay': `rgba(${navigationStyle.navOverlayTone === 'light' ? '255, 255, 255' : '0, 0, 0'}, ${boundedNumber(navigationStyle.navOverlayOpacity, 15, 0, 80) / 100})`,
     '--nav-hover-bg': navigationStyle.navHoverBackgroundColor || 'rgba(127,127,127,0.14)',
     '--nav-hover-text': navigationStyle.navHoverTextColor || navigationStyle.navAccentColor || navigationStyle.navTextColor || '#ffffff',
+    '--mobile-header-bg': navigationStyle.mobileHeaderBackground || '#ffffff',
+    '--mobile-header-text': navigationStyle.mobileHeaderTextColor || '#1a1a1a',
+    '--mobile-header-opacity': `${boundedNumber(navigationStyle.mobileHeaderOpacity, 100, 0, 100)}%`,
+    '--mobile-scrolled-bg': navigationStyle.mobileScrolledBackground || '#ffffff',
+    '--mobile-scrolled-text': navigationStyle.mobileScrolledTextColor || '#1a1a1a',
+    '--mobile-drawer-bg': navigationStyle.mobileDrawerBackground || '#ffffff',
+    '--mobile-drawer-text': navigationStyle.mobileDrawerTextColor || '#202820',
+    '--mobile-drawer-width': `${boundedNumber(navigationStyle.mobileDrawerWidth, 82, 65, 100)}vw`,
+    '--mobile-overlay-alpha': boundedNumber(navigationStyle.mobileOverlayOpacity, 45, 15, 75) / 100,
+    '--mobile-blur': `${boundedNumber(navigationStyle.mobileBlur, 0, 0, 24)}px`,
   } as CSSProperties;
   const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
@@ -287,6 +317,15 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [mobileMenuOpen]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const query = searchQuery.trim();
@@ -404,7 +443,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   return (
     <>
-      <header style={navVariables} data-nav-hover={navigationStyle.navHoverEffect || 'default'} className={`header ${bannerBackground ? 'header--banner-nav' : ''} ${customBackground ? 'header--image-nav' : ''} ${navigationStyle.navSticky === false ? 'header--not-sticky' : ''} header--logo-${logoPosition} header--nav-${navVariant} ${scrolled ? 'header--scrolled' : ''}`}>
+      <header style={navVariables} data-nav-hover={navigationStyle.navHoverEffect || 'default'} className={`header ${bannerBackground ? 'header--banner-nav' : ''} ${customBackground ? 'header--image-nav' : ''} ${navigationStyle.navSticky === false ? 'header--not-sticky' : ''} header--logo-${logoPosition} header--nav-${navVariant} header--mobile-${mobileHeaderVariant} ${mobileHeaderOverHero ? 'header--mobile-over-hero' : ''} ${scrolled ? 'header--scrolled' : ''}`}>
         {logoPosition === 'above' && <div className="header__logo-row">{renderLogo()}</div>}
         <div className="header__main">
           <div className="header__left">
@@ -492,8 +531,10 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
       {/* Mobile Overlay Menu */}
       {mobileMenuOpen && (
-        <div className="header__mobile-overlay" onClick={() => setMobileMenuOpen(false)}>
-          <div className="header__mobile-menu" onClick={(e) => e.stopPropagation()}>
+        <div style={navVariables} data-mobile-menu={mobileMenuVariant} className="header__mobile-overlay" onClick={() => setMobileMenuOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label="Mobile navigation"
+            className={`header__mobile-menu header__mobile-menu--${mobileMenuVariant} header__mobile-menu--${navigationStyle.mobileDrawerPosition === 'right' ? 'right' : 'left'}`}
+            onClick={(e) => e.stopPropagation()}>
             <div className="header__mobile-header">
               <span className="header__mobile-logo">{storeName.toUpperCase()}</span>
               <button onClick={() => setMobileMenuOpen(false)} aria-label="Close">
