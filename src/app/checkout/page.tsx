@@ -205,7 +205,7 @@ export default function CheckoutPage() {
     if (!shippingConfig.enabled) return 0;
     if (
       shippingConfig.freeShippingThreshold > 0 &&
-      subtotal >= shippingConfig.freeShippingThreshold
+      subtotal < shippingConfig.freeShippingThreshold
     )
       return 0;
     return shippingConfig.shippingFee;
