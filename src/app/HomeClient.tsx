@@ -9,6 +9,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import BannersSection from "@/components/BannersSection";
 import type { HydratedSection } from "@/lib/products";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { videoMimeType } from "@/lib/media-type";
 import "./page.css";
 
 interface Product {
@@ -444,7 +445,7 @@ export default function HomeClient({
               className="brand-video__player"
               key={videoUrl}
             >
-              <source src={videoUrl} type="video/mp4" />
+              <source src={videoUrl} type={videoMimeType(videoUrl)} />
             </video>
           </div>
         </section>
