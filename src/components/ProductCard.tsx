@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Heart, Star, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
+import { isVideoUrl, videoMimeType } from '@/lib/media-type';
 import './ProductCard.css';
 
 interface Product {
@@ -154,11 +155,29 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           {images.map((img, index) => {
             const isFirst = index === 0;
             const isEager = priority && isFirst;
+            const src = imgError && isFirst ? 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' : img;
+            if (isVideoUrl(src)) {
+              return (
+                <video
+                  key={index}
+                  src={src}
+                  className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
+                  muted
+                  playsInline
+                  loop
+                  preload="metadata"
+                  onLoadedData={isFirst ? () => setImgLoaded(true) : undefined}
+                  onError={isFirst ? handleImageError : undefined}
+                >
+                  <source src={src} type={videoMimeType(src)} />
+                </video>
+              );
+            }
             return (
               <img
                 key={index}
                 ref={isFirst ? imgRef : undefined}
-                src={imgError && isFirst ? 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' : img}
+                src={src}
                 alt={`${product.name} - Image ${index + 1}`}
                 className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
                 onLoad={isFirst ? handleImageLoad : undefined}

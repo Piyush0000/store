@@ -19,6 +19,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import SpecialOffersCard from "@/components/SpecialOffersCard";
 import ReelsSection from "@/components/ReelsSection";
 import { trackViewContent } from "@/lib/pixel";
+import { isVideoUrl, videoMimeType } from "@/lib/media-type";
 import type { TestimonialSection } from "@/lib/api";
 import "./product.css";
 
@@ -174,9 +175,7 @@ export default function ProductClient({
   }, []);
 
   useEffect(() => {
-    if (product.variants?.length > 0) {
-      setSelectedVariant(product.variants[0]);
-    }
+    setSelectedVariant(null);
     if (product) {
       trackViewContent(product.name, product.id, Number(product.price));
     }
@@ -244,9 +243,12 @@ export default function ProductClient({
   ];
 
   const galleryImages: string[] = useMemo(() => {
+    const defaults = Array.isArray(product.images)
+      ? product.images.filter((url: unknown) => typeof url === "string" && url.trim())
+      : [];
+    if (!selectedVariant) return defaults;
     const variantImages = getVariantImages(selectedVariant);
-    if (variantImages.length) return variantImages;
-    return Array.isArray(product.images) ? product.images : [];
+    return variantImages.length ? variantImages : defaults;
   }, [selectedVariant, product.images]);
 
   useEffect(() => {
@@ -383,11 +385,12 @@ export default function ProductClient({
   // Auto-play slideshow loop
   useEffect(() => {
     if (!galleryImages || galleryImages.length <= 1) return;
+    if (isVideoUrl(galleryImages[selectedImageIndex])) return;
     const timer = setInterval(() => {
       setSelectedImageIndex((prev) => (prev + 1) % galleryImages.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, [galleryImages]);
+  }, [galleryImages, selectedImageIndex]);
 
   return (
     <>
@@ -405,7 +408,17 @@ export default function ProductClient({
                       setImageLoading(true);
                     }}
                   >
-                    <img src={img} alt={`Thumbnail ${index + 1}`} />
+                    {isVideoUrl(img) ? (
+                      <video
+                        src={img}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        aria-label={`Thumbnail ${index + 1}`}
+                      />
+                    ) : (
+                      <img src={img} alt={`Thumbnail ${index + 1}`} />
+                    )}
                   </button>
                 ))}
               </div>
@@ -423,18 +436,39 @@ export default function ProductClient({
                   />
                 </div>
               )}
-              <img
-                ref={imgRef}
-                src={
+              {(() => {
+                const mediaUrl =
                   galleryImages?.[selectedImageIndex] ||
                   galleryImages?.[0] ||
-                  "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80"
+                  "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80";
+                if (isVideoUrl(mediaUrl)) {
+                  return (
+                    <video
+                      key={mediaUrl}
+                      src={mediaUrl}
+                      controls
+                      playsInline
+                      muted
+                      loop
+                      preload="metadata"
+                      onLoadedData={() => setImageLoading(false)}
+                      onError={() => setImageLoading(false)}
+                    >
+                      <source src={mediaUrl} type={videoMimeType(mediaUrl)} />
+                    </video>
+                  );
                 }
-                alt={product.name}
-                onLoad={() => setImageLoading(false)}
-                onError={() => setImageLoading(false)}
-                style={{ borderRadius: "4px", backgroundColor: "#fff" }}
-              />
+                return (
+                  <img
+                    ref={imgRef}
+                    src={mediaUrl}
+                    alt={product.name}
+                    onLoad={() => setImageLoading(false)}
+                    onError={() => setImageLoading(false)}
+                    style={{ borderRadius: "4px", backgroundColor: "#fff" }}
+                  />
+                );
+              })()}
             </div>
           </div>
 

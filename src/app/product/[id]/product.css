@@ -47,7 +47,8 @@
   box-shadow: 0 0 0 1px #1b4d3e;
 }
 
-.product-page__thumb img {
+.product-page__thumb img,
+.product-page__thumb video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -109,7 +110,8 @@
   }
 }
 
-.product-page__main-image img {
+.product-page__main-image img,
+.product-page__main-image video {
   width: 100%;
   max-width: 100%;
   height: auto;
@@ -990,7 +992,8 @@
     border-radius: 12px;
   }
 
-  .product-page__main-image img {
+  .product-page__main-image img,
+  .product-page__main-image video {
     height: 350px;
     width: 100%;
     max-width: 100%;

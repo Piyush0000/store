@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import './ReelsSection.css';
+import { videoMimeType } from '@/lib/media-type';
 
 interface Reel {
   id: string;
@@ -366,13 +367,14 @@ function ReelCard({
       {inView && (
         <video
           ref={videoRef}
-          src={reel.videoUrl}
           muted={!isActive || isMuted}
           loop
           playsInline
           preload={isActive ? 'auto' : 'metadata'}
           className="store-reels__video"
-        />
+        >
+          <source src={reel.videoUrl} type={videoMimeType(reel.videoUrl)} />
+        </video>
       )}
     </div>
   );
