@@ -50,3 +50,13 @@ export async function getServerSubdomain(): Promise<string> {
   }
   return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
 }
+
+// Server-side only function to resolve the active store ID from headers
+export async function getServerStoreId(): Promise<string> {
+  try {
+    const headersList = await headers();
+    return headersList.get('x-store-id') || '';
+  } catch {
+    return '';
+  }
+}

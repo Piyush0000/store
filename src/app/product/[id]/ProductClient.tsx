@@ -59,6 +59,7 @@ interface ProductClientProps {
       ctaLink?: string;
     }>;
   };
+  subdomain?: string;
 }
 
 export default function ProductClient({
@@ -66,6 +67,7 @@ export default function ProductClient({
   relatedProducts,
   testimonials,
   reelsSection,
+  subdomain,
 }: ProductClientProps) {
   // Safely normalize customFields (handles JSON string from Prisma / API / DB)
   const customFields: Record<string, any> = (() => {
@@ -93,7 +95,8 @@ export default function ProductClient({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/storefront/public/coupons");
+        const subQuery = subdomain ? `?subdomain=${encodeURIComponent(subdomain)}` : "";
+        const res = await fetch(`/api/storefront/public/coupons${subQuery}`);
         if (res.ok) {
           const json = await res.json();
           if (!cancelled) {
@@ -105,7 +108,7 @@ export default function ProductClient({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [subdomain]);
 
   const specifications: Array<{ key: string; value: string }> = (() => {
     const raw = customFields.specifications || product.specifications;
