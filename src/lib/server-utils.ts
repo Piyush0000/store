@@ -1,44 +1,52 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
-// Server-side only function to resolve the active subdomain from headers
+const cookieSubdomain = async () => {
+  try {
+    const cookieStore = await cookies();
+    return cookieStore.get('x-store-subdomain')?.value || '';
+  } catch {
+    return '';
+  }
+};
+
+export async function getServerStoreId(): Promise<string> {
+  try {
+    const headersList = await headers();
+    const fromHeader = headersList.get('x-store-id');
+    if (fromHeader) return fromHeader;
+    const cookieStore = await cookies();
+    return cookieStore.get('x-store-id')?.value || '';
+  } catch {
+    return '';
+  }
+}
+
 export async function getServerSubdomain(): Promise<string> {
   try {
     const headersList = await headers();
-    
-    // 1. Check for custom header set by middleware first
     const xSubdomain = headersList.get('x-subdomain');
-    console.log('[server-utils] x-subdomain header:', xSubdomain);
-    if (xSubdomain) {
-      return xSubdomain;
-    }
+    if (xSubdomain) return xSubdomain;
 
-    // 2. Fallback to parsing Host header
+    const fromCookie = await cookieSubdomain();
+    if (fromCookie) return fromCookie;
+
     let host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
-    console.log('[server-utils] host header:', host);
-    if (host.includes(',')) {
-      host = host.split(',')[0].trim();
-    }
+    if (host.includes(',')) host = host.split(',')[0].trim();
     if (host) {
-      // Strip port if exists
       let hostname = host.split(':')[0].toLowerCase();
-      // Strip www prefix if present
-      if (hostname.startsWith('www.')) {
-        hostname = hostname.substring(4);
-      }
+      if (hostname.startsWith('www.')) hostname = hostname.substring(4);
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        console.log('[server-utils] Localhost detected. process.env.NEXT_PUBLIC_SUBDOMAIN:', process.env.NEXT_PUBLIC_SUBDOMAIN);
         return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
       }
-      const parts = hostname.split('.');
-      if (parts.length >= 2) {
-        return parts[0];
+      if (hostname.endsWith('.evoclabs.com')) {
+        return hostname.split('.')[0] || '';
       }
     }
   } catch (error: any) {
     if (error && (error.digest === 'DYNAMIC_SERVER_USAGE' || String(error.message).includes('Dynamic server usage'))) {
       throw error;
     }
-    console.warn('[server-utils] Failed to get host header:', error);
+    console.warn('[server-utils] Failed to resolve storefront identity:', error);
   }
   return process.env.NEXT_PUBLIC_SUBDOMAIN || '';
 }

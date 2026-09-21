@@ -1,4 +1,4 @@
-import { getApiUrl } from './config';
+import { getApiUrl, withStoreId } from './config';
 import { resolveMediaTree } from './media';
 import type { CategoryImagesConfig } from './category-card-style';
 
@@ -343,23 +343,24 @@ const MOCK_STOREFRONT: StorefrontData = {
 };
 
 
-export async function fetchStorefront(subdomain?: string): Promise<StorefrontData> {
+export async function fetchStorefront(subdomain?: string, storeId?: string): Promise<StorefrontData> {
   try {
-    const apiUrl = getApiUrl(subdomain);
+    const apiUrl = withStoreId(getApiUrl(subdomain), storeId);
     const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Storefront request failed (${res.status}) for ${apiUrl}`);
     const data = await res.json();
 
     if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
     return resolveMediaTree(data);
   } catch (err) {
-    
+    console.error('[storefront-api] Falling back to mock storefront:', err);
     return MOCK_STOREFRONT;
   }
 }
 
 export async function fetchProduct(id: string, subdomain?: string): Promise<Product> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/products/${id}`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/products/${id}`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || `Failed to fetch product ${id}`);
@@ -371,7 +372,7 @@ export async function fetchProduct(id: string, subdomain?: string): Promise<Prod
 
 export async function fetchAnnouncements(subdomain?: string): Promise<Announcement[]> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/announcements`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/announcements`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
@@ -384,7 +385,7 @@ export async function fetchAnnouncements(subdomain?: string): Promise<Announceme
 
 export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/legal`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/legal`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
@@ -397,7 +398,7 @@ export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
 
 export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/pages`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/pages`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
@@ -410,7 +411,7 @@ export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
 
 export async function fetchPageBySlug(slug: string, subdomain?: string): Promise<StorePage | null> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/pages/${slug}`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/pages/${slug}`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
@@ -429,7 +430,7 @@ export async function submitReview(review: {
   title: string;
   content: string;
 }, subdomain?: string): Promise<{ message: string; review: Partial<ProductReview> }> {
-  const apiUrl = `${getApiUrl(subdomain)}/reviews`;
+  const apiUrl = withStoreId(`${getApiUrl(subdomain)}/reviews`);
 
   const res = await fetch(apiUrl, {
     method: 'POST',
