@@ -115,6 +115,7 @@ interface Customization {
     name: string;
     enabled: boolean;
     refIndex?: number;
+    instanceData?: any;
   }>;
 }
 
@@ -604,8 +605,11 @@ export default function HomeClient({
     <MostBuySection config={customizationState?.mostBuySection} />
   );
 
-  const renderFaqSection = () => {
-    const faqData = customizationState?.faqSection;
+  const renderFaqSection = (instanceData?: any) => {
+    const faqData =
+      instanceData?.faqSection ||
+      instanceData ||
+      customizationState?.faqSection;
     if (
       faqData?.enabled === false ||
       !faqData?.faqs ||
@@ -692,6 +696,12 @@ export default function HomeClient({
       name: "Testimonials",
       enabled: true,
     },
+    {
+      id: "faq-section",
+      type: "faqSection",
+      name: "FAQ Section",
+      enabled: true,
+    },
   ];
 
   const homepageSections =
@@ -715,6 +725,24 @@ export default function HomeClient({
       });
     }
   });
+
+  const faqConfig = customizationState?.faqSection;
+  if (
+    faqConfig &&
+    faqConfig.enabled !== false &&
+    Array.isArray(faqConfig.faqs) &&
+    faqConfig.faqs.length > 0
+  ) {
+    const hasFaq = syncedSections.some((s: any) => s.type === "faqSection");
+    if (!hasFaq) {
+      syncedSections.push({
+        id: "faq-section",
+        type: "faqSection",
+        name: "FAQ Section",
+        enabled: true,
+      });
+    }
+  }
 
   return (
     <div className="home">
@@ -749,7 +777,7 @@ export default function HomeClient({
             case "testimonialsSection":
               return <div key={sec.id}>{renderTestimonials()}</div>;
             case "faqSection":
-              return <div key={sec.id}>{renderFaqSection()}</div>;
+              return <div key={sec.id}>{renderFaqSection(sec.instanceData)}</div>;
             default:
               return null;
           }

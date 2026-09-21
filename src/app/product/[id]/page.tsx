@@ -14,9 +14,10 @@ export default async function ProductPage({ params }: PageProps) {
   let product: any = null;
   let testimonialSection: TestimonialSection | null = null;
   let reelsSection: any = null;
+  let subdomain = "";
   try {
     // Cache for 60 seconds to avoid hammering the API
-    const subdomain = await getServerSubdomain();
+    subdomain = await getServerSubdomain();
 
     const data = await fetchStorefront(subdomain);
     products = data.products || [];
@@ -66,6 +67,7 @@ export default async function ProductPage({ params }: PageProps) {
       relatedProducts={relatedProducts}
       testimonials={testimonialSection}
       reelsSection={reelsSection}
+      subdomain={subdomain}
     />
   );
 }
