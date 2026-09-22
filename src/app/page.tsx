@@ -1,6 +1,6 @@
 import { fetchStorefront, type Customization, type StorefrontData } from '@/lib/api';
 import { buildSectionData, type HydratedSection } from '@/lib/products';
-import { getServerSubdomain } from '@/lib/server-utils';
+import { getServerSubdomain, getServerStoreId } from '@/lib/server-utils';
 import HomeClient from './HomeClient';
 import './page.css';
 
@@ -15,8 +15,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   try {
     const params = await searchParams;
     const querySubdomain = params?.subdomain;
+    const queryStoreId = params?.storeId;
     const resolvedSubdomain = querySubdomain || (await getServerSubdomain());
-    const data: StorefrontData = await fetchStorefront(resolvedSubdomain);
+    const storeId = queryStoreId || (await getServerStoreId());
+    const data: StorefrontData = await fetchStorefront(resolvedSubdomain, storeId);
 
     customization = data.customization;
     categories = data.categories || [];

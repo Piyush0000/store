@@ -17,10 +17,11 @@ import ScrollObserver from "@/components/ScrollObserver";
 import { fetchStorefront } from "@/lib/api";
 import { extractPixelId } from "@/lib/pixel";
 import MetaPixel from "@/components/MetaPixel";
-import { getServerSubdomain } from "@/lib/server-utils";
+import { getServerSubdomain, getServerStoreId } from "@/lib/server-utils";
 import Image from "next/image";
 import PreviewBridge from "@/components/PreviewBridge";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
+import { CustomerAiMount } from "@/features/customer-ai/components/customer-ai-mount";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -52,7 +53,8 @@ export default async function RootLayout({
   let products: any[] = [];
   try {
     const subdomain = await getServerSubdomain();
-    const data = await fetchStorefront(subdomain);
+    const storeId = await getServerStoreId();
+    const data = await fetchStorefront(subdomain, storeId);
     customization = data.customization;
     storeName = data.store?.name || "";
     storeSubdomain = data.store?.subdomain || subdomain;
@@ -162,6 +164,11 @@ export default async function RootLayout({
                 storeSubdomain={storeSubdomain}
               />
               <BottomNav />
+              <CustomerAiMount
+                subdomain={storeSubdomain}
+                storeName={storeName}
+                brandColor={customization?.brandColors?.primary}
+              />
             </CartProvider>
           </AnalyticsProvider>
         </WishlistProvider>
