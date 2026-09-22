@@ -58,13 +58,41 @@ export default async function ProductPage({ params }: PageProps) {
       .slice(0, 4);
   }
 
+  // Routing logic: product reviews take priority over homepage testimonials when set
+  const reviewMode = customFields?.reviewMode || "homepage";
+  const productReviews = Array.isArray(customFields?.productReviews) ? customFields.productReviews : [];
+
+  let effectiveTestimonials = testimonialSection;
+  if (reviewMode === "product" && productReviews.length > 0) {
+    const mappedReviews = productReviews.map((r: any, idx: number) => ({
+      id: r.id || `product-review-${idx}`,
+      name: r.name || r.author || "Customer",
+      rating: typeof r.rating === "number" ? r.rating : 5,
+      description: r.description || r.text || r.review || "",
+      image: r.image || r.avatar || "",
+      date: r.date || "",
+      ctaLink: r.ctaLink || "",
+      verified: true,
+    }));
+
+    effectiveTestimonials = {
+      ...(testimonialSection || {}),
+      enabled: true,
+      title: testimonialSection?.title || "Customer Reviews",
+      heading: (testimonialSection as any)?.heading || testimonialSection?.title || "Customer Reviews",
+      displayType: (testimonialSection as any)?.displayType || "classic",
+      testimonials: mappedReviews,
+      items: mappedReviews,
+    } as any;
+  }
+
   const normalizedProduct = { ...product, customFields };
 
   return (
     <ProductClient
       product={normalizedProduct}
       relatedProducts={relatedProducts}
-      testimonials={testimonialSection}
+      testimonials={effectiveTestimonials as any}
       reelsSection={reelsSection}
     />
   );
