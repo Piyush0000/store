@@ -125,9 +125,15 @@ export async function proxy(request: Request) {
     const isEditor = requestUrl.searchParams.get('isEditor') === 'true';
 
     if (!isLocalhost && isEvoclabsSubdomain && data.store?.customDomain && !isEditor) {
-      const customUrl = new URL(request.url);
-      customUrl.hostname = `www.${data.store.customDomain}`;
-      return NextResponse.redirect(customUrl, 301);
+      const customHost = String(data.store.customDomain)
+        .replace(/^https?:\/\//i, "")
+        .replace(/\/.*$/, "")
+        .replace(/^www\./i, "")
+        .trim()
+        .toLowerCase();
+      const labels = customHost.split(".").filter(Boolean);
+      const hostname = labels.length === 2 ? `www.${customHost}` : customHost;
+      return NextResponse.redirect(`https://${hostname}${requestUrl.pathname}${requestUrl.search}`, 301);
     }
 
     // Set custom header with the resolved subdomain to pass down to Server Components
