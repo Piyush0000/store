@@ -154,7 +154,7 @@ export interface Customization {
     buttonColor?: string;
     buttonTextColor?: string;
   };
-  homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number }>;
+  homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number; instanceData?: any }>;
 }
 
 export interface ProductVariant {
