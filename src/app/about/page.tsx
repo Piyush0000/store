@@ -9,9 +9,9 @@ export default async function AboutPage() {
   const subdomain = await getServerSubdomain();
   const storefront = await fetchStorefront(subdomain);
   
-  const customization = storefront.customization || {};
-  const settings = storefront.settings || {};
-  const store = storefront.store || { name: 'Our Store' };
+  const customization = storefront?.customization || {};
+  const settings = storefront?.settings || {};
+  const store = storefront?.store || { name: 'Our Store' };
 
   let pageContent = '';
   let pageTitle = 'About Us';
@@ -30,10 +30,32 @@ export default async function AboutPage() {
     content: customization.footerContent?.bio || customization.footerStyle?.bio || customization.aboutSection?.content || `At ${store.name}, we believe in delivering quality and value. Founded on a passion for excellence, we bring you products that celebrate true craftsmanship.`,
   };
 
-  const features = customization.features || [
+  const defaultFeatures = [
     { title: 'Premium Quality', description: 'Every item is crafted with attention to detail.', icon: '✦' },
     { title: 'Secure Shopping', description: 'Multiple payment options with safe checkout.', icon: '✦' },
   ];
+
+  let rawFeatures: any = customization.features;
+  if (typeof rawFeatures === 'string') {
+    try {
+      rawFeatures = JSON.parse(rawFeatures);
+    } catch {
+      rawFeatures = null;
+    }
+  }
+
+  let features = defaultFeatures;
+  if (Array.isArray(rawFeatures)) {
+    features = rawFeatures;
+  } else if (rawFeatures && typeof rawFeatures === 'object') {
+    if (Array.isArray(rawFeatures.items)) {
+      features = rawFeatures.items;
+    } else if (Array.isArray(rawFeatures.list)) {
+      features = rawFeatures.list;
+    } else if (Array.isArray(rawFeatures.features)) {
+      features = rawFeatures.features;
+    }
+  }
 
   return (
     <div className="about">
@@ -54,20 +76,22 @@ export default async function AboutPage() {
           </div>
         )}
 
-        <div className="about__section">
-          <h2>Our Promise</h2>
-          <ul className="about__features">
-            {features.map((feature: any, idx: number) => (
-              <li key={idx}>
-                <span className="about__feature-icon">{feature.icon || '✦'}</span>
-                <div>
-                  <h3>{feature.title}</h3>
-                  <p>{feature.description}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {Array.isArray(features) && features.length > 0 && (
+          <div className="about__section">
+            <h2>Our Promise</h2>
+            <ul className="about__features">
+              {features.map((feature: any, idx: number) => (
+                <li key={idx}>
+                  <span className="about__feature-icon">{feature?.icon || '✦'}</span>
+                  <div>
+                    <h3>{feature?.title}</h3>
+                    <p>{feature?.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="about__section">
           <h2>Contact Us</h2>

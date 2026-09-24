@@ -1523,8 +1523,10 @@
 .checkout__free-shipping-banner::before {
   content: '';
   position: absolute;
-  top: 0; left: -100%;
-  width: 50%; height: 100%;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
   animation: shine 3s infinite;
 }
@@ -1563,14 +1565,29 @@
 }
 
 @keyframes shine {
-  0% { left: -100%; }
-  20% { left: 200%; }
-  100% { left: 200%; }
+  0% {
+    left: -100%;
+  }
+
+  20% {
+    left: 200%;
+  }
+
+  100% {
+    left: 200%;
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
@@ -1988,14 +2005,17 @@
     .checkout__step {
       font-size: 10px;
     }
+
     .checkout__step:first-child {
       padding-left: 10px;
       padding-right: 8px;
     }
+
     .checkout__step:nth-child(2) {
       padding-left: 12px;
       padding-right: 8px;
     }
+
     .checkout__step:last-child {
       padding-left: 12px;
       padding-right: 10px;
