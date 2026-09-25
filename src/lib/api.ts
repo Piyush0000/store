@@ -177,6 +177,7 @@ export interface ProductReview {
 
 export interface Product {
   id: string;
+  isActive?: boolean;
   slug: string;
   name: string;
   description: string;
@@ -351,7 +352,8 @@ export async function fetchStorefront(subdomain?: string, storeId?: string): Pro
     const data = await res.json();
 
     if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
-    return resolveMediaTree(data);
+    const storefront = resolveMediaTree(data);
+    return { ...storefront, products: (storefront.products || []).filter((product: Product) => product.isActive !== false) };
   } catch (err) {
     console.error('[storefront-api] Falling back to mock storefront:', err);
     return MOCK_STOREFRONT;
