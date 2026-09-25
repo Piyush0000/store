@@ -20,6 +20,7 @@ import SpecialOffersCard from "@/components/SpecialOffersCard";
 import ReelsSection from "@/components/ReelsSection";
 import { trackViewContent } from "@/lib/pixel";
 import { isVideoUrl, videoMimeType } from "@/lib/media-type";
+import { availableStock, isOutOfStock } from "@/lib/stock";
 import type { TestimonialSection } from "@/lib/api";
 import "./product.css";
 
@@ -280,7 +281,19 @@ export default function ProductClient({
     ) ?? false;
   const optionLabel = isSizeVariant ? "Size" : "Option";
 
+  const stockLeft = availableStock(product, selectedVariant);
+  const outOfStock = isOutOfStock(product, selectedVariant);
+
+  useEffect(() => {
+    if (outOfStock) {
+      setQuantity(1);
+      return;
+    }
+    setQuantity((prev) => Math.min(prev, Math.max(1, stockLeft)));
+  }, [outOfStock, stockLeft]);
+
   const handleAddToCart = () => {
+    if (outOfStock) return;
     const variantSelection = selectedVariant
       ? customOptionKeys.length > 0
         ? Object.fromEntries(
@@ -309,6 +322,7 @@ export default function ProductClient({
   };
 
   const handleBuyNow = () => {
+    if (outOfStock) return;
     const variantSelection = selectedVariant
       ? customOptionKeys.length > 0
         ? Object.fromEntries(
@@ -598,11 +612,21 @@ export default function ProductClient({
             <div className="product-page__quantity">
               <label>Quantity:</label>
               <div className="product-page__quantity-controls">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+                <button
+                  disabled={outOfStock}
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                >
                   −
                 </button>
                 <span>{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)}>+</button>
+                <button
+                  disabled={outOfStock}
+                  onClick={() =>
+                    setQuantity((prev) => Math.min(stockLeft, prev + 1))
+                  }
+                >
+                  +
+                </button>
               </div>
             </div>
 
@@ -610,11 +634,16 @@ export default function ProductClient({
               <button
                 className="product-page__add-cart"
                 onClick={handleAddToCart}
+                disabled={outOfStock}
               >
                 <ShoppingBag size={16} />
                 {addedToCart ? "Added!" : "Add to Cart"}
               </button>
-              <button className="product-page__buy-now" onClick={handleBuyNow}>
+              <button
+                className="product-page__buy-now"
+                onClick={handleBuyNow}
+                disabled={outOfStock}
+              >
                 <span>Buy Now</span>
                 <img
                   src="/buynow.png"
@@ -623,6 +652,9 @@ export default function ProductClient({
                 />
               </button>
             </div>
+            {outOfStock ? (
+              <p className="product-page__out-of-stock">This is out of stock</p>
+            ) : null}
 
             <button
               className={`product-page__wishlist ${liked ? "product-page__wishlist--active" : ""}`}
