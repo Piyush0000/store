@@ -5,6 +5,7 @@ import { Heart, Star, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
 import { isVideoUrl, videoMimeType } from '@/lib/media-type';
+import { isOutOfStock } from '@/lib/stock';
 import './ProductCard.css';
 
 interface Product {
@@ -17,6 +18,8 @@ interface Product {
   category: string;
   averageRating?: number;
   reviewCount?: number;
+  stock?: number;
+  variants?: { stock?: number }[];
 }
 
 interface ProductCardProps {
@@ -114,9 +117,12 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     };
   }, []);
 
+  const outOfStock = isOutOfStock(product);
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (outOfStock) return;
     addToCart({
       id: product.id,
       name: product.name,
@@ -203,8 +209,13 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           <span className="product-card__badge">{discount}% OFF</span>
         )}
         <div className="product-card__overlay">
-          <button className="product-card__quick-btn" onClick={handleAddToCart}>
-            <ShoppingBag size={14} /> Quick Add
+          <button
+            className="product-card__quick-btn"
+            onClick={handleAddToCart}
+            disabled={outOfStock}
+          >
+            <ShoppingBag size={14} />
+            {outOfStock ? "Out of stock" : "Quick Add"}
           </button>
         </div>
       </a>
@@ -244,9 +255,16 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           )}
         </div>
 
-        <button className="product-card__add-btn" onClick={handleAddToCart}>
-          ADD TO CART
+        <button
+          className="product-card__add-btn"
+          onClick={handleAddToCart}
+          disabled={outOfStock}
+        >
+          {outOfStock ? "OUT OF STOCK" : "ADD TO CART"}
         </button>
+        {outOfStock ? (
+          <p className="product-card__out-of-stock">This is out of stock</p>
+        ) : null}
       </div>
     </div>
   );

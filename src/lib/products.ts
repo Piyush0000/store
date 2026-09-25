@@ -15,6 +15,8 @@ export interface NormalizedProduct {
   averageRating?: number;
   reviewCount?: number;
   images: string[];
+  stock?: number;
+  variants?: { stock?: number }[];
 }
 
 export interface HydratedSection {
@@ -46,6 +48,12 @@ function normalizeProduct(raw: any): NormalizedProduct {
     averageRating: raw.averageRating ? Number(raw.averageRating) : undefined,
     reviewCount: raw.reviewCount ? Number(raw.reviewCount) : undefined,
     images: images.map((img) => resolveMediaUrl(img)),
+    stock: raw.stock != null ? Number(raw.stock) : undefined,
+    variants: Array.isArray(raw.variants)
+      ? raw.variants.map((variant: any) => ({
+          stock: variant?.stock != null ? Number(variant.stock) : undefined,
+        }))
+      : undefined,
   };
 }
 

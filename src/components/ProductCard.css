@@ -230,6 +230,23 @@
   transform: scale(0.97);
 }
 
+.product-card__add-btn:disabled,
+.product-card__quick-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+  background: #9ca3af;
+  color: #fff;
+}
+
+.product-card__out-of-stock {
+  margin: 6px 0 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: #b45309;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .product-card__overlay {
