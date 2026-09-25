@@ -113,7 +113,7 @@ export async function getProductsByCategory(
       (Array.isArray(data.data?.products) ? data.data.products : null) ??
       (Array.isArray(data.data?.data) ? data.data.data : null) ??
       [];
-    return raw.map(normalizeProduct);
+    return raw.filter(product => product.isActive !== false).map(normalizeProduct);
   } catch {
     return [];
   }
