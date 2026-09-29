@@ -1,0 +1,28 @@
+.powered-by-evoc {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  color: inherit;
+  font-family: var(--font-body, Inter, sans-serif);
+  font-size: 11px;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.powered-by-evoc__label { opacity: .7; }
+.powered-by-evoc__brand { display: inline-flex; align-items: center; gap: 0; font-size: 15px; font-weight: 700; letter-spacing: -.035em; }
+.powered-by-evoc__mark { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-right: 5px; overflow: hidden; }
+.powered-by-evoc__mark img { display: block; width: 22px; height: 22px; object-fit: contain; transform: scale(1.55); }
+.powered-by-evoc--light .powered-by-evoc__mark img { filter: brightness(0) invert(1); }
+.powered-by-evoc__labs { color: #2666ef; }
+.powered-by-evoc--light .powered-by-evoc__labs { color: #60a5fa; }
+.powered-by-evoc__arrow { opacity: .65; }
+.powered-by-evoc:hover .powered-by-evoc__brand { text-decoration: underline; text-underline-offset: 3px; }
+.powered-by-evoc:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 2px; }
+
+@media (max-width: 540px) {
+  .powered-by-evoc { font-size: 10px; }
+  .powered-by-evoc__brand { font-size: 14px; }
+}

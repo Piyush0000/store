@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { MessageCircle, ArrowUp, ArrowUpRight, Music2, AtSign } from 'lucide-react';
+import { MessageCircle, ArrowUp, Music2, AtSign } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
+import PoweredByEvoc, { isLightColor } from './PoweredByEvoc';
 import './FooterDesign.css';
 
 export const FOOTER_DESIGNS = ['minimal-brand', 'large-brand', 'store-directory', 'centered-elegant', 'floating-card'];
@@ -121,7 +122,7 @@ export default function FooterDesign({ customization, storeName, defaultLogo, li
         {settings.showPaymentIcons !== false && <div className="footer-design__payments" aria-label="Payment methods">
           <span>Visa</span><span>Mastercard</span>{['UPI', 'PhonePe', 'RuPay'].map(name => <img key={name} src={`/${name}.svg`} alt={name} />)}
         </div>}
-        <a className="footer-design__powered" href="https://evoclabs.com" target="_blank" rel="noopener noreferrer">Powered by EvocLabs <ArrowUpRight size={13} /></a>
+        <PoweredByEvoc light={isLightColor(text)} />
       </div>
     </div>
   </footer>;

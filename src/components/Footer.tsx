@@ -7,6 +7,7 @@ import { fetchStorefront, fetchPages } from "@/lib/api";
 import "./Footer.css";
 import FooterDesign, { FOOTER_DESIGNS, footerSettings } from "./FooterDesign";
 import { resolveMediaUrl } from "@/lib/media";
+import PoweredByEvoc, { isLightColor } from "./PoweredByEvoc";
 
 const DEFAULT_SLUGS = [
   "about",
@@ -744,23 +745,7 @@ export default function Footer({
 
       {currentSettings.copyright && <p className="footer__copyright">{currentSettings.copyright}</p>}
       <div className="footer__powered-by-wrap">
-        <a
-          href="https://evoclabs.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="footer__powered-by"
-        >
-          <span className="footer__powered-by-text">Powered by</span>
-          <Image
-            src="/evoc-logo.png"
-            alt="EvocLabs"
-            width={24}
-            height={24}
-            className="footer__evoc-logo"
-            unoptimized
-          />
-          <span className="footer__powered-by-name">EvocLabs</span>
-        </a>
+        <PoweredByEvoc light={isLightColor(txtColor)} />
       </div>
     </footer>
   );

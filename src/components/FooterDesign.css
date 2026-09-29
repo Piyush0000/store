@@ -26,7 +26,7 @@
 .footer-design__utility { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-top: 24px; }
 .footer-design__payments { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .footer-design__payments img,.footer-design__payments span { height: 25px; max-width: 72px; padding: 4px 6px; background: #fff; border-radius: 3px; object-fit: contain; color: #1f2937; font-size: 9px; font-weight: 700; }
-.footer-design__powered { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; opacity: .7; margin-left: auto; }
+.footer-design__utility > .powered-by-evoc { margin-left: auto; }
 .footer-design__watermark { text-transform: uppercase; font-size: clamp(48px,13vw,200px); font-weight: 800; letter-spacing: -.065em; line-height: 1; opacity: var(--fd-watermark-opacity); margin: -10px 0 60px; overflow-wrap: anywhere; }
 .footer-design--large-brand .footer-design__surface { padding-top: 32px; }
 .footer-design--minimal-brand .footer-design__grid { grid-template-columns: minmax(240px,2fr) repeat(2,minmax(140px,1fr)); }
@@ -37,6 +37,8 @@
 .footer-design--centered-elegant .footer-design__social-section { flex-basis: 100%; }
 .footer-design--centered-elegant .footer-design__socials { justify-content: center; }
 .footer-design--centered-elegant .footer-design__bottom { justify-content: center; }
+.footer-design--centered-elegant .footer-design__utility { justify-content: center; }
+.footer-design--centered-elegant .footer-design__utility > .powered-by-evoc { margin-left: 0; }
 .footer-design--floating-card { padding: 24px clamp(12px,3vw,48px); }
 .footer-design--floating-card .footer-design__surface { border-radius: var(--fd-radius); box-shadow: 0 12px 40px #00000012; }
 @media(min-width:901px) {
@@ -59,7 +61,7 @@
  .footer-design__brand { max-width: 100%; }
  .footer-design__bottom { margin-top: 32px; align-items: flex-start; flex-direction: column; }
  .footer-design__utility { align-items: flex-start; flex-direction: column; }
- .footer-design__powered { margin-left: 0; }
+ .footer-design__utility > .powered-by-evoc { margin-left: 0; }
  .footer-design__accordion { border-bottom: 1px solid color-mix(in srgb,var(--fd-text) 18%,transparent); padding-bottom: 16px; }
  .footer-design--centered-elegant .footer-design__column { flex-basis: 100%; }
  .footer-design--centered-elegant .footer-design__bottom { align-items: center; }

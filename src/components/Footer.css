@@ -274,46 +274,12 @@
 }
 
 .footer__powered-by-wrap {
-  margin-left: -60px;
-  margin-right: -60px;
-  background: #050505;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  margin-top: 40px;
-}
-
-.footer__powered-by {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 24px 0 24px;
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: #1A6FBF;
-  text-decoration: none;
-  transition: filter 0.2s;
-}
-
-.footer__powered-by:hover {
-  filter: brightness(1.15);
-}
-
-.footer__evoc-logo {
-  height: 36px;
-  width: auto;
-}
-
-.footer__powered-by-name {
-  font-weight: 700;
-  font-size: 16px;
-  color: #1A6FBF;
-}
-
-.footer__powered-by-text {
-  font-size: 15px;
-  color: #1A6FBF;
+  margin-top: 24px;
+  padding: 18px 0;
+  border-top: 1px solid var(--footer-border, #222);
 }
 
 /* ── Brand Video Section ─────────────────────────────────────── */
@@ -365,11 +331,6 @@
     padding: 48px 40px 0px;
   }
 
-  .footer__powered-by-wrap {
-    margin-left: -40px;
-    margin-right: -40px;
-  }
-
   .footer__row1 {
     grid-template-columns: 1fr;
     gap: 40px;
@@ -409,9 +370,8 @@
   }
 
   .footer__powered-by-wrap {
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-bottom: 64px; /* safety offset for mobile bottom nav bar */
+    justify-content: center;
+    padding-bottom: 80px; /* safety offset for mobile bottom nav bar */
   }
 
   .footer__row1 {
@@ -461,26 +421,11 @@
     font-size: 11px;
   }
 
-  .footer__powered-by {
-    padding-top: 12px;
-    padding-bottom: 12px;
-    font-size: 13px;
-    gap: 10px;
-  }
-
-  .footer__evoc-logo {
-    height: 26px;
-  }
-
   /* Variant layouts are desktop-only; on phones every variant stacks. */
   .footer--compact .footer__brand {
     flex-direction: column;
     align-items: center;
     text-align: center;
-  }
-
-  .footer__powered-by-name {
-    font-size: 14px;
   }
 
   .brand-video__wrapper {
@@ -572,6 +517,10 @@
   }
 
   .footer--centered .footer__row4 {
+    justify-content: center;
+  }
+
+  .footer--centered .footer__powered-by-wrap {
     justify-content: center;
   }
 
