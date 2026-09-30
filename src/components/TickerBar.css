@@ -1,0 +1,285 @@
+/* Scrolling ticker strip section.
+   Colours arrive as --ticker-bg / --ticker-fg / --ticker-accent set inline by
+   the component; every display type reads the same three variables. */
+
+.ticker-bar {
+  width: 100%;
+  overflow: hidden;
+  background: var(--ticker-bg);
+  color: var(--ticker-fg);
+  position: relative;
+}
+
+.ticker-bar--edges {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ticker-bar__row {
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+}
+
+.ticker-bar__track {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  flex: none;
+  animation-name: ticker-bar-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.ticker-bar__row--pausable:hover .ticker-bar__track {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-bar-scroll {
+  from {
+    transform: translateX(0);
+  }
+  /* Half, because the message list is rendered twice for a seamless loop. */
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-bar__item {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ticker-bar__item--link:hover {
+  text-decoration: underline;
+}
+
+.ticker-bar__symbol {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 14px;
+  color: var(--ticker-accent);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.ticker-bar__gap {
+  display: inline-block;
+  width: 40px;
+}
+
+/* ── Heights ────────────────────────────────────────────────────────── */
+
+.ticker-bar--h-compact .ticker-bar__row {
+  padding: 7px 0;
+}
+
+.ticker-bar--h-normal .ticker-bar__row {
+  padding: 12px 0;
+}
+
+.ticker-bar--h-tall .ticker-bar__row {
+  padding: 20px 0;
+}
+
+.ticker-bar--h-tall .ticker-bar__item {
+  font-size: 14px;
+}
+
+/* ── 2. Dual counter-scroll ─────────────────────────────────────────── */
+
+.ticker-bar--dual .ticker-bar__row--alt {
+  background: var(--ticker-accent);
+  color: var(--ticker-bg);
+}
+
+.ticker-bar--dual .ticker-bar__row--alt .ticker-bar__symbol {
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* ── 3. Rotated ribbon ──────────────────────────────────────────────── */
+
+.ticker-bar--ribbon {
+  background: transparent;
+  border: none;
+  padding: 26px 0;
+}
+
+.ticker-bar__ribbons {
+  position: relative;
+}
+
+.ticker-bar--ribbon .ticker-bar__row {
+  background: var(--ticker-bg);
+  color: var(--ticker-fg);
+  /* Wider than the viewport so the rotated ends never expose a corner. */
+  width: 108%;
+  margin-left: -4%;
+}
+
+.ticker-bar--ribbon .ticker-bar__row--alt {
+  background: var(--ticker-accent);
+  color: var(--ticker-bg);
+  margin-top: -6px;
+}
+
+.ticker-bar--ribbon .ticker-bar__row--alt .ticker-bar__symbol {
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* ── 4. Outline display ─────────────────────────────────────────────── */
+
+.ticker-bar--outline {
+  background: transparent;
+  border: none;
+}
+
+.ticker-bar--outline .ticker-bar__item {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-family: var(--font-heading, inherit);
+  /* Painted fill is the fallback; the stroke overrides it where supported. */
+  color: var(--ticker-fg);
+}
+
+@supports (-webkit-text-stroke: 1px black) {
+  .ticker-bar--outline .ticker-bar__item {
+    -webkit-text-stroke: 1px var(--ticker-fg);
+    color: transparent;
+  }
+
+  .ticker-bar--outline .ticker-bar__item--link:hover {
+    color: var(--ticker-fg);
+    text-decoration: none;
+  }
+}
+
+.ticker-bar--outline .ticker-bar__symbol {
+  margin: 0 20px;
+  font-size: 30px;
+}
+
+.ticker-bar--outline.ticker-bar--h-compact .ticker-bar__item {
+  font-size: 32px;
+}
+
+.ticker-bar--outline.ticker-bar--h-tall .ticker-bar__item {
+  font-size: 60px;
+}
+
+/* ── 5. Pill track ──────────────────────────────────────────────────── */
+
+.ticker-bar--pills {
+  background: transparent;
+  border: none;
+}
+
+.ticker-bar--pills .ticker-bar__row {
+  padding: 14px 0;
+}
+
+.ticker-bar__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--ticker-bg);
+  color: var(--ticker-fg);
+  border-radius: 999px;
+  padding: 9px 18px;
+  margin-right: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.ticker-bar__pill--link:hover {
+  outline: 1px solid var(--ticker-accent);
+}
+
+/* Alternate every other pill into the accent colour so the track has rhythm. */
+.ticker-bar--pills .ticker-bar__track > *:nth-child(even) .ticker-bar__pill {
+  background: var(--ticker-accent);
+  color: var(--ticker-bg);
+}
+
+/* ── 6. Pinned label ────────────────────────────────────────────────── */
+
+.ticker-bar--label {
+  display: flex;
+  align-items: stretch;
+}
+
+.ticker-bar__label {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--ticker-accent);
+  color: var(--ticker-bg);
+  padding: 0 18px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.ticker-bar--label .ticker-bar__row {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-bar__track {
+    animation: none;
+  }
+  .ticker-bar__row {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ticker-bar__row::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .ticker-bar__item {
+    font-size: 11px;
+  }
+  .ticker-bar__symbol {
+    margin: 0 10px;
+  }
+  .ticker-bar--outline .ticker-bar__item {
+    font-size: 28px;
+  }
+  .ticker-bar--outline.ticker-bar--h-tall .ticker-bar__item {
+    font-size: 36px;
+  }
+  .ticker-bar--outline .ticker-bar__symbol {
+    margin: 0 12px;
+    font-size: 22px;
+  }
+  .ticker-bar--ribbon {
+    padding: 18px 0;
+  }
+  .ticker-bar__label {
+    padding: 0 12px;
+    font-size: 11px;
+  }
+}

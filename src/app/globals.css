@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --page-background: #FFFFFF;
   --bg-primary: #FFFFFF;
   --bg-secondary: #FAF9F6;
   --bg-card: #FFFFFF;
@@ -58,7 +59,7 @@ html {
 
 body {
   font-family: var(--font-inter), system-ui, sans-serif;
-  background-color: var(--bg-primary);
+  background-color: var(--page-background, var(--bg-primary));
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -120,6 +121,11 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  .scroll-fade-up {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 @layer utilities {
@@ -150,4 +156,35 @@ body {
   .delay-400 { animation-delay: 400ms; }
   .delay-500 { animation-delay: 500ms; }
   .delay-600 { animation-delay: 600ms; }
+}
+
+/* ── Lenis Smooth Scrolling Styles ── */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ── Hardware-Accelerated Scroll Reveal (Fade-Up) ── */
+.scroll-fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-fade-up.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
 }

@@ -11,14 +11,17 @@ import { Inter, Playfair_Display } from "next/font/google";
 import PageLoader from "@/components/PageLoader";
 import FakeSalesPopup from "@/components/FakeSalesPopup";
 import FloatingLogo from "@/components/FloatingLogo";
+import SmoothScroll from "@/components/SmoothScroll";
+import ScrollObserver from "@/components/ScrollObserver";
 
 import { fetchStorefront } from "@/lib/api";
 import { extractPixelId } from "@/lib/pixel";
 import MetaPixel from "@/components/MetaPixel";
-import { getServerSubdomain } from "@/lib/server-utils";
+import { getServerSubdomain, getServerStoreId } from "@/lib/server-utils";
 import Image from "next/image";
 import PreviewBridge from "@/components/PreviewBridge";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
+import { CustomerAiMount } from "@/features/customer-ai/components/customer-ai-mount";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -50,7 +53,8 @@ export default async function RootLayout({
   let products: any[] = [];
   try {
     const subdomain = await getServerSubdomain();
-    const data = await fetchStorefront(subdomain);
+    const storeId = await getServerStoreId();
+    const data = await fetchStorefront(subdomain, storeId);
     customization = data.customization;
     storeName = data.store?.name || "";
     storeSubdomain = data.store?.subdomain || subdomain;
@@ -108,6 +112,8 @@ export default async function RootLayout({
         )}
       </head>
       <body className={`${inter.variable} ${playfair.variable}`}>
+        <SmoothScroll />
+        <ScrollObserver />
         <PageLoader />
         {pixelId && <MetaPixel pixelId={pixelId} />}
         <PreviewBridge initialCustomization={customization} />
@@ -115,6 +121,16 @@ export default async function RootLayout({
           src={payuScriptUrl}
           strategy="afterInteractive"
           id="payu-bolt"
+        />
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="afterInteractive"
+          id="razorpay-checkout"
+        />
+        <Script
+          src="https://sdk.cashfree.com/js/v3/cashfree.js"
+          strategy="afterInteractive"
+          id="cashfree-checkout"
         />
         <WishlistProvider>
           <AnalyticsProvider
@@ -148,6 +164,11 @@ export default async function RootLayout({
                 storeSubdomain={storeSubdomain}
               />
               <BottomNav />
+              <CustomerAiMount
+                subdomain={storeSubdomain}
+                storeName={storeName}
+                brandColor={customization?.brandColors?.primary}
+              />
             </CartProvider>
           </AnalyticsProvider>
         </WishlistProvider>

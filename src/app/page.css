@@ -1,6 +1,7 @@
 
 .home {
   min-height: 100vh;
+  background-color: var(--page-background, var(--bg-primary));
 }
 
 /* Hero Carousel */
@@ -233,6 +234,8 @@
 
 .shop-category__grid {
   display: flex;
+  justify-content: center;
+  justify-content: safe center;
   overflow-x: auto;
   gap: 24px;
   padding: 12px 4px 24px 4px;
@@ -252,6 +255,11 @@
   text-decoration: none;
   border-radius: 4px;
   background-color: #fff;
+  /* Card stroke — the website editor injects these custom properties on
+     .shop-category__grid. Defaults keep the card borderless. */
+  border-style: var(--category-card-border-style, solid);
+  border-width: var(--category-card-border-width, 0);
+  border-color: var(--category-card-border-color, transparent);
 }
 
 .shop-category__card img {

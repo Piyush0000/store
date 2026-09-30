@@ -5,6 +5,9 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { fetchStorefront, fetchPages } from "@/lib/api";
 import "./Footer.css";
+import FooterDesign, { FOOTER_DESIGNS, footerSettings } from "./FooterDesign";
+import { resolveMediaUrl } from "@/lib/media";
+import PoweredByEvoc, { isLightColor } from "./PoweredByEvoc";
 
 const DEFAULT_SLUGS = [
   "about",
@@ -129,6 +132,38 @@ function getContrastColor(hexColor: string) {
   return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
+const FOOTER_VARIANTS = [
+  "classic", "columns", "centered", "compact", "contrast", "cta", ...FOOTER_DESIGNS,
+];
+
+function readFooterSettings(customization: any) {
+  const fc = customization?.footerContent;
+  let fs = customization?.footerStyle;
+  if (fs && typeof fs === "string") {
+    try {
+      fs = JSON.parse(fs);
+    } catch {
+      fs = undefined;
+    }
+  }
+  return { fc, fs };
+}
+
+function resolveFooterVariant(customization: any): string {
+  const { fc, fs } = readFooterSettings(customization);
+  const variant = fc?.footerVariant || fs?.footerVariant;
+  return FOOTER_VARIANTS.includes(variant) ? variant : "classic";
+}
+
+function resolveFooterColors(customization: any) {
+  const { fc, fs } = readFooterSettings(customization);
+  return {
+    text: fc?.textColor || fs?.textColor || "",
+    accent: fc?.accentColor || fs?.accentColor || "",
+    linkHover: fc?.linkHoverColor || fs?.linkHoverColor || "",
+  };
+}
+
 interface FooterProps {
   initialCustomization?: any;
   storeName?: string;
@@ -140,6 +175,8 @@ export default function Footer({
   storeName: propStoreName,
   storeSubdomain,
 }: FooterProps) {
+  const [footerCustomization, setFooterCustomization] = useState(initialCustomization || {});
+  useEffect(() => { if (initialCustomization) setFooterCustomization(initialCustomization); }, [initialCustomization]);
   const getInitialLogo = () => {
     let headerStyle = initialCustomization?.headerStyle;
     if (headerStyle && typeof headerStyle === "string") {
@@ -189,6 +226,26 @@ export default function Footer({
     const fc = initialCustomization?.footerContent;
     const fs = initialCustomization?.footerStyle;
     return fc?.backgroundColor || fs?.backgroundColor || "#0a0a0a";
+  });
+  const [footerVariant, setFooterVariant] = useState(() =>
+    resolveFooterVariant(initialCustomization),
+  );
+  const [footerColors, setFooterColors] = useState(() =>
+    resolveFooterColors(initialCustomization),
+  );
+  const [policyLayout, setPolicyLayout] = useState<"horizontal" | "vertical">(() => {
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
+    return fc?.policyLayout || fs?.policyLayout || "horizontal";
+  });
+  const [policyColumnTitle, setPolicyColumnTitle] = useState<string>(() => {
+    const fc = initialCustomization?.footerContent;
+    const fs = initialCustomization?.footerStyle;
+    return (
+      fc?.policyColumnTitle ||
+      fs?.policyColumnTitle ||
+      "Quick Links & Policies"
+    );
   });
 
   const [links, setLinks] =
@@ -283,6 +340,7 @@ export default function Footer({
     fetchStorefront(storeSubdomain)
       .then((data) => {
         const { customization, store } = data;
+        setFooterCustomization(customization || {});
 
         if (store?.name) setStoreName(store.name);
 
@@ -367,6 +425,19 @@ export default function Footer({
         const fcBg = customization?.footerContent?.backgroundColor;
         const fsBg = customization?.footerStyle?.backgroundColor;
         setBackgroundColor(fcBg || fsBg || "#0a0a0a");
+        setFooterVariant(resolveFooterVariant(customization));
+        setFooterColors(resolveFooterColors(customization));
+
+        const fcPolicy = customization?.footerContent?.policyLayout;
+        const fsPolicy = customization?.footerStyle?.policyLayout;
+        if (fcPolicy || fsPolicy) {
+          setPolicyLayout(fcPolicy || fsPolicy || "horizontal");
+        }
+        const fcTitle = customization?.footerContent?.policyColumnTitle;
+        const fsTitle = customization?.footerStyle?.policyColumnTitle;
+        if (fcTitle || fsTitle) {
+          setPolicyColumnTitle(fcTitle || fsTitle || "Quick Links & Policies");
+        }
       })
       .catch((err) => console.warn("[Footer] Failed to fetch config:", err));
   }, [initialCustomization]);
@@ -375,6 +446,7 @@ export default function Footer({
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
         const cust = e.data.data;
+        setFooterCustomization((previous: any) => ({ ...previous, ...cust }));
         let headerStyle = cust?.headerStyle;
         if (headerStyle && typeof headerStyle === "string") {
           try {
@@ -453,6 +525,19 @@ export default function Footer({
         const fcBg = cust?.footerContent?.backgroundColor;
         const fsBg = cust?.footerStyle?.backgroundColor;
         setBackgroundColor(fcBg || fsBg || "#0a0a0a");
+        setFooterVariant(resolveFooterVariant(cust));
+        setFooterColors(resolveFooterColors(cust));
+
+        const fcPolicy = cust?.footerContent?.policyLayout;
+        const fsPolicy = cust?.footerStyle?.policyLayout;
+        if (fcPolicy !== undefined || fsPolicy !== undefined) {
+          setPolicyLayout(fcPolicy || fsPolicy || "horizontal");
+        }
+        const fcTitle = cust?.footerContent?.policyColumnTitle;
+        const fsTitle = cust?.footerStyle?.policyColumnTitle;
+        if (fcTitle !== undefined || fsTitle !== undefined) {
+          setPolicyColumnTitle(fcTitle || fsTitle || "Quick Links & Policies");
+        }
       }
     };
     window.addEventListener("message", handleMessage);
@@ -461,14 +546,24 @@ export default function Footer({
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  const txtColor = getContrastColor(backgroundColor);
+  const currentSettings = footerSettings(footerCustomization);
+  const currentVariant = currentSettings.footerVariant || footerVariant;
+  const footerLogo = resolveMediaUrl(currentSettings.footerBanner ?? footerCustomization?.footerBanner ?? logoUrl);
+  useEffect(() => setLogoError(false), [footerLogo]);
+  if (FOOTER_DESIGNS.includes(currentVariant)) {
+    return <FooterDesign customization={{ ...footerCustomization, footerContent: { ...currentSettings, backgroundColor: currentSettings.backgroundColor || "#0a0a0a", textColor: currentSettings.textColor || getContrastColor(currentSettings.backgroundColor || "#0a0a0a") } }} storeName={storeName} defaultLogo={logoUrl} links={links} />;
+  }
+
+  const txtColor = footerColors.text || getContrastColor(backgroundColor);
   const secondaryTxtColor = txtColor === "#000000" ? "#555555" : "#999999";
   const borderColor =
     txtColor === "#000000" ? "rgba(0, 0, 0, 0.15)" : "#222222";
 
   return (
     <footer
-      className="footer"
+      className={`footer footer--${footerVariant} ${
+        policyLayout === "vertical" ? "footer--vertical-policies" : ""
+      }`}
       style={
         {
           backgroundColor: backgroundColor,
@@ -476,6 +571,8 @@ export default function Footer({
           "--footer-text": txtColor,
           "--footer-text-secondary": secondaryTxtColor,
           "--footer-border": borderColor,
+          "--footer-accent": footerColors.accent || txtColor,
+          "--footer-link-hover": footerColors.linkHover || footerColors.accent || txtColor,
         } as React.CSSProperties
       }
     >
@@ -483,18 +580,18 @@ export default function Footer({
         <div className="footer__brand">
           <div className="footer__logo-wrap">
             {logoError ||
-            !logoUrl ||
+            !footerLogo ||
             !(
-              logoUrl.startsWith("http://") ||
-              logoUrl.startsWith("https://") ||
-              logoUrl.startsWith("/")
+              footerLogo.startsWith("http://") ||
+              footerLogo.startsWith("https://") ||
+              footerLogo.startsWith("/")
             ) ? (
               <span className="footer__logo-text">
                 {storeName.toUpperCase()}
               </span>
             ) : (
               <Image
-                src={logoUrl}
+                src={footerLogo}
                 alt={storeName}
                 className="footer__logo"
                 width={150}
@@ -554,6 +651,21 @@ export default function Footer({
           </div>
         </div>
 
+        {policyLayout === "vertical" && (
+          <div className="footer__policies-col">
+            <h4 className="footer__policies-heading">{policyColumnTitle}</h4>
+            <ul className="footer__policies-list">
+              {links.map((link) => (
+                <li key={link.path}>
+                  <Link href={link.path} className="footer__policies-link">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="footer__contact">
           <h4 className="footer__contact-heading">Contact Us</h4>
           <ul className="footer__contact-list">
@@ -571,21 +683,25 @@ export default function Footer({
         </div>
       </div>
 
-      <div className="footer__divider" />
+      {policyLayout !== "vertical" && (
+        <>
+          <div className="footer__divider" />
 
-      <div className="footer__row2">
-        <div className="footer__quick-links">
-          {links.map((link) => (
-            <Link
-              key={link.path}
-              href={link.path}
-              className="footer__quick-link"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </div>
+          <div className="footer__row2">
+            <div className="footer__quick-links">
+              {links.map((link) => (
+                <Link
+                  key={link.path}
+                  href={link.path}
+                  className="footer__quick-link"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="footer__divider" />
 
@@ -627,24 +743,9 @@ export default function Footer({
         </button>
       </div>
 
+      {currentSettings.copyright && <p className="footer__copyright">{currentSettings.copyright}</p>}
       <div className="footer__powered-by-wrap">
-        <a
-          href="https://evoclabs.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="footer__powered-by"
-        >
-          <span className="footer__powered-by-text">Powered by</span>
-          <Image
-            src="/evoc-logo.png"
-            alt="EvocLabs"
-            width={24}
-            height={24}
-            className="footer__evoc-logo"
-            unoptimized
-          />
-          <span className="footer__powered-by-name">EvocLabs</span>
-        </a>
+        <PoweredByEvoc light={isLightColor(txtColor)} />
       </div>
     </footer>
   );

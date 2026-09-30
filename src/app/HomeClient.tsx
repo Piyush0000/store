@@ -7,7 +7,16 @@ import ProductsSection from "@/components/ProductsSection";
 import ReelsSection from "@/components/ReelsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import BannersSection from "@/components/BannersSection";
+import FaqSection from "@/components/FaqSection";
+import TickerBar from "@/components/TickerBar";
+import TrustBadgesSection from "@/components/TrustBadgesSection";
+import MostBuySection from "@/components/MostBuySection";
 import type { HydratedSection } from "@/lib/products";
+import {
+  categoryCardStyleVars,
+  resolveCategoryCardStyle,
+  type CategoryImagesConfig,
+} from "@/lib/category-card-style";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { videoMimeType } from "@/lib/media-type";
 import "./page.css";
@@ -43,9 +52,10 @@ interface Customization {
   features?: { title: string; description: string; icon: string }[];
   aboutSection?: { title: string; content: string; image: string };
   newsletter?: { heading: string; subtext: string };
-  categoryImages?: Record<string, string>;
+  categoryImages?: CategoryImagesConfig;
   reelsSection?: {
     enabled?: boolean;
+    displayType?: "carousel" | "grid" | "stories" | "pop" | "sales-page" | "ugc";
     reels?: Array<{
       id: string;
       title: string;
@@ -58,6 +68,7 @@ interface Customization {
   testimonialsSection?: {
     enabled?: boolean;
     title?: string;
+    displayType?: string;
     testimonials?: Array<{
       id: string;
       name: string;
@@ -81,12 +92,30 @@ interface Customization {
       openInNewTab?: boolean;
     }>;
   };
+  faqSection?: {
+    enabled?: boolean;
+    title?: string;
+    subtitle?: string;
+    headingColor?: string;
+    displayStyle?: "accordion" | "cards" | "grid";
+    faqs?: Array<{
+      id: string;
+      question: string;
+      answer: string;
+      isActive?: boolean;
+    }>;
+  };
+  trustBadgesSection?: any;
+  mostBuySection?: any;
+  tickerBar?: unknown;
+  productSections?: Array<Partial<HydratedSection> & { id?: string }>;
   homepageSections?: Array<{
     id: string;
     type: string;
     name: string;
     enabled: boolean;
     refIndex?: number;
+    instanceData?: any;
   }>;
 }
 
@@ -160,7 +189,9 @@ function buildCategories(
   if (categories && categories.length > 0) {
     return categories.map((cat) => {
       const catKey = cat.toLowerCase().trim();
-      let image = customization?.categoryImages?.[catKey];
+      // categoryImages also contains card-style keys, so only strings are images.
+      const configuredImage = customization?.categoryImages?.[catKey];
+      let image = typeof configuredImage === "string" ? configuredImage : "";
 
       // If no custom image, use first product image in this category as a fallback
       if (!image && bestSellers && bestSellers.length > 0) {
@@ -209,6 +240,16 @@ export default function HomeClient({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [customizationState, setCustomizationState] = useState(customization);
 
+  const liveProductSections = productSections.map((section, index) => {
+    const configuredSections = Array.isArray(customizationState?.productSections)
+      ? customizationState.productSections
+      : customizationState?.productSections
+        ? [customizationState.productSections]
+        : [];
+    const liveConfig = configuredSections.find((item: any) => item?.id === section.id) || configuredSections[index];
+    return liveConfig ? { ...section, ...liveConfig, products: section.products } : section;
+  });
+
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
@@ -227,9 +268,6 @@ export default function HomeClient({
     bestSellers,
   );
   const videoUrl = buildVideoUrl(customizationState);
-  const categoryShape =
-    customizationState?.categoryImages?.shape || "rounded-rect";
-
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
   };
@@ -266,7 +304,7 @@ export default function HomeClient({
     )
       return null;
     return (
-      <section className="hero-carousel animate-slide-up delay-200">
+      <section className="hero-carousel scroll-fade-up">
         <div
           className="hero-carousel__track"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -342,31 +380,40 @@ export default function HomeClient({
       customizationState.reelsSection.reels.length === 0
     )
       return null;
-    return <ReelsSection reels={customizationState.reelsSection.reels} />;
+    return (
+      <ReelsSection
+        reels={customizationState.reelsSection.reels}
+        displayType={customizationState.reelsSection.displayType || "carousel"}
+      />
+    );
   };
 
   const renderCategories = () => {
+    const cardStyle = resolveCategoryCardStyle(
+      customizationState?.categoryImages,
+    );
     if (
       customizationState?.homePageConfig?.categoriesEnabled === false ||
       brandCategories.length === 0
     )
       return null;
     return (
-      <section className="shop-category animate-slide-up delay-400">
+      <section className="shop-category scroll-fade-up">
         <h2 className="section-title">SHOP BY CATEGORY</h2>
         <div
           className="shop-category__slider-wrapper"
           style={{ position: "relative" }}
         >
           <div
-            id="category-grid"
-            className={`shop-category__grid shop-category__grid--${categoryShape}`}
+           id="category-grid"
+            className={`shop-category__grid shop-category__grid--${cardStyle.shape}`}
+            style={categoryCardStyleVars(cardStyle)}
           >
             {brandCategories.map((cat) => (
               <Link
                 key={`shop-${cat.name}`}
                 href={cat.path}
-                className={`shop-category__card shop-category__card--${categoryShape}`}
+                className={`shop-category__card shop-category__card--${cardStyle.shape}`}
               >
                 <img
                   src={cat.image}
@@ -407,7 +454,7 @@ export default function HomeClient({
       if (!customizationState?.homePageConfig?.imageUrl) return null;
       return (
         <section
-          className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.bannerOverlay === false ? " brand-video--fullbleed" : ""}${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
+          className={`brand-video scroll-fade-up${customizationState?.homePageConfig?.bannerOverlay === false ? " brand-video--fullbleed" : ""}${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
         >
           <div className="brand-video__wrapper">
             <img
@@ -434,7 +481,7 @@ export default function HomeClient({
       if (!videoUrl) return null;
       return (
         <section
-          className={`brand-video animate-slide-up delay-500${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
+          className={`brand-video scroll-fade-up${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
         >
           <div className="brand-video__wrapper">
             <video
@@ -471,10 +518,10 @@ export default function HomeClient({
   const renderProductSection = (sectionId: string, index?: number) => {
     let section = null;
     if (sectionId) {
-      section = productSections.find((s) => s.id === sectionId);
+      section = liveProductSections.find((s) => s.id === sectionId);
     }
     if (!section && typeof index === "number") {
-      section = productSections[index];
+      section = liveProductSections[index];
     }
     if (!section) return null;
     return (
@@ -483,7 +530,23 @@ export default function HomeClient({
         title={section.title}
         subtitle={section.subtitle}
         products={section.products}
+        layout={section.layout}
         sliderMode={section.sliderMode}
+        backgroundColor={section.backgroundColor}
+        titleColor={section.titleColor}
+        textColor={section.textColor}
+        accentColor={section.accentColor}
+        headingAlignment={section.headingAlignment}
+        desktopColumns={section.desktopColumns}
+        mobileColumns={section.mobileColumns}
+        showViewAll={section.showViewAll}
+        viewAllLabel={section.viewAllLabel}
+        viewAllUrl={section.viewAllUrl}
+        editorialEyebrow={section.editorialEyebrow}
+        editorialTitle={section.editorialTitle}
+        editorialImage={section.editorialImage}
+        editorialCtaLabel={section.editorialCtaLabel}
+        editorialCtaUrl={section.editorialCtaUrl}
       />
     );
   };
@@ -493,7 +556,7 @@ export default function HomeClient({
       return null;
     if (bestSellers.length > 0) {
       return (
-        <section className="featured-collection animate-slide-up delay-600">
+        <section className="featured-collection scroll-fade-up">
           <h2 className="section-title">ALL PRODUCTS</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
             {bestSellers.map((product, idx) => (
@@ -504,7 +567,7 @@ export default function HomeClient({
       );
     } else {
       return (
-        <section className="featured-collection animate-slide-up delay-600">
+        <section className="featured-collection scroll-fade-up">
           <h2 className="section-title">ALL PRODUCTS</h2>
           <p style={{ textAlign: "center", color: "#888", padding: "40px" }}>
             No products available
@@ -525,6 +588,41 @@ export default function HomeClient({
       <TestimonialsSection
         testimonials={customizationState.testimonialsSection.testimonials}
         title={customizationState.testimonialsSection.title}
+        displayType={customizationState.testimonialsSection.displayType}
+      />
+    );
+  };
+
+  const renderTicker = () => (
+    <TickerBar config={customizationState?.tickerBar} />
+  );
+
+  const renderTrustBadges = () => (
+    <TrustBadgesSection config={customizationState?.trustBadgesSection} />
+  );
+
+  const renderMostBuy = () => (
+    <MostBuySection config={customizationState?.mostBuySection} />
+  );
+
+  const renderFaqSection = (instanceData?: any) => {
+    const faqData =
+      instanceData?.faqSection ||
+      instanceData ||
+      customizationState?.faqSection;
+    if (
+      faqData?.enabled === false ||
+      !faqData?.faqs ||
+      faqData.faqs.length === 0
+    )
+      return null;
+    return (
+      <FaqSection
+        title={faqData.title}
+        subtitle={faqData.subtitle}
+        faqs={faqData.faqs}
+        headingColor={faqData.headingColor}
+        displayStyle={faqData.displayStyle}
       />
     );
   };
@@ -538,30 +636,36 @@ export default function HomeClient({
       enabled: true,
     },
     {
-      id: "reels-stories",
+      id: "trust-badges",
+      type: "trustBadgesSection",
+      name: "Trust Badges",
+      enabled: true,
+    },
+    {
+      id: "reels-showcase",
       type: "reelsSection",
-      name: "Reels / Video Stories",
+      name: "Reels Showcase",
       enabled: true,
     },
     {
-      id: "categories-grid",
+      id: "category-circles",
       type: "categoryImages",
-      name: "Category Images",
+      name: "Shop by Category",
       enabled: true,
     },
     {
-      id: "brand-video",
+      id: "brand-video-section",
       type: "brandVideo",
-      name: "Brand Video / Banner",
+      name: "Brand Video",
       enabled: true,
     },
     {
-      id: "banners-section",
+      id: "promo-banners",
       type: "bannersSection",
       name: "Banner Section",
       enabled: true,
     },
-    ...productSections.map((sec, idx) => ({
+    ...liveProductSections.map((sec, idx) => ({
       id: sec.id || `prod-sec-${idx}`,
       type: "productSections",
       name: `Product Section: ${sec.title || "Untitled"}`,
@@ -569,15 +673,33 @@ export default function HomeClient({
       refIndex: idx,
     })),
     {
+      id: "most-buy",
+      type: "mostBuySection",
+      name: "Most Buy Product",
+      enabled: true,
+    },
+    {
       id: "featured-collection",
       type: "featuredProducts",
       name: "All Products",
       enabled: true,
     },
     {
+      id: "ticker-bar",
+      type: "tickerBar",
+      name: "Scrolling Ticker",
+      enabled: true,
+    },
+    {
       id: "testimonials-section",
       type: "testimonialsSection",
       name: "Testimonials",
+      enabled: true,
+    },
+    {
+      id: "faq-section",
+      type: "faqSection",
+      name: "FAQ Section",
       enabled: true,
     },
   ];
@@ -588,7 +710,7 @@ export default function HomeClient({
   // In case of dynamic sync updates where new productSections are added/removed but homepageSections is not yet saved,
   // ensure we dynamically include any productSections not present in homepageSections at the bottom
   const syncedSections = [...homepageSections];
-  productSections.forEach((sec, idx) => {
+  liveProductSections.forEach((sec, idx) => {
     const exists = syncedSections.some(
       (s: any) =>
         s.type === "productSections" && (s.id === sec.id || s.refIndex === idx),
@@ -604,6 +726,24 @@ export default function HomeClient({
     }
   });
 
+  const faqConfig = customizationState?.faqSection;
+  if (
+    faqConfig &&
+    faqConfig.enabled !== false &&
+    Array.isArray(faqConfig.faqs) &&
+    faqConfig.faqs.length > 0
+  ) {
+    const hasFaq = syncedSections.some((s: any) => s.type === "faqSection");
+    if (!hasFaq) {
+      syncedSections.push({
+        id: "faq-section",
+        type: "faqSection",
+        name: "FAQ Section",
+        enabled: true,
+      });
+    }
+  }
+
   return (
     <div className="home">
       {syncedSections
@@ -612,6 +752,8 @@ export default function HomeClient({
           switch (sec.type) {
             case "heroSection":
               return <div key={sec.id}>{renderHero()}</div>;
+            case "trustBadgesSection":
+              return <div key={sec.id}>{renderTrustBadges()}</div>;
             case "reelsSection":
               return <div key={sec.id}>{renderReels()}</div>;
             case "categoryImages":
@@ -626,10 +768,16 @@ export default function HomeClient({
                   {renderProductSection(sec.id, sec.refIndex)}
                 </div>
               );
+            case "mostBuySection":
+              return <div key={sec.id}>{renderMostBuy()}</div>;
             case "featuredProducts":
               return <div key={sec.id}>{renderFeatured()}</div>;
+            case "tickerBar":
+              return <div key={sec.id}>{renderTicker()}</div>;
             case "testimonialsSection":
               return <div key={sec.id}>{renderTestimonials()}</div>;
+            case "faqSection":
+              return <div key={sec.id}>{renderFaqSection(sec.instanceData)}</div>;
             default:
               return null;
           }

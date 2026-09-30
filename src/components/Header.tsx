@@ -1,13 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, Heart, ShoppingBag, User, Menu, X } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense, type CSSProperties } from 'react';
 import { useCart } from './CartProvider';
 import { fetchStorefront } from '@/lib/api';
 import { getSubdomain } from '@/lib/config';
 import './Header.css';
+import NavigationLinks from './NavigationLinks';
+import { readHeaderStyle, usesBannerBackground, boundedNumber } from '@/lib/navigation-style';
 
 const HomeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -26,6 +28,37 @@ const DEFAULT_NAV_LINKS = [
 
 const DEFAULT_LOGO = '';
 
+function resolveLogoPosition(customization: any): string {
+  let style = customization?.headerStyle;
+  if (typeof style === 'string') {
+    try { style = JSON.parse(style); } catch { style = undefined; }
+  }
+  const position = style?.logoPosition;
+  return ['left', 'middle', 'right', 'above', 'bottom'].includes(position) ? position : 'middle';
+}
+
+const NAV_VARIANTS = [
+  'classic', 'underline', 'pill', 'boxed', 'floating',
+  'dropdown', 'transparent', 'minimal', 'bold', 'gradient', 'left',
+];
+
+const MOBILE_HEADER_VARIANTS = [
+  'transparent-hero', 'frosted-glass', 'floating-capsule', 'minimal-white', 'brand-color',
+];
+
+const MOBILE_MENU_VARIANTS = [
+  'classic-list', 'rounded-links', 'catalog-drawer', 'glass-panel', 'fullscreen',
+];
+
+function resolveNavVariant(customization: any): string {
+  let style = customization?.headerStyle;
+  if (typeof style === 'string') {
+    try { style = JSON.parse(style); } catch { style = undefined; }
+  }
+  const variant = style?.navVariant;
+  return NAV_VARIANTS.includes(variant) ? variant : 'classic';
+}
+
 interface HeaderProps {
   initialCustomization?: any;
   storeName?: string;
@@ -34,6 +67,46 @@ interface HeaderProps {
 
 export default function Header({ initialCustomization, storeName: propStoreName, storeSubdomain }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const [navigationConfig, setNavigationConfig] = useState(initialCustomization || {});
+  const navigationStyle = readHeaderStyle(navigationConfig);
+  const bannerBackground = usesBannerBackground(navigationConfig, pathname);
+  const customBackground = navigationStyle.navBackgroundMode === 'image' && navigationStyle.navBackgroundImage;
+  const navMenus = Array.isArray(navigationStyle.navMenus) ? navigationStyle.navMenus : [];
+  const mobileHeaderVariant = MOBILE_HEADER_VARIANTS.includes(navigationStyle.mobileHeaderVariant)
+    ? navigationStyle.mobileHeaderVariant
+    : 'legacy';
+  const mobileMenuVariant = MOBILE_MENU_VARIANTS.includes(navigationStyle.mobileMenuVariant)
+    ? navigationStyle.mobileMenuVariant
+    : 'legacy';
+  const firstEnabledSection = navigationConfig?.homepageSections?.find((section: any) => section.enabled !== false);
+  const mobileHeaderOverHero = navigationStyle.mobileTransparentOverHero === true
+    && ['transparent-hero', 'frosted-glass', 'floating-capsule'].includes(mobileHeaderVariant)
+    && pathname === '/'
+    && navigationConfig?.homePageConfig?.heroEnabled !== false
+    && (!firstEnabledSection || firstEnabledSection.type === 'heroSection');
+  const navVariables = {
+    '--nav-gradient-end': navigationStyle.navGradientEndColor || navigationStyle.navAccentColor || 'var(--gold-light)',
+    '--nav-height': `${boundedNumber(navigationStyle.navHeight, 60, 44, 100)}px`,
+    '--nav-radius': `${boundedNumber(navigationStyle.navRadius, 16, 0, 48)}px`,
+    '--nav-width': `${boundedNumber(navigationStyle.navWidth, 1120, 600, 1600)}px`,
+    '--nav-margin': `${boundedNumber(navigationStyle.navFloatingMargin, 20, 0, 64)}px`,
+    '--nav-image': customBackground ? `url(${JSON.stringify(customBackground)})` : 'none',
+    '--nav-image-position': navigationStyle.navImagePosition || 'center',
+    '--nav-overlay': `rgba(${navigationStyle.navOverlayTone === 'light' ? '255, 255, 255' : '0, 0, 0'}, ${boundedNumber(navigationStyle.navOverlayOpacity, 15, 0, 80) / 100})`,
+    '--nav-hover-bg': navigationStyle.navHoverBackgroundColor || 'rgba(127,127,127,0.14)',
+    '--nav-hover-text': navigationStyle.navHoverTextColor || navigationStyle.navAccentColor || navigationStyle.navTextColor || '#ffffff',
+    '--mobile-header-bg': navigationStyle.mobileHeaderBackground || '#ffffff',
+    '--mobile-header-text': navigationStyle.mobileHeaderTextColor || '#1a1a1a',
+    '--mobile-header-opacity': `${boundedNumber(navigationStyle.mobileHeaderOpacity, 100, 0, 100)}%`,
+    '--mobile-scrolled-bg': navigationStyle.mobileScrolledBackground || '#ffffff',
+    '--mobile-scrolled-text': navigationStyle.mobileScrolledTextColor || '#1a1a1a',
+    '--mobile-drawer-bg': navigationStyle.mobileDrawerBackground || '#ffffff',
+    '--mobile-drawer-text': navigationStyle.mobileDrawerTextColor || '#202820',
+    '--mobile-drawer-width': `${boundedNumber(navigationStyle.mobileDrawerWidth, 82, 65, 100)}vw`,
+    '--mobile-overlay-alpha': boundedNumber(navigationStyle.mobileOverlayOpacity, 45, 15, 75) / 100,
+    '--mobile-blur': `${boundedNumber(navigationStyle.mobileBlur, 0, 0, 24)}px`,
+  } as CSSProperties;
   const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
   const [scrolled, setScrolled] = useState(false);
@@ -70,6 +143,8 @@ export default function Header({ initialCustomization, storeName: propStoreName,
   };
 
   const [logoUrl, setLogoUrl] = useState(getInitialLogo);
+  const [logoPosition, setLogoPosition] = useState(() => resolveLogoPosition(initialCustomization));
+  const [navVariant, setNavVariant] = useState(() => resolveNavVariant(initialCustomization));
   const [logoError, setLogoError] = useState(false);
   const [storeName, setStoreName] = useState(getInitialStoreName);
   const [navLinks, setNavLinks] = useState<{ label: string; path: string }[]>(getInitialNavLinks);
@@ -94,6 +169,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   useEffect(() => {
     if (initialCustomization) {
+      setNavigationConfig(initialCustomization);
       if (initialCustomization.products) {
         setAllProducts(initialCustomization.products);
       }
@@ -109,6 +185,9 @@ export default function Header({ initialCustomization, storeName: propStoreName,
           setAllProducts(data.products);
         }
         const customization = data.customization;
+        setNavigationConfig(customization || {});
+        setLogoPosition(resolveLogoPosition(customization));
+        setNavVariant(resolveNavVariant(customization));
         let headerStyle = customization?.headerStyle;
         if (headerStyle && typeof headerStyle === 'string') {
           try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
@@ -197,6 +276,9 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
         const cust = e.data.data;
+        setNavigationConfig((previous: any) => ({ ...previous, ...cust }));
+        setLogoPosition(resolveLogoPosition(cust));
+        setNavVariant(resolveNavVariant(cust));
         let headerStyle = cust?.headerStyle;
         if (headerStyle && typeof headerStyle === 'string') {
           try { headerStyle = JSON.parse(headerStyle); } catch (err) { }
@@ -225,13 +307,23 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
   }, [mobileMenuOpen]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -333,9 +425,26 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     </div>
   );
 
+  const separateLogoRow = logoPosition === 'above' || logoPosition === 'bottom';
+  const renderLogo = () => (
+    <Link href="/" className="header__logo">
+      {logoError || !logoUrl || !(logoUrl.startsWith('http://') || logoUrl.startsWith('https://') || logoUrl.startsWith('/')) ? (
+        <span className="header__logo-text">{storeName.toUpperCase()}</span>
+      ) : (
+        <img
+          src={logoUrl}
+          alt={storeName}
+          className="header__logo-img"
+          onError={() => setLogoError(true)}
+        />
+      )}
+    </Link>
+  );
+
   return (
     <>
-      <header className={`header ${scrolled ? 'header--scrolled' : ''}`}>
+      <header style={navVariables} data-nav-hover={navigationStyle.navHoverEffect || 'default'} className={`header ${bannerBackground ? 'header--banner-nav' : ''} ${customBackground ? 'header--image-nav' : ''} ${navigationStyle.navSticky === false ? 'header--not-sticky' : ''} header--logo-${logoPosition} header--nav-${navVariant} header--mobile-${mobileHeaderVariant} ${mobileHeaderOverHero ? 'header--mobile-over-hero' : ''} ${scrolled ? 'header--scrolled' : ''}`}>
+        {logoPosition === 'above' && <div className="header__logo-row">{renderLogo()}</div>}
         <div className="header__main">
           <div className="header__left">
             <div className={`header__search ${searchOpen ? 'header__search--open' : ''}`}>
@@ -358,18 +467,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
             </button>
           </div>
 
-          <Link href="/" className="header__logo">
-            {logoError || !logoUrl || !(logoUrl.startsWith('http://') || logoUrl.startsWith('https://') || logoUrl.startsWith('/')) ? (
-              <span className="header__logo-text">{storeName.toUpperCase()}</span>
-            ) : (
-              <img
-                src={logoUrl}
-                alt={storeName}
-                className="header__logo-img"
-                onError={() => setLogoError(true)}
-              />
-            )}
-          </Link>
+          {!separateLogoRow && renderLogo()}
 
           <div className="header__right">
             <Link href="/orders" className="header__icon-btn" aria-label="Orders">
@@ -398,19 +496,9 @@ export default function Header({ initialCustomization, storeName: propStoreName,
             >
               <Menu size={24} />
             </button>
-            <Link href="/" className="header__logo">
-              {logoError || !logoUrl ? (
-                <span className="header__logo-text">{storeName.toUpperCase()}</span>
-              ) : (
-                <img
-                  src={logoUrl}
-                  alt={storeName}
-                  className="header__logo-img"
-                  onError={() => setLogoError(true)}
-                />
-              )}
-            </Link>
           </div>
+
+          {!separateLogoRow && renderLogo()}
 
           <div className="header__right">
             <div className={`header__search ${searchOpen ? 'header__search--open' : ''}`}>
@@ -435,34 +523,25 @@ export default function Header({ initialCustomization, storeName: propStoreName,
         </div>
          <nav className="header__nav">
            <div className="header__nav-inner">
-             {renderedLinks.map((link) => (
-               <Link
-                 key={link.path || link.label}
-                 href={link.path}
-                 className="header__nav-link"
-               >
-                 {link.label}
-               </Link>
-             ))}
+             <Suspense fallback={null}><NavigationLinks links={renderedLinks} menus={navMenus} /></Suspense>
            </div>
          </nav>
+        {logoPosition === 'bottom' && <div className="header__logo-row">{renderLogo()}</div>}
       </header>
 
       {/* Mobile Overlay Menu */}
       {mobileMenuOpen && (
-        <div className="header__mobile-overlay" onClick={() => setMobileMenuOpen(false)}>
-          <div className="header__mobile-menu" onClick={(e) => e.stopPropagation()}>
+        <div style={navVariables} data-mobile-menu={mobileMenuVariant} className="header__mobile-overlay" onClick={() => setMobileMenuOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label="Mobile navigation"
+            className={`header__mobile-menu header__mobile-menu--${mobileMenuVariant} header__mobile-menu--${navigationStyle.mobileDrawerPosition === 'right' ? 'right' : 'left'}`}
+            onClick={(e) => e.stopPropagation()}>
             <div className="header__mobile-header">
               <span className="header__mobile-logo">{storeName.toUpperCase()}</span>
               <button onClick={() => setMobileMenuOpen(false)} aria-label="Close">
                 <X size={24} />
               </button>
             </div>
-             {renderedLinks.map((link) => (
-               <Link key={`mobile-${link.path || link.label}`} href={link.path} className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>
-                 {link.label}
-               </Link>
-             ))}
+             <Suspense fallback={null}><NavigationLinks links={renderedLinks} menus={navMenus} mobile onNavigate={() => setMobileMenuOpen(false)} /></Suspense>
             <Link href="/orders" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>MY ORDERS</Link>
             <Link href="/wishlist" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>WISHLIST</Link>
           </div>

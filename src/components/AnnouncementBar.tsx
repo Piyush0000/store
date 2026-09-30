@@ -54,6 +54,9 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
   const [backgroundColor, setBackgroundColor] = useState(() => {
     return initialCustomization?.announcementBar?.backgroundColor || '#000000';
   });
+  const [customTextColor, setCustomTextColor] = useState<string | undefined>(
+    initialCustomization?.announcementBar?.textColor,
+  );
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -94,6 +97,7 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
         if (cust?.announcementBar?.backgroundColor) {
           setBackgroundColor(cust.announcementBar.backgroundColor);
         }
+        setCustomTextColor(cust?.announcementBar?.textColor);
       }
     };
     window.addEventListener('message', handleMessage);
@@ -139,7 +143,9 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
     return () => clearInterval(interval);
   }, [displayList.length]);
 
-  const textColor = getContrastColor(backgroundColor);
+  const textColor = customTextColor && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(customTextColor)
+    ? customTextColor
+    : getContrastColor(backgroundColor);
   const barStyle = {
     backgroundColor: backgroundColor,
     color: textColor,

@@ -1,5 +1,6 @@
-import { getApiUrl } from './config';
+import { getApiUrl, withStoreId } from './config';
 import { resolveMediaTree } from './media';
+import type { CategoryImagesConfig } from './category-card-style';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -7,6 +8,7 @@ export interface BrandColors {
   primary: string;
   secondary: string;
   accent: string;
+  background?: string;
   headerBackground: string;
   headerText: string;
   footerBackground: string;
@@ -36,9 +38,33 @@ export interface Customization {
   metaDescription: string;
   metaPixel?: string;
   headerStyle?: any;
-  footerStyle?: any;
-  footerContent?: any;
-  categoryImages?: Record<string, string>;
+  footerStyle?: {
+    backgroundColor?: string;
+    bio?: string;
+    policyLayout?: "horizontal" | "vertical";
+    policyColumnTitle?: string;
+    [key: string]: any;
+  };
+  footerContent?: {
+    backgroundColor?: string;
+    bio?: string;
+    description?: string;
+    policyLayout?: "horizontal" | "vertical";
+    policyColumnTitle?: string;
+    contact?: {
+      phone?: string;
+      email?: string;
+      address?: string;
+    };
+    socials?: {
+      facebook?: string;
+      instagram?: string;
+      twitter?: string;
+      tiktok?: string;
+    };
+    [key: string]: any;
+  };
+  categoryImages?: CategoryImagesConfig;
   shippingSettings?: {
     enabled?: boolean;
     shippingFee?: number;
@@ -47,6 +73,7 @@ export interface Customization {
   };
   reelsSection?: {
     enabled?: boolean;
+    displayType?: "carousel" | "grid" | "stories" | "pop" | "sales-page" | "ugc";
     reels?: Array<{ id: string; title: string; sub: string; category: string; videoUrl: string; ctaLink?: string }>;
   };
   fakeSalesPopup?: {
@@ -77,7 +104,57 @@ export interface Customization {
       openInNewTab?: boolean;
     }>;
   };
-  homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number }>;
+  faqSection?: {
+    enabled?: boolean;
+    title?: string;
+    subtitle?: string;
+    headingColor?: string;
+    displayStyle?: "accordion" | "cards" | "grid";
+    faqs?: Array<{
+      id: string;
+      question: string;
+      answer: string;
+      isActive?: boolean;
+    }>;
+  };
+  trustBadgesSection?: {
+    enabled?: boolean;
+    layout?: "classic" | "stacked" | "round" | "semicircle" | "matrix" | "minimal" | "horizontal";
+    borderColor?: string;
+    borderStyle?: "none" | "solid" | "dashed" | "dotted";
+    borderWidth?: number;
+    animationEnabled?: boolean;
+    animationDirection?: "rightToLeft" | "leftToRight";
+    badgeSize?: number;
+    logoSize?: number;
+    backgroundColor?: string;
+    badgeColor?: string;
+    titleColor?: string;
+    descriptionColor?: string;
+    iconColor?: string;
+    badges?: Array<{
+      id: string;
+      image?: string;
+      imageAlt?: string;
+      title?: string;
+      description?: string;
+    }>;
+  };
+  mostBuySection?: {
+    enabled?: boolean;
+    image?: string;
+    heading?: string;
+    description?: string;
+    buttonText?: string;
+    buttonLink?: string;
+    sectionColor?: string;
+    cardColor?: string;
+    headingColor?: string;
+    descriptionColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
+  };
+  homepageSections?: Array<{ id: string; type: string; name: string; enabled: boolean; refIndex?: number; instanceData?: any }>;
 }
 
 export interface ProductVariant {
@@ -266,23 +343,24 @@ const MOCK_STOREFRONT: StorefrontData = {
 };
 
 
-export async function fetchStorefront(subdomain?: string): Promise<StorefrontData> {
+export async function fetchStorefront(subdomain?: string, storeId?: string): Promise<StorefrontData> {
   try {
-    const apiUrl = getApiUrl(subdomain);
+    const apiUrl = withStoreId(getApiUrl(subdomain), storeId);
     const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Storefront request failed (${res.status}) for ${apiUrl}`);
     const data = await res.json();
 
     if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
     return resolveMediaTree(data);
   } catch (err) {
-    
+    console.error('[storefront-api] Falling back to mock storefront:', err);
     return MOCK_STOREFRONT;
   }
 }
 
 export async function fetchProduct(id: string, subdomain?: string): Promise<Product> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/products/${id}`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/products/${id}`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || `Failed to fetch product ${id}`);
@@ -294,7 +372,7 @@ export async function fetchProduct(id: string, subdomain?: string): Promise<Prod
 
 export async function fetchAnnouncements(subdomain?: string): Promise<Announcement[]> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/announcements`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/announcements`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
@@ -307,7 +385,7 @@ export async function fetchAnnouncements(subdomain?: string): Promise<Announceme
 
 export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/legal`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/legal`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
@@ -320,7 +398,7 @@ export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
 
 export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/pages`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/pages`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
@@ -333,7 +411,7 @@ export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
 
 export async function fetchPageBySlug(slug: string, subdomain?: string): Promise<StorePage | null> {
   try {
-    const apiUrl = `${getApiUrl(subdomain)}/pages/${slug}`;
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/pages/${slug}`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
@@ -352,7 +430,7 @@ export async function submitReview(review: {
   title: string;
   content: string;
 }, subdomain?: string): Promise<{ message: string; review: Partial<ProductReview> }> {
-  const apiUrl = `${getApiUrl(subdomain)}/reviews`;
+  const apiUrl = withStoreId(`${getApiUrl(subdomain)}/reviews`);
 
   const res = await fetch(apiUrl, {
     method: 'POST',

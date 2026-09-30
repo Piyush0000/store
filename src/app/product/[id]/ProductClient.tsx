@@ -9,11 +9,15 @@ import {
   Shield,
   RotateCcw,
   Clock,
+  Users,
+  TrendingUp,
 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { useWishlist } from "@/components/WishlistProvider";
 import ProductCard from "@/components/ProductCard";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import SpecialOffersCard from "@/components/SpecialOffersCard";
+import ReelsSection from "@/components/ReelsSection";
 import { trackViewContent } from "@/lib/pixel";
 import { isVideoUrl, videoMimeType } from "@/lib/media-type";
 import { availableStock, isOutOfStock } from "@/lib/stock";
@@ -22,10 +26,41 @@ import "./product.css";
 
 const pad = (num: number) => String(num).padStart(2, "0");
 
+const decodeAndFormatHtml = (content: string) => {
+  if (!content) return "";
+  let formatted = content;
+  if (formatted.includes("&lt;") && formatted.includes("&gt;")) {
+    formatted = formatted
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, " ");
+  }
+  if (formatted.includes("<")) {
+    return formatted;
+  }
+  return formatted.replace(/\n/g, "<br/>");
+};
+
 interface ProductClientProps {
   product: any;
   relatedProducts: any[];
   testimonials: TestimonialSection | null;
+  reelsSection?: {
+    enabled?: boolean;
+    displayType?: "carousel" | "grid" | "stories" | "pop";
+    reels?: Array<{
+      id: string;
+      title: string;
+      sub: string;
+      category: string;
+      videoUrl: string;
+      ctaLink?: string;
+    }>;
+  };
+  subdomain?: string;
   codEnabled?: boolean;
 }
 
@@ -33,8 +68,78 @@ export default function ProductClient({
   product,
   relatedProducts,
   testimonials,
+  reelsSection,
+  subdomain,
   codEnabled = false,
 }: ProductClientProps) {
+  // Safely normalize customFields (handles JSON string from Prisma / API / DB)
+  const customFields: Record<string, any> = (() => {
+    const raw = product?.customFields;
+    if (!raw) return {};
+    if (typeof raw === "object") return raw;
+    if (typeof raw === "string") {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error("Failed to parse customFields in ProductClient:", e);
+      }
+    }
+    return {};
+  })();
+  const showReelsSection = Boolean(
+    customFields.showReelsSection ?? true
+  );
+  const showFloatingReel = Boolean(
+    customFields.showFloatingReel ?? false
+  );
+  const [coupons, setCoupons] = useState<any[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const subQuery = subdomain ? `?subdomain=${encodeURIComponent(subdomain)}` : "";
+        const res = await fetch(`/api/storefront/public/coupons${subQuery}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (!cancelled) {
+            setCoupons(json.data || json.coupons || []);
+          }
+        }
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [subdomain]);
+
+  const specifications: Array<{ key: string; value: string }> = (() => {
+    const raw = customFields.specifications || product.specifications;
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.filter(
+        (s: any) =>
+          s && (String(s.key || "").trim() || String(s.value || "").trim()),
+      );
+    }
+    if (typeof raw === "object") {
+      return Object.entries(raw).map(([key, value]) => ({
+        key,
+        value: String(value),
+      }));
+    }
+    return [];
+  })();
+
+  const isBestseller = Boolean(
+    customFields.showBestsellerBadge ?? product.isBestSeller
+  );
+  const isFastSelling = Boolean(
+    customFields.showFastSellingBadge ??
+      customFields.isFastSelling
+  );
+  const recentSalesCount =
+    customFields.recentSalesCount || product.recentSalesCount;
   const { addToCart, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const liked = isInWishlist(product.id);
@@ -390,6 +495,24 @@ export default function ProductClient({
             {product.brand && (
               <span className="product-page__brand">{product.brand}</span>
             )}
+
+            {(isBestseller || isFastSelling) && (
+              <div className="product-page__badge-capsules">
+                {isBestseller && (
+                  <span className="badge-capsule badge-capsule--bestseller">
+                    <Star size={12} className="badge-capsule__icon" />
+                    <span>Bestseller</span>
+                  </span>
+                )}
+                {isFastSelling && (
+                  <span className="badge-capsule badge-capsule--fast-selling">
+                    <TrendingUp size={12} className="badge-capsule__icon" />
+                    <span>Fast Selling</span>
+                  </span>
+                )}
+              </div>
+            )}
+
             <h1 className="product-page__title">{product.name}</h1>
 
             <div className="product-page__rating">
@@ -421,6 +544,18 @@ export default function ProductClient({
                 {pad(saleTime.seconds)}S
               </span>
             </div>
+
+            {recentSalesCount && Number(recentSalesCount) > 0 && (
+              <div className="product-page__recent-sales-strip">
+                <Users size={16} className="recent-sales-icon" />
+                <span className="recent-sales-text">
+                  <strong className="recent-sales-highlight">
+                    {recentSalesCount} +
+                  </strong>{" "}
+                  customers bought this in the last 7 days
+                </span>
+              </div>
+            )}
 
             {product.variants?.length > 0 && (
               <div className="product-page__variants">
@@ -542,6 +677,10 @@ export default function ProductClient({
               {liked ? "Remove from Wishlist" : "Add to Wishlist"}
             </button>
 
+            {coupons && coupons.length > 0 && (
+              <SpecialOffersCard coupons={coupons} />
+            )}
+
             <div className="product-page__benefits">
               <div className="product-page__benefits-grid">
                 {codEnabled && (
@@ -597,81 +736,46 @@ export default function ProductClient({
 
         <div className="product-page__tab-content">
           {activeTab === "description" && (
-            <div className="product-page__description">
-              {(() => {
-                const parseDescription = (desc: string) => {
-                  if (!desc) return [];
-                  const lines = desc.split("\n");
-                  const groups: { type: "bullet" | "text"; content: string }[] =
-                    [];
-                  let currentGroup: {
-                    type: "bullet" | "text";
-                    content: string;
-                  } | null = null;
+            <div className="product-page__description-container">
+              {/* 1. Product Information (Table) */}
+              {specifications.length > 0 && (
+                <div className="product-page__info-card">
+                  <h3 className="product-page__section-title">
+                    Product Information
+                  </h3>
+                  <div className="product-page__specs-table">
+                    {specifications.map((spec, idx) => (
+                      <div key={idx} className="product-page__spec-row">
+                        <span className="product-page__spec-key">
+                          {spec.key}
+                        </span>
+                        <span className="product-page__spec-value">
+                          {spec.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                  for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (!trimmed) {
-                      currentGroup = null;
-                      continue;
-                    }
-                    const isBulletStart =
-                      trimmed.startsWith("•") ||
-                      trimmed.startsWith("-") ||
-                      trimmed.startsWith("*");
-                    if (isBulletStart) {
-                      const content = trimmed.replace(/^[•\-\*]\s*/, "");
-                      currentGroup = { type: "bullet", content };
-                      groups.push(currentGroup);
-                    } else {
-                      if (currentGroup) {
-                        currentGroup.content += " " + trimmed;
-                      } else {
-                        currentGroup = { type: "text", content: trimmed };
-                        groups.push(currentGroup);
-                      }
-                    }
-                  }
-                  return groups;
-                };
-
-                return parseDescription(product.description).map(
-                  (group, idx) => {
-                    if (group.type === "bullet") {
-                      const colonIndex = group.content.indexOf(":");
-                      if (colonIndex > -1) {
-                        const title = group.content.substring(
-                          0,
-                          colonIndex + 1,
-                        );
-                        const desc = group.content.substring(colonIndex + 1);
-                        return (
-                          <div key={idx} className="product-page__bullet-box">
-                            <span className="product-page__bullet-dot">•</span>
-                            <div className="product-page__bullet-content">
-                              <strong>{title}</strong>
-                              {desc}
-                            </div>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div key={idx} className="product-page__bullet-box">
-                          <span className="product-page__bullet-dot">•</span>
-                          <div className="product-page__bullet-content">
-                            {group.content}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return (
-                      <p key={idx} className="product-page__description-text">
-                        {group.content}
-                      </p>
-                    );
-                  },
-                );
-              })()}
+              {/* 2. Product Description (Rich HTML or Text) */}
+              <div className="product-page__desc-card">
+                <h3 className="product-page__section-title">
+                  Product Description
+                </h3>
+                {product.description ? (
+                  <div
+                    className="product-page__rich-description"
+                    dangerouslySetInnerHTML={{
+                      __html: decodeAndFormatHtml(product.description),
+                    }}
+                  />
+                ) : (
+                  <p className="product-page__empty-desc">
+                    No description available for this product.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -736,6 +840,27 @@ export default function ProductClient({
                   title={testimonials.title || ""}
                 />
               </div>
+            </div>
+          )}
+
+        {/* Dedicated Product Video Reels Section */}
+        {showReelsSection &&
+          reelsSection &&
+          reelsSection.enabled !== false &&
+          reelsSection.reels &&
+          reelsSection.reels.length > 0 && (
+            <div
+              className="w-full"
+              style={{ marginTop: "48px", marginBottom: "32px" }}
+            >
+              <ReelsSection
+                reels={reelsSection.reels}
+                displayType={
+                  showFloatingReel
+                    ? "pop"
+                    : reelsSection.displayType || "carousel"
+                }
+              />
             </div>
           )}
       </section>

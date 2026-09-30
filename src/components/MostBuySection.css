@@ -1,0 +1,91 @@
+/* Most Buy Product Section Styles */
+
+.most-buy-section {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.most-buy-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+@media (min-width: 768px) {
+  .most-buy-card {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.most-buy-media-wrap {
+  min-height: 240px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.most-buy-img {
+  width: 100%;
+  height: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  display: block;
+}
+
+.most-buy-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px 24px;
+}
+
+@media (min-width: 768px) {
+  .most-buy-info {
+    padding: 48px 36px;
+  }
+}
+
+.most-buy-heading {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .most-buy-heading {
+    font-size: 30px;
+  }
+}
+
+.most-buy-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.most-buy-btn {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+.most-buy-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}

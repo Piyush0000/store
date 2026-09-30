@@ -1,159 +1,112 @@
 import { NextResponse } from 'next/server';
 
-// In-memory cache for custom domain resolutions to avoid hitting API on every request
+function readCookie(request: Request, name: string): string {
+  const header = request.headers.get('cookie') || '';
+  for (const part of header.split(';')) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) return decodeURIComponent(rest.join('='));
+  }
+  return '';
+}
+
+function publicStorefrontApiBase(): string {
+  if (process.env.NODE_ENV !== 'production') {
+    return (
+      process.env.INTERNAL_API_BASE ||
+      process.env.NEXT_PUBLIC_API_BASE ||
+      'http://127.0.0.1:5000/api/storefront/public'
+    ).replace(/\/+$/, '');
+  }
+  return (
+    process.env.INTERNAL_API_BASE ||
+    process.env.NEXT_PUBLIC_API_BASE ||
+    'https://api.evoclabs.com/api/storefront/public'
+  ).replace(/\/+$/, '');
+}
+
 const domainCache = new Map<string, { subdomain: string; expiry: number }>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // Cache for 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export async function proxy(request: Request) {
   const hostname = request.headers.get('host') || '';
   let cleanHostname = hostname.split(':')[0].toLowerCase();
-  if (cleanHostname.startsWith('www.')) {
-    cleanHostname = cleanHostname.substring(4);
+  if (cleanHostname.startsWith('www.')) cleanHostname = cleanHostname.substring(4);
+
+  const requestUrl = new URL(request.url);
+  if (requestUrl.pathname.startsWith('/store-error')) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-storefront-error', '1');
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  let subdomain = '';
-  const requestUrl = new URL(request.url);
-  const querySubdomain = requestUrl.searchParams.get('subdomain');
+  let subdomain = requestUrl.searchParams.get('subdomain') || readCookie(request, 'x-store-subdomain');
+  const storeId = requestUrl.searchParams.get('storeId') || readCookie(request, 'x-store-id');
 
-  if (querySubdomain) {
-    subdomain = querySubdomain;
-  } else {
-    const isLocalhost = cleanHostname === 'localhost' ||
-      cleanHostname === '127.0.0.1' ||
-      cleanHostname.endsWith('.localhost');
-
+  if (!subdomain) {
+    const isLocalhost = cleanHostname === 'localhost' || cleanHostname === '127.0.0.1' || cleanHostname.endsWith('.localhost');
     if (isLocalhost) {
-      if (cleanHostname === 'localhost' || cleanHostname === '127.0.0.1') {
-        subdomain = process.env.NEXT_PUBLIC_SUBDOMAIN || '';
-      } else {
-        const parts = cleanHostname.split('.');
-        subdomain = parts[0];
-      }
+      subdomain = cleanHostname === 'localhost' || cleanHostname === '127.0.0.1'
+        ? process.env.NEXT_PUBLIC_SUBDOMAIN || ''
+        : cleanHostname.split('.')[0];
     } else {
       const isEvoclabsSubdomain = cleanHostname.endsWith('.evoclabs.com');
-
-      if (!isEvoclabsSubdomain) {
+      if (!isEvoclabsSubdomain && !storeId) {
         const now = Date.now();
         const cached = domainCache.get(cleanHostname);
         if (cached && cached.expiry > now) {
           subdomain = cached.subdomain;
         } else {
-          // Non-localhost, non-evoclabs domain → resolve custom domain from API
           try {
             const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-            const resolveUrl = `${apiBase}/resolve?domain=${cleanHostname}`;
-            let resolveRes;
-            try {
-              resolveRes = await fetch(resolveUrl, { next: { revalidate: 0 } });
-            } catch (localErr) {
-              console.warn('[PROXY] Local domain resolve failed, trying public fallback:', localErr);
-              const publicApiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-              resolveRes = await fetch(`${publicApiBase}/resolve?domain=${cleanHostname}`, { next: { revalidate: 0 } });
-            }
+            const resolveRes = await fetch(`${apiBase}/resolve?domain=${cleanHostname}`, { cache: 'no-store' });
             const resolveData = await resolveRes.json();
-            if (resolveData.success && resolveData.store) {
-              subdomain = resolveData.store.subdomain;
-              domainCache.set(cleanHostname, {
-                subdomain,
-                expiry: now + CACHE_TTL_MS
-              });
-            } else {
-              return NextResponse.redirect(
-                new URL(`/store-error?reason=${encodeURIComponent(resolveData.message || 'Invalid store domain')}`, request.url)
-              );
+            if (!resolveData.success || !resolveData.store) {
+              return NextResponse.redirect(new URL(`/store-error?reason=${encodeURIComponent(resolveData.message || 'Invalid store domain')}`, request.url));
             }
-          } catch (err) {
-            console.error('[PROXY] Custom domain resolve failed:', err);
+            subdomain = resolveData.store.subdomain;
+            domainCache.set(cleanHostname, { subdomain, expiry: now + CACHE_TTL_MS });
+          } catch (error) {
+            console.error('[PROXY] Custom domain resolve failed:', error);
             return NextResponse.redirect(new URL('/store-error?reason=Resolution+failed', request.url));
           }
         }
-      } else {
-        // Valid subdomain pattern: *.evoclabs.com → validate via API
-        const parts = cleanHostname.split('.');
-        subdomain = parts[0];
+      } else if (isEvoclabsSubdomain) {
+        subdomain = cleanHostname.split('.')[0];
       }
     }
   }
 
-  if (!subdomain) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-subdomain', '');
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-  }
-
   try {
-    const apiBase = (process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public').replace(/\/+$/, '');
-    const apiUrl = `${apiBase}/${subdomain}/frontend`;
-    let response;
-    try {
-      response = await fetch(apiUrl, { next: { revalidate: 0 } });
-    } catch (localErr) {
-      console.warn('[PROXY] Local frontend fetch failed, trying public fallback:', localErr);
-      const publicApiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-      response = await fetch(`${publicApiBase}/${subdomain}/frontend`, { next: { revalidate: 0 } });
-    }
-
-    const contentType = response.headers.get('content-type') || '';
-    if (!response.ok || !contentType.includes('application/json')) {
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('x-subdomain', subdomain);
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
-    }
-
+    const query = storeId ? `?storeId=${encodeURIComponent(storeId)}` : '';
+    const apiUrl = `${publicStorefrontApiBase()}/${encodeURIComponent(subdomain || 'preview')}/frontend${query}`;
+    const response = await fetch(apiUrl, { cache: 'no-store' });
     const data = await response.json();
-
-    if (!data.success) {
-      return NextResponse.redirect(
-        new URL(`/store-error?reason=${encodeURIComponent(data.message || 'Store not found')}`, request.url)
-      );
+    if (!response.ok || !data.success) {
+      return NextResponse.redirect(new URL(`/store-error?reason=${encodeURIComponent(data.message || 'Store not found')}`, request.url));
     }
 
-    // Redirect to custom domain if configured and the current request is on the default evoclabs subdomain
-    const isEvoclabsSubdomain = cleanHostname.endsWith('.evoclabs.com');
-    const isLocalhost = cleanHostname === 'localhost' ||
-      cleanHostname === '127.0.0.1' ||
-      cleanHostname.endsWith('.localhost');
-
-    const isEditor = requestUrl.searchParams.get('isEditor') === 'true';
-
-    if (!isLocalhost && isEvoclabsSubdomain && data.store?.customDomain && !isEditor) {
-      const customUrl = new URL(request.url);
-      customUrl.hostname = `www.${data.store.customDomain}`;
-      return NextResponse.redirect(customUrl, 301);
-    }
-
-    // Set custom header with the resolved subdomain to pass down to Server Components
+    if (data.store?.subdomain) subdomain = data.store.subdomain;
+    const resolvedStoreId = storeId || data.store?.id || '';
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-subdomain', subdomain);
+    if (resolvedStoreId) requestHeaders.set('x-store-id', resolvedStoreId);
 
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+    const nextResponse = NextResponse.next({ request: { headers: requestHeaders } });
+    if (subdomain) nextResponse.cookies.set('x-store-subdomain', subdomain, { path: '/', sameSite: 'lax' });
+    if (resolvedStoreId) nextResponse.cookies.set('x-store-id', resolvedStoreId, { path: '/', sameSite: 'lax' });
+    return nextResponse;
   } catch (error) {
-    console.error('[PROXY] API call failed:', error);
-
-    // Set custom header on error fallback
+    console.error('[PROXY] Storefront lookup failed:', error);
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-subdomain', subdomain);
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+    if (storeId) requestHeaders.set('x-store-id', storeId);
+    const nextResponse = NextResponse.next({ request: { headers: requestHeaders } });
+    if (subdomain) nextResponse.cookies.set('x-store-subdomain', subdomain, { path: '/', sameSite: 'lax' });
+    if (storeId) nextResponse.cookies.set('x-store-id', storeId, { path: '/', sameSite: 'lax' });
+    return nextResponse;
   }
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|store-error).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

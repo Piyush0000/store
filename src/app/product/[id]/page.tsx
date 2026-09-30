@@ -13,16 +13,19 @@ export default async function ProductPage({ params }: PageProps) {
   let products: any[] = [];
   let product: any = null;
   let testimonialSection: TestimonialSection | null = null;
+  let reelsSection: any = null;
+  let subdomain = "";
   let codEnabled = false;
   try {
     // Cache for 60 seconds to avoid hammering the API
-    const subdomain = await getServerSubdomain();
+    subdomain = await getServerSubdomain();
 
     const data = await fetchStorefront(subdomain);
     products = data.products || [];
     product = products.find((p: any) => p.id === id || p.slug === id);
     testimonialSection =
       (data?.customization?.testimonialsSection as TestimonialSection) || null;
+    reelsSection = data?.customization?.reelsSection || null;
     codEnabled = Boolean(data.settings?.enabledGateways?.cod?.enabled);
   } catch (error) {
     console.error("Failed to fetch product:", error);
@@ -58,11 +61,15 @@ export default async function ProductPage({ params }: PageProps) {
       .slice(0, 4);
   }
 
+  const normalizedProduct = { ...product, customFields };
+
   return (
     <ProductClient
-      product={product}
+      product={normalizedProduct}
       relatedProducts={relatedProducts}
       testimonials={testimonialSection}
+      reelsSection={reelsSection}
+      subdomain={subdomain}
       codEnabled={codEnabled}
     />
   );

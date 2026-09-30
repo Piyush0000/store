@@ -1,51 +1,45 @@
-name: Deploy to GitHub Pages
+name: Deploy Storefront to Production
 
 on:
   push:
     branches:
       - main
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow one active deployment
-concurrency:
-  group: 'pages'
-  cancel-in-progress: true
-
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    name: Deploy Storefront via SSH
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - name: Deploy App via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          node-version: 20
-          cache: 'npm'
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            set -e
 
-      - name: Install dependencies
-        run: npm ci
+            # Load NVM so npm and pm2 commands work in this non-interactive shell
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
+            # 1. Sync store working tree to latest main
+            cd /home/orbit_software/store
+            git fetch https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
+            git reset --hard FETCH_HEAD --
+            git clean -fd
+            echo "Current Storefront Commit:"
+            git log -1 --oneline
 
-      - name: Build
-        run: npm run build
+            # 2. Install dependencies & build Next.js application
+            echo "Building Storefront App..."
+            rm -rf .next
+            npm install
+            npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./.next
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+            # 3. Reload storefront process in PM2
+            echo "Reloading PM2 Storefront (client)..."
+            pm2 reload client || pm2 restart client || (cd /home/orbit_software/server && pm2 startOrReload pm2.config.js --only client)
+            pm2 save || true

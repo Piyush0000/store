@@ -28,7 +28,14 @@ import {
   createOrder,
   createCodOrder,
 } from "@/actions/order-actions";
-import { initiatePayUPayment } from "@/actions/payment-actions";
+import { initializeCartSession, completeCartSession } from "@/actions/cart-actions";
+import {
+  initiatePayUPayment,
+  initiateRazorpayPayment,
+  verifyRazorpayPayment,
+  initiateCashfreePayment,
+  verifyCashfreePayment,
+} from "@/actions/payment-actions";
 import { validateCouponAction } from "@/actions/coupon-actions";
 import { getInitialCheckoutState, type EnabledPaymentMethods } from "@/actions/checkout-actions";
 import OtpStep from "@/components/OtpStep";
@@ -62,6 +69,14 @@ const IndiaFlag = () => (
 );
 
 type Step = "identify" | "verify" | "details" | "payment" | "success";
+type OnlineGateway = "PAYU" | "RAZORPAY" | "CASHFREE";
+type PaymentAction = "COD" | OnlineGateway;
+
+const gatewayLabels: Record<OnlineGateway, string> = {
+  PAYU: "PayU",
+  RAZORPAY: "Razorpay",
+  CASHFREE: "Cashfree",
+};
 
 const isStepActive = (step: Step, s: Step) => {
   const order: Step[] = ["identify", "verify", "details", "payment", "success"];
@@ -103,19 +118,10 @@ export default function CheckoutPage() {
   const [codFee, setCodFee] = useState(0);
   const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(0);
   const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<EnabledPaymentMethods | null>(null);
+  const [onlineGateway, setOnlineGateway] = useState<OnlineGateway | null>(null);
   const paymentOptionsReady = enabledPaymentMethods !== null;
   const codEnabled = enabledPaymentMethods?.cod === true;
-  const payuEnabled = enabledPaymentMethods?.payu === true;
-  const onlineEnabled = Boolean(
-    enabledPaymentMethods?.payu || enabledPaymentMethods?.cashfree || enabledPaymentMethods?.razorpay,
-  );
-  const onlineGatewayName = enabledPaymentMethods?.payu
-    ? "PayU"
-    : enabledPaymentMethods?.cashfree
-      ? "Cashfree"
-      : enabledPaymentMethods?.razorpay
-        ? "Razorpay"
-        : "PayU";
+  const onlineEnabled = Boolean(onlineGateway);
   const [shippingConfig, setShippingConfig] = useState({
     shippingFee: 0,
     freeShippingThreshold: 0,
@@ -139,7 +145,7 @@ export default function CheckoutPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [isSessionVerified, setIsSessionVerified] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'COD' | 'PAYU' | null>(null);
+  const [pendingAction, setPendingAction] = useState<PaymentAction | null>(null);
   const [otpChannel, setOtpChannel] = useState<'whatsapp' | 'sms' | null>(null);
   const [otpVerified, setOtpVerified] = useState(false);
 
@@ -160,9 +166,10 @@ export default function CheckoutPage() {
     isDefault: true,
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentAction | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [cartSessionId, setCartSessionId] = useState<string | null>(null);
   const [payUData, setPayUData] = useState<any>(null);
   const launchAttemptedRef = useRef(false);
   const [orderSummary, setOrderSummary] = useState<{
@@ -210,7 +217,9 @@ export default function CheckoutPage() {
       ),
     [cartItems],
   );
-  const onlineDiscountAmount = paymentMethod === 'PAYU' ? Math.round(displaySubtotal * (onlineDiscountPercent / 100)) : 0;
+  const onlineDiscountAmount = paymentMethod && paymentMethod !== 'COD'
+    ? Math.round(displaySubtotal * (onlineDiscountPercent / 100))
+    : 0;
   
   const displayDiscountTotal = discountAmount + bundleDiscountTotal + onlineDiscountAmount;
   
@@ -325,6 +334,7 @@ export default function CheckoutPage() {
         } else {
           setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
         }
+        setOnlineGateway(initialState.onlineGateway);
         if (initialState.sessionValid && initialState.phone) {
           setPhone(initialState.phone);
           if (initialState.user) {
@@ -347,6 +357,7 @@ export default function CheckoutPage() {
       } catch (err) {
         console.error("Failed to load checkout state:", err);
         setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
+        setOnlineGateway(null);
         setStep("identify");
       }
     };
@@ -497,6 +508,7 @@ export default function CheckoutPage() {
     setError(null);
     try {
       const userResult = await getUserByPhone(phone);
+      let customerName = 'Customer';
       if (userResult.success && userResult.data) {
         setUser(userResult.data);
         setUserId(userResult.data.id);
@@ -505,11 +517,42 @@ export default function CheckoutPage() {
         if (userResult.data.firstName) setCustomerFirstName(userResult.data.firstName);
         if (userResult.data.lastName) setCustomerLastName(userResult.data.lastName);
         if (userResult.data.email) setCustomerEmail(userResult.data.email);
-        if (addresses.length > 0) {
-          const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
-          setSelectedAddress(defaultAddr);
-        }
+        customerName = [userResult.data.firstName, userResult.data.lastName].filter(Boolean).join(' ') || 'Customer';
       }
+
+      // Initialize abandoned cart session in the background
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      const detectedSubdomain = typeof window !== 'undefined'
+        ? window.location.hostname.split('.')[0].replace(/^www$/i, '')
+        : undefined;
+
+      initializeCartSession({
+        phoneNumber: cleanPhone,
+        customerName,
+        subdomain: detectedSubdomain,
+        items: (cartItems || []).map((item) => ({
+          productId: item.productId || item.id,
+          variantId: item.variantId,
+          name: item.name || 'Item',
+          price: Number(item.price || 0),
+          quantity: Number(item.quantity || 1),
+          image: item.image,
+        })),
+        cartValue: subtotal,
+        totalAmount: subtotal + effectiveShippingFee - displayDiscountTotal,
+      })
+        .then((res: any) => {
+          if (res?.success && res?.cartId) {
+            setCartSessionId(res.cartId);
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem('active_cart_id', res.cartId);
+            }
+          } else {
+            console.warn('[Checkout] Cart tracking init response:', res);
+          }
+        })
+        .catch((e: any) => console.warn('[Checkout] Cart tracking init error:', e));
+
       setStep('details');
     } catch (err: any) {
       setError(err.message);
@@ -904,6 +947,13 @@ export default function CheckoutPage() {
         // Clear cart AFTER setting orderSummary
         clearCart();
 
+        // Complete active cart tracking session
+        const activeCartId = cartSessionId || (typeof window !== "undefined" ? sessionStorage.getItem("active_cart_id") : null);
+        if (activeCartId) {
+          completeCartSession(activeCartId).catch(console.error);
+          if (typeof window !== "undefined") sessionStorage.removeItem("active_cart_id");
+        }
+
         // Track Purchase event for Meta Pixel
         try {
           track("Purchase", {
@@ -952,7 +1002,46 @@ export default function CheckoutPage() {
     codEnabled,
   ]);
 
-  const handleInitiatePayU = useCallback(async (): Promise<boolean> => {
+  const completeOnlineCheckout = useCallback((
+    localOrderId: string,
+    gateway: OnlineGateway,
+    capturedSubtotal: number,
+    capturedDiscount: number,
+  ) => {
+    const capturedItems = [...cartItems];
+    setOrderId(localOrderId);
+    setOrderSummary({
+      items: capturedItems,
+      subtotal: capturedSubtotal,
+      paymentMethod: gateway,
+      discountAmount: capturedDiscount,
+      couponCode: appliedCoupon?.code || null,
+    });
+    clearCart();
+
+    const activeCartId = cartSessionId || (typeof window !== "undefined"
+      ? sessionStorage.getItem("active_cart_id")
+      : null);
+    if (activeCartId) {
+      completeCartSession(activeCartId).catch(console.error);
+      sessionStorage.removeItem("active_cart_id");
+    }
+
+    try {
+      track("Purchase", {
+        content_ids: capturedItems.map((item) => item.id),
+        value: Math.max(0, capturedSubtotal + effectiveShippingFee - capturedDiscount),
+        currency: "INR",
+        transaction_id: localOrderId,
+        payment_method: gateway,
+      });
+    } catch (analyticsError) {
+      console.warn("[Analytics] Failed to track Purchase:", analyticsError);
+    }
+    setStep("success");
+  }, [appliedCoupon, cartItems, cartSessionId, clearCart, effectiveShippingFee, track]);
+
+  const handleInitiateOnlinePayment = useCallback(async (gateway: OnlineGateway): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
@@ -1008,17 +1097,21 @@ export default function CheckoutPage() {
       const { orderItems, totalBundleDiscount, totalRegularSubtotal } =
         buildOrderItems();
 
-      const overallDiscount = discountAmount + totalBundleDiscount;
+      const gatewayDiscount = Math.round(totalRegularSubtotal * (onlineDiscountPercent / 100));
+      const overallDiscount = discountAmount + totalBundleDiscount + gatewayDiscount;
+      const payableTotal = Math.max(
+        0,
+        totalRegularSubtotal + effectiveShippingFee - overallDiscount,
+      );
 
       const result = await createOrder({
         userId: uid,
         items: orderItems,
-        totalAmount:
-          totalRegularSubtotal + effectiveShippingFee - overallDiscount,
+        totalAmount: payableTotal,
         subtotal: totalRegularSubtotal,
         tax: 0,
         shipping: effectiveShippingFee,
-        paymentMethod: "PAYU",
+        paymentMethod: gateway,
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
@@ -1030,33 +1123,106 @@ export default function CheckoutPage() {
           state: selectedAddress?.state || "",
           pincode: selectedAddress?.pincode || "",
         },
-        payuTxnId: txnId,
+        payuTxnId: gateway === "PAYU" ? txnId : undefined,
         couponCode: appliedCoupon?.code || undefined,
         discountAmount: overallDiscount || undefined,
       });
 
-      if (result.success && result.data) {
-        setPendingOrderId(result.data.id);
+      if (!result.success || !result.data) {
+        throw new Error(result.message || "Failed to create payment order");
       }
 
-      const payUResult = await initiatePayUPayment({
-        orderId: ordId,
-        amount: totalRegularSubtotal - overallDiscount,
-        firstName: customerFirstName,
-        email: customerEmail,
-        phone: `+91${phone}`,
-        productinfo:
-          cartItems.length > 1
-            ? `${cartItems.length} items`
-            : cartItems[0]?.name || "Jewellery",
-      });
+      const localOrderId = result.data.id;
+      setPendingOrderId(localOrderId);
 
-      if (payUResult.success && payUResult.data) {
+      if (gateway === "PAYU") {
+        const payUResult = await initiatePayUPayment({
+          orderId: localOrderId,
+          firstName: customerFirstName,
+          email: customerEmail,
+          phone: `+91${phone}`,
+          productinfo: cartItems.length > 1
+            ? `${cartItems.length} items`
+            : cartItems[0]?.name || "Products",
+        });
+        if (!payUResult.success || !payUResult.data) {
+          throw new Error(payUResult.message || "Failed to initiate PayU");
+        }
         setPayUData(payUResult.data);
         return true;
-      } else {
-        throw new Error(payUResult.message || "Failed to initiate payment");
       }
+
+      if (gateway === "RAZORPAY") {
+        const razorpayResult = await initiateRazorpayPayment(localOrderId);
+        if (!razorpayResult.success || !razorpayResult.data) {
+          throw new Error(razorpayResult.message || "Failed to initiate Razorpay");
+        }
+        const RazorpayCheckout = (window as any).Razorpay;
+        if (!RazorpayCheckout) throw new Error("Razorpay checkout is still loading. Please try again.");
+
+        const checkout = new RazorpayCheckout({
+          key: razorpayResult.data.keyId,
+          order_id: razorpayResult.data.orderId,
+          amount: razorpayResult.data.amount,
+          currency: razorpayResult.data.currency || "INR",
+          name: razorpayResult.data.storeName || "Store",
+          description: `Order ${result.data.orderNumber || localOrderId}`,
+          prefill: {
+            name: `${customerFirstName} ${customerLastName}`.trim(),
+            email: customerEmail,
+            contact: phone,
+          },
+          theme: { color: "#2563eb" },
+          handler: async (response: any) => {
+            setIsLoading(true);
+            const verified = await verifyRazorpayPayment({
+              localOrderId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            if (verified.success) {
+              completeOnlineCheckout(localOrderId, gateway, totalRegularSubtotal, overallDiscount);
+            } else {
+              setError(verified.message || "Razorpay payment verification failed");
+            }
+            setIsLoading(false);
+          },
+          modal: { ondismiss: () => setIsLoading(false) },
+        });
+        checkout.on("payment.failed", (response: any) => {
+          setError(response?.error?.description || "Razorpay payment failed. Please try again.");
+          setIsLoading(false);
+        });
+        checkout.open();
+        return true;
+      }
+
+      const cashfreeResult = await initiateCashfreePayment(localOrderId, {
+        id: uid,
+        name: `${customerFirstName} ${customerLastName}`.trim(),
+        email: customerEmail,
+        phone,
+      });
+      if (!cashfreeResult.success || !cashfreeResult.data) {
+        throw new Error(cashfreeResult.message || "Failed to initiate Cashfree");
+      }
+      const cashfreeFactory = (window as any).Cashfree;
+      if (!cashfreeFactory) throw new Error("Cashfree checkout is still loading. Please try again.");
+      const cashfree = cashfreeFactory({ mode: cashfreeResult.data.environment });
+      const checkoutResult = await cashfree.checkout({
+        paymentSessionId: cashfreeResult.data.paymentSessionId,
+        redirectTarget: "_modal",
+      });
+      if (checkoutResult?.error) {
+        throw new Error(checkoutResult.error.message || "Cashfree payment was not completed");
+      }
+      const verified = await verifyCashfreePayment(localOrderId, cashfreeResult.data.orderId);
+      if (!verified.success) {
+        throw new Error(verified.message || "Cashfree payment verification failed");
+      }
+      completeOnlineCheckout(localOrderId, gateway, totalRegularSubtotal, overallDiscount);
+      return true;
     } catch (err: any) {
       setError(err.message || "Failed to initiate payment");
       return false;
@@ -1066,24 +1232,26 @@ export default function CheckoutPage() {
   }, [
     cartItems,
     subtotal,
+    buildOrderItems,
     discountAmount,
+    onlineDiscountPercent,
     effectiveShippingFee,
     customerFirstName,
     customerLastName,
     customerEmail,
     selectedAddress,
     appliedCoupon,
-    onlineEnabled,
-    payuEnabled,
-    onlineGatewayName,
+    userId,
+    phone,
+    completeOnlineCheckout,
   ]);
 
-  const handleFinalOrderClick = async (action: 'COD' | 'PAYU') => {
+  const handleFinalOrderClick = async (action: PaymentAction) => {
     if (action === 'COD' && !codEnabled) {
       setError("Cash on Delivery is not enabled for this store.");
       return;
     }
-    if (action === 'PAYU' && !onlineEnabled) {
+    if (action !== 'COD' && !onlineGateway) {
       setError("Online payment is not enabled for this store.");
       return;
     }
@@ -1093,7 +1261,7 @@ export default function CheckoutPage() {
       if (action === 'COD') {
         handleCreateCodOrder();
       } else {
-        handleInitiatePayU();
+        handleInitiateOnlinePayment(action);
       }
       return;
     }
@@ -1140,8 +1308,8 @@ export default function CheckoutPage() {
       let placed = false;
       if (pendingAction === 'COD') {
         placed = await handleCreateCodOrder();
-      } else if (pendingAction === 'PAYU') {
-        placed = await handleInitiatePayU();
+      } else if (pendingAction) {
+        placed = await handleInitiateOnlinePayment(pendingAction);
       }
       if (placed) {
         setIsOtpModalOpen(false);
@@ -1333,7 +1501,7 @@ export default function CheckoutPage() {
         <div className={`checkout__step ${isStepActive(step, 'identify') ? 'active' : ''}`}>
           <span className="checkout__step-content">
             <span className="checkout__step-num">1.</span>
-            <span className="checkout__step-label">Login &amp; Verification</span>
+            <span className="checkout__step-label">Login</span>
           </span>
         </div>
         <div className={`checkout__step ${isStepActive(step, 'details') ? 'active' : ''}`}>
@@ -1528,8 +1696,14 @@ export default function CheckoutPage() {
                     </div>
                     )}
 
-                    {onlineEnabled && (
-                    <div className="checkout__payment-card" onClick={() => setPaymentMethod('PAYU')}>
+                    {onlineGateway && (
+                    <div
+                      className="checkout__payment-card"
+                      onClick={() => {
+                        setPaymentMethod(onlineGateway);
+                        setError(null);
+                      }}
+                    >
                       <div className="checkout__payment-header">
                         <div className="checkout__payment-info-left">
                           <div className="checkout__payment-icon">
@@ -1537,6 +1711,9 @@ export default function CheckoutPage() {
                           </div>
                           <div>
                             <p className="checkout__payment-title">Online Payment</p>
+                            <p className="checkout__payment-note">
+                              {onlineGateway ? `Secure checkout with ${gatewayLabels[onlineGateway]}` : "Currently unavailable"}
+                            </p>
                             <img
                               className="checkout__payment-logos"
                               src="/upi-icons.png"
@@ -1592,11 +1769,11 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {paymentMethod === 'PAYU' && !payUData && onlineEnabled && (
+                {paymentMethod && paymentMethod !== 'COD' && !payUData && (
                   <div className="checkout__payment-inline-wrapper">
                     <div className="checkout__payment-confirm">
                       <div className="checkout__online-info">
-                        <p>Pay securely via {onlineGatewayName}.</p>
+                        <p>Pay securely via {gatewayLabels[paymentMethod]}.</p>
                         <p className="checkout__secure-badge">🔒 256-bit SSL Encrypted</p>
                         {onlineDiscountPercent > 0 && (
                           <p className="checkout__coupon-success">
@@ -1607,8 +1784,8 @@ export default function CheckoutPage() {
                       {error && <span className="checkout__error">{error}</span>}
                       <div className="checkout__payment-actions">
                         <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
-                        <button className="checkout__place-order-btn checkout__place-order-btn--online" onClick={() => handleFinalOrderClick('PAYU')} disabled={isLoading}>
-                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `PAY NOW - ₹${(displaySubtotal - displayDiscountTotal).toLocaleString()}`}
+                        <button className="checkout__place-order-btn checkout__place-order-btn--online" onClick={() => handleFinalOrderClick(paymentMethod)} disabled={isLoading}>
+                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `PAY NOW - ₹${Math.max(0, displaySubtotal + effectiveShippingFee - displayDiscountTotal).toLocaleString()}`}
                         </button>
                       </div>
                     </div>
@@ -1736,8 +1913,8 @@ export default function CheckoutPage() {
                         setError(null);
                         (async () => {
                           setIsLoading(true);
-                          const placed = pendingAction === 'PAYU'
-                            ? await handleInitiatePayU()
+                          const placed = pendingAction && pendingAction !== 'COD'
+                            ? await handleInitiateOnlinePayment(pendingAction)
                             : await handleCreateCodOrder();
                           if (placed) setIsOtpModalOpen(false);
                           setIsLoading(false);
@@ -1755,7 +1932,7 @@ export default function CheckoutPage() {
                   ) : otpVerified ? (
                     <><Loader2 className="animate-spin" size={18} /> PLACING ORDER…</>
                   ) : (
-                    pendingAction === 'PAYU' ? 'VERIFY & PAY NOW' : 'VERIFY & PLACE ORDER'
+                    pendingAction && pendingAction !== 'COD' ? 'VERIFY & PAY NOW' : 'VERIFY & PLACE ORDER'
                   )}
                 </button>
 
