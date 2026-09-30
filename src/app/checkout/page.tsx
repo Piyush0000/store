@@ -1051,12 +1051,6 @@ export default function CheckoutPage() {
       return false;
     }
 
-    if (!payuEnabled) {
-      setError(`${onlineGatewayName} checkout is not available yet. Please choose another payment method.`);
-      setIsLoading(false);
-      return false;
-    }
-
     // Validate cart has items and valid prices
     if (!cartItems || cartItems.length === 0) {
       setError("Your cart is empty. Please add items before checkout.");
@@ -1244,6 +1238,7 @@ export default function CheckoutPage() {
     userId,
     phone,
     completeOnlineCheckout,
+    onlineEnabled,
   ]);
 
   const handleFinalOrderClick = async (action: PaymentAction) => {
