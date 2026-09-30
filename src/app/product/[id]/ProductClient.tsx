@@ -61,6 +61,7 @@ interface ProductClientProps {
     }>;
   };
   subdomain?: string;
+  codEnabled?: boolean;
 }
 
 export default function ProductClient({
@@ -69,6 +70,7 @@ export default function ProductClient({
   testimonials,
   reelsSection,
   subdomain,
+  codEnabled = false,
 }: ProductClientProps) {
   // Safely normalize customFields (handles JSON string from Prisma / API / DB)
   const customFields: Record<string, any> = (() => {
@@ -681,12 +683,14 @@ export default function ProductClient({
 
             <div className="product-page__benefits">
               <div className="product-page__benefits-grid">
+                {codEnabled && (
                 <div className="product-page__benefit">
                   <div className="benefit-icon-wrapper">
                     <span className="benefit-icon-text">₹</span>
                   </div>
                   <span>Cash on Delivery</span>
                 </div>
+                )}
                 <div className="product-page__benefit">
                   <div className="benefit-icon-wrapper">
                     <RotateCcw size={16} />

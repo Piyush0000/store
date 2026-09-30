@@ -7,6 +7,30 @@ import { fetchStorefront } from '@/lib/api';
 
 const SESSION_COOKIE_NAME = "checkout_session_id";
 
+export type EnabledPaymentMethods = {
+  cod: boolean;
+  payu: boolean;
+  cashfree: boolean;
+  razorpay: boolean;
+};
+
+const NO_PAYMENT_METHODS: EnabledPaymentMethods = {
+  cod: false,
+  payu: false,
+  cashfree: false,
+  razorpay: false,
+};
+
+function parseEnabledPaymentMethods(gateways: any): EnabledPaymentMethods {
+  const isOn = (key: string) => Boolean(gateways?.[key]?.enabled ?? gateways?.[key]);
+  return {
+    cod: isOn("cod"),
+    payu: isOn("payu"),
+    cashfree: isOn("cashfree"),
+    razorpay: isOn("razorpay"),
+  };
+}
+
 export interface InitialCheckoutState {
   sessionValid: boolean;
   phone: string;
@@ -17,6 +41,7 @@ export interface InitialCheckoutState {
   customerEmail: string;
   codFee: number;
   onlineDiscountPercent: number;
+  enabledPaymentMethods: EnabledPaymentMethods;
   onlineGateway: "PAYU" | "RAZORPAY" | "CASHFREE" | null;
   shippingConfig: {
     shippingFee: number;
@@ -51,17 +76,18 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
         const settings = storefront.settings || {};
         const customization = storefront.customization || {};
         const shippingSettings = (customization as any).shippingSettings || {};
-
-        const codFee = settings.codFee ?? 0;
-        const gateways = settings.enabledGateways || {};
-        const selectedGateway = gateways.payu?.enabled
+        const gateways = settings.enabledGateways || (storefront as any).store?.enabledGateways || {};
+        const enabledPaymentMethods = parseEnabledPaymentMethods(gateways);
+        const selectedGateway = enabledPaymentMethods.payu
           ? { name: "PAYU" as const, config: gateways.payu }
-          : gateways.razorpay?.enabled
+          : enabledPaymentMethods.razorpay
             ? { name: "RAZORPAY" as const, config: gateways.razorpay }
-            : gateways.cashfree?.enabled
+            : enabledPaymentMethods.cashfree
               ? { name: "CASHFREE" as const, config: gateways.cashfree }
               : null;
-        const onlineDiscountPercent = selectedGateway?.config.discountPercent ?? 0;
+
+        const codFee = settings.codFee ?? 0;
+        const onlineDiscountPercent = selectedGateway?.config?.discountPercent ?? 0;
         const shippingFee = Number(shippingSettings.shippingFee ?? (settings as any).shippingFee ?? 0);
         const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? (settings as any).freeShippingThreshold ?? 0);
         const shippingLabel = shippingSettings.shippingLabel || 'Shipment Fee';
@@ -70,6 +96,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
         return {
           codFee,
           onlineDiscountPercent,
+          enabledPaymentMethods,
           onlineGateway: selectedGateway?.name ?? null,
           shippingConfig: {
             shippingFee,
@@ -82,6 +109,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
         return {
           codFee: 0,
           onlineDiscountPercent: 0,
+          enabledPaymentMethods: NO_PAYMENT_METHODS,
           onlineGateway: null,
           shippingConfig: {
             shippingFee: 0,
@@ -136,6 +164,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       customerEmail,
       codFee: storefrontData.codFee,
       onlineDiscountPercent: storefrontData.onlineDiscountPercent,
+      enabledPaymentMethods: storefrontData.enabledPaymentMethods,
       onlineGateway: storefrontData.onlineGateway,
       shippingConfig: storefrontData.shippingConfig,
       initialStep,
@@ -152,6 +181,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       customerEmail: "",
       codFee: 0,
       onlineDiscountPercent: 0,
+      enabledPaymentMethods: NO_PAYMENT_METHODS,
       onlineGateway: null,
       shippingConfig: {
         shippingFee: 0,

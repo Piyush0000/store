@@ -17,6 +17,8 @@ interface PaymentStepProps {
   onInitiatePayU: () => void;
   onClearPaymentMethod: () => void;
   onClearError: () => void;
+  codEnabled?: boolean;
+  onlineEnabled?: boolean;
 }
 
 const PaymentStep = React.memo(function PaymentStep({
@@ -32,6 +34,8 @@ const PaymentStep = React.memo(function PaymentStep({
   onInitiatePayU,
   onClearPaymentMethod,
   onClearError,
+  codEnabled = false,
+  onlineEnabled = false,
 }: PaymentStepProps) {
   return (
     <section className="checkout__section">
@@ -40,8 +44,15 @@ const PaymentStep = React.memo(function PaymentStep({
       </div>
       <p className="checkout__step-desc">Select your preferred way to pay</p>
 
-      {paymentMethod === null && (
+      {paymentMethod === null && !codEnabled && !onlineEnabled && (
+        <p className="checkout__step-desc">
+          No payment methods are available right now. Please contact the store.
+        </p>
+      )}
+
+      {paymentMethod === null && (codEnabled || onlineEnabled) && (
         <div className="checkout__payment-options">
+          {codEnabled && (
           <div
             className="checkout__payment-card"
             onClick={onCreateCodOrder}
@@ -65,7 +76,9 @@ const PaymentStep = React.memo(function PaymentStep({
               </button>
             </div>
           </div>
+          )}
 
+          {onlineEnabled && (
           <div
             className="checkout__payment-card"
             onClick={() => onSelectPayment("PAYU")}
@@ -87,12 +100,13 @@ const PaymentStep = React.memo(function PaymentStep({
               </button>
             </div>
           </div>
+          )}
 
           {error && <span className="checkout__error">{error}</span>}
         </div>
       )}
 
-      {paymentMethod === "PAYU" && !payUData && (
+      {paymentMethod === "PAYU" && !payUData && onlineEnabled && (
         <div className="checkout__payment-inline-wrapper">
           <div className="checkout__payment-confirm">
             <div className="checkout__online-info">
