@@ -30,7 +30,7 @@ import {
 } from "@/actions/order-actions";
 import { initiatePayUPayment } from "@/actions/payment-actions";
 import { validateCouponAction } from "@/actions/coupon-actions";
-import { getInitialCheckoutState } from "@/actions/checkout-actions";
+import { getInitialCheckoutState, type EnabledPaymentMethods } from "@/actions/checkout-actions";
 import OtpStep from "@/components/OtpStep";
 import DetailsForm from "@/components/DetailsForm";
 import AddressSection from "@/components/AddressSection";
@@ -102,6 +102,20 @@ export default function CheckoutPage() {
   }, []);
   const [codFee, setCodFee] = useState(0);
   const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(0);
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<EnabledPaymentMethods | null>(null);
+  const paymentOptionsReady = enabledPaymentMethods !== null;
+  const codEnabled = enabledPaymentMethods?.cod === true;
+  const payuEnabled = enabledPaymentMethods?.payu === true;
+  const onlineEnabled = Boolean(
+    enabledPaymentMethods?.payu || enabledPaymentMethods?.cashfree || enabledPaymentMethods?.razorpay,
+  );
+  const onlineGatewayName = enabledPaymentMethods?.payu
+    ? "PayU"
+    : enabledPaymentMethods?.cashfree
+      ? "Cashfree"
+      : enabledPaymentMethods?.razorpay
+        ? "Razorpay"
+        : "PayU";
   const [shippingConfig, setShippingConfig] = useState({
     shippingFee: 0,
     freeShippingThreshold: 0,
@@ -306,6 +320,11 @@ export default function CheckoutPage() {
         if ((initialState as any).onlineDiscountPercent !== undefined) {
           setOnlineDiscountPercent((initialState as any).onlineDiscountPercent);
         }
+        if (initialState.enabledPaymentMethods) {
+          setEnabledPaymentMethods(initialState.enabledPaymentMethods);
+        } else {
+          setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
+        }
         if (initialState.sessionValid && initialState.phone) {
           setPhone(initialState.phone);
           if (initialState.user) {
@@ -327,6 +346,7 @@ export default function CheckoutPage() {
         }
       } catch (err) {
         console.error("Failed to load checkout state:", err);
+        setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
         setStep("identify");
       }
     };
@@ -772,6 +792,12 @@ export default function CheckoutPage() {
     setIsLoading(true);
     setError(null);
 
+    if (!codEnabled) {
+      setError("Cash on Delivery is not enabled for this store.");
+      setIsLoading(false);
+      return false;
+    }
+
     // Validate cart has items
     if (!cartItems || cartItems.length === 0) {
       setError("Your cart is empty. Please add items before checkout.");
@@ -923,11 +949,24 @@ export default function CheckoutPage() {
     userId,
     clearCart,
     track,
+    codEnabled,
   ]);
 
   const handleInitiatePayU = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
+
+    if (!onlineEnabled) {
+      setError("Online payment is not enabled for this store.");
+      setIsLoading(false);
+      return false;
+    }
+
+    if (!payuEnabled) {
+      setError(`${onlineGatewayName} checkout is not available yet. Please choose another payment method.`);
+      setIsLoading(false);
+      return false;
+    }
 
     // Validate cart has items and valid prices
     if (!cartItems || cartItems.length === 0) {
@@ -1034,9 +1073,20 @@ export default function CheckoutPage() {
     customerEmail,
     selectedAddress,
     appliedCoupon,
+    onlineEnabled,
+    payuEnabled,
+    onlineGatewayName,
   ]);
 
   const handleFinalOrderClick = async (action: 'COD' | 'PAYU') => {
+    if (action === 'COD' && !codEnabled) {
+      setError("Cash on Delivery is not enabled for this store.");
+      return;
+    }
+    if (action === 'PAYU' && !onlineEnabled) {
+      setError("Online payment is not enabled for this store.");
+      return;
+    }
     setPendingAction(action);
     if (action === 'COD') setPaymentMethod('COD');
     if (isSessionVerified) {
@@ -1445,8 +1495,19 @@ export default function CheckoutPage() {
                   <span className="checkout__error" style={{ display: 'block', marginBottom: '12px' }}>{error}</span>
                 )}
 
-                {paymentMethod === null && (
+                {paymentMethod === null && !paymentOptionsReady && (
+                  <p className="checkout__step-desc">Loading payment methods...</p>
+                )}
+
+                {paymentMethod === null && paymentOptionsReady && !codEnabled && !onlineEnabled && (
+                  <p className="checkout__step-desc">
+                    No payment methods are available right now. Please contact the store.
+                  </p>
+                )}
+
+                {paymentMethod === null && paymentOptionsReady && (codEnabled || onlineEnabled) && (
                   <div className="checkout__payment-options">
+                    {codEnabled && (
                     <div className="checkout__payment-card" onClick={() => handleFinalOrderClick('COD')}>
                       <div className="checkout__payment-header">
                         <div className="checkout__payment-info-left">
@@ -1455,7 +1516,9 @@ export default function CheckoutPage() {
                           </div>
                           <div>
                             <p className="checkout__payment-title">Cash on Delivery</p>
-                            <p className="checkout__payment-note">+ Rs. {codFee} fee</p>
+                            {codFee > 0 && (
+                              <p className="checkout__payment-note">+ Rs. {codFee} fee</p>
+                            )}
                           </div>
                         </div>
                         <button className="checkout__payment-select-btn" type="button">
@@ -1463,7 +1526,9 @@ export default function CheckoutPage() {
                         </button>
                       </div>
                     </div>
+                    )}
 
+                    {onlineEnabled && (
                     <div className="checkout__payment-card" onClick={() => setPaymentMethod('PAYU')}>
                       <div className="checkout__payment-header">
                         <div className="checkout__payment-info-left">
@@ -1489,10 +1554,11 @@ export default function CheckoutPage() {
                         </button>
                       </div>
                     </div>
+                    )}
                   </div>
                 )}
 
-                {paymentMethod === 'COD' && (
+                {paymentMethod === 'COD' && codEnabled && (
                   <div className="checkout__payment-inline-wrapper">
                     <div className="checkout__payment-confirm">
                       <div className="checkout__cod-info">
@@ -1526,11 +1592,11 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {paymentMethod === 'PAYU' && !payUData && (
+                {paymentMethod === 'PAYU' && !payUData && onlineEnabled && (
                   <div className="checkout__payment-inline-wrapper">
                     <div className="checkout__payment-confirm">
                       <div className="checkout__online-info">
-                        <p>Pay securely via PayU.</p>
+                        <p>Pay securely via {onlineGatewayName}.</p>
                         <p className="checkout__secure-badge">🔒 256-bit SSL Encrypted</p>
                         {onlineDiscountPercent > 0 && (
                           <p className="checkout__coupon-success">

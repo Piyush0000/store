@@ -26,12 +26,14 @@ interface ProductClientProps {
   product: any;
   relatedProducts: any[];
   testimonials: TestimonialSection | null;
+  codEnabled?: boolean;
 }
 
 export default function ProductClient({
   product,
   relatedProducts,
   testimonials,
+  codEnabled = false,
 }: ProductClientProps) {
   const { addToCart, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -542,12 +544,14 @@ export default function ProductClient({
 
             <div className="product-page__benefits">
               <div className="product-page__benefits-grid">
+                {codEnabled && (
                 <div className="product-page__benefit">
                   <div className="benefit-icon-wrapper">
                     <span className="benefit-icon-text">₹</span>
                   </div>
                   <span>Cash on Delivery</span>
                 </div>
+                )}
                 <div className="product-page__benefit">
                   <div className="benefit-icon-wrapper">
                     <RotateCcw size={16} />

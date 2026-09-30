@@ -256,6 +256,12 @@ export async function createCodOrder(data: {
     return { success: false, message: 'STORE_ID is required to validate COD stock' };
   }
 
+  const gateways = storefront.settings?.enabledGateways || (storefront as any).store?.enabledGateways || {};
+  const codEnabled = Boolean((gateways as any).cod?.enabled ?? (gateways as any).cod);
+  if (!codEnabled) {
+    return { success: false, message: 'Cash on Delivery is not enabled for this store' };
+  }
+
   if (!data.shippingAddress) {
     return { success: false, message: 'Shipping address is required to validate COD stock' };
   }
@@ -332,6 +338,7 @@ export async function createCodOrder(data: {
     shipping: shippingFee,
     tax: 0,
     source: 'STOREFRONT',
+    paymentMethod: 'COD',
     paymentStatus: 'PENDING',
     status: 'PENDING',
     couponCode: data.couponCode || null,

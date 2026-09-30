@@ -13,6 +13,7 @@ export default async function ProductPage({ params }: PageProps) {
   let products: any[] = [];
   let product: any = null;
   let testimonialSection: TestimonialSection | null = null;
+  let codEnabled = false;
   try {
     // Cache for 60 seconds to avoid hammering the API
     const subdomain = await getServerSubdomain();
@@ -22,6 +23,7 @@ export default async function ProductPage({ params }: PageProps) {
     product = products.find((p: any) => p.id === id || p.slug === id);
     testimonialSection =
       (data?.customization?.testimonialsSection as TestimonialSection) || null;
+    codEnabled = Boolean(data.settings?.enabledGateways?.cod?.enabled);
   } catch (error) {
     console.error("Failed to fetch product:", error);
   }
@@ -61,6 +63,7 @@ export default async function ProductPage({ params }: PageProps) {
       product={product}
       relatedProducts={relatedProducts}
       testimonials={testimonialSection}
+      codEnabled={codEnabled}
     />
   );
 }
