@@ -265,14 +265,63 @@ export default function ProductClient({
   }, [selectedVariant?.id, selectedImageIndex, galleryImages[0]]);
 
   const handleOptionChange = (key: string, value: string) => {
-    const match = product.variants.find(
+    const compatibleVariant = product.variants.find(
       (v: any) =>
         v.options?.[key] === value &&
         customOptionKeys
           .filter((k) => k !== key)
           .every((k) => v.options?.[k] === selectedVariant?.options?.[k]),
     );
+    const match = compatibleVariant || product.variants.find((v: any) => v.options?.[key] === value);
     if (match) setSelectedVariant(match);
+  };
+
+  const getVariantForOption = (key: string, value: string) =>
+    product.variants.find(
+      (variant: any) =>
+        variant.options?.[key] === value &&
+        customOptionKeys
+          .filter((optionKey) => optionKey !== key)
+          .every((optionKey) => variant.options?.[optionKey] === selectedVariant?.options?.[optionKey]),
+    ) || product.variants.find((variant: any) => variant.options?.[key] === value);
+
+  const isCompactOption = (key: string) => /size/i.test(key);
+
+  const renderVariantCard = (variant: any, label: string, selected: boolean, onSelect: () => void) => {
+    const image = getVariantImages(variant)[0] || product.images?.[0];
+    const price = Number(variant?.price ?? product.price);
+    const compareAtPrice = Number(
+      variant?.options?.compareAtPrice ?? product.compareAtPrice ?? 0,
+    );
+    const showCompareAtPrice = compareAtPrice > price;
+    const stock = variant?.stock == null ? null : Number(variant.stock);
+
+    return (
+      <button
+        key={variant?.id || label}
+        type="button"
+        className={`product-page__variant-card ${selected ? "active" : ""}`}
+        onClick={onSelect}
+        aria-pressed={selected}
+        title={label}
+      >
+        <span className="product-page__variant-card-image">
+          {image ? <img src={image} alt="" loading="lazy" /> : <span>{label.slice(0, 1)}</span>}
+        </span>
+        <span className="product-page__variant-card-name">{label}</span>
+        <span className="product-page__variant-card-price">₹{price.toLocaleString("en-IN")}</span>
+        {showCompareAtPrice && (
+          <span className="product-page__variant-card-original-price">
+            ₹{compareAtPrice.toLocaleString("en-IN")}
+          </span>
+        )}
+        {stock !== null && Number.isFinite(stock) && (
+          <span className={`product-page__variant-card-stock ${stock > 0 ? "" : "out-of-stock"}`}>
+            {stock > 0 ? "In stock" : "Sold out"}
+          </span>
+        )}
+      </button>
+    );
   };
 
   const isSizeVariant =
@@ -564,16 +613,27 @@ export default function ProductClient({
                         {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
                         <strong>{selectedVariant?.options?.[key]}</strong>
                       </label>
-                      <div className="product-page__variant-options">
-                        {getOptionValues(key).map((value: string) => (
-                          <button
-                            key={value}
-                            className={`product-page__variant-btn ${selectedVariant?.options?.[key] === value ? "active" : ""}`}
-                            onClick={() => handleOptionChange(key, value)}
-                          >
-                            {value}
-                          </button>
-                        ))}
+                      <div className={`product-page__variant-options ${isCompactOption(key) ? "product-page__variant-options--compact" : "product-page__variant-options--cards"}`}>
+                        {getOptionValues(key).map((value: string) => {
+                          const optionVariant = getVariantForOption(key, value);
+                          const selected = selectedVariant?.options?.[key] === value;
+                          if (isCompactOption(key)) {
+                            return (
+                              <button
+                                key={value}
+                                type="button"
+                                className={`product-page__variant-btn ${selected ? "active" : ""}`}
+                                onClick={() => handleOptionChange(key, value)}
+                                aria-pressed={selected}
+                              >
+                                {value}
+                              </button>
+                            );
+                          }
+                          return optionVariant
+                            ? renderVariantCard(optionVariant, value, selected, () => handleOptionChange(key, value))
+                            : null;
+                        })}
                       </div>
                     </div>
                   ))
@@ -582,19 +642,9 @@ export default function ProductClient({
                     <label>
                       {optionLabel}: <strong>{selectedVariant?.name}</strong>
                     </label>
-                    <div className="product-page__variant-options">
+                    <div className="product-page__variant-options product-page__variant-options--cards">
                       {product.variants.map((v: any) => {
-                        const thumb = getVariantImages(v)[0];
-                        return (
-                          <button
-                            key={v.id}
-                            className={`product-page__variant-btn ${selectedVariant?.id === v.id ? "active" : ""}`}
-                            onClick={() => setSelectedVariant(v)}
-                          >
-                            {thumb ? <img src={thumb} alt="" /> : null}
-                            {v.name}
-                          </button>
-                        );
+                        return renderVariantCard(v, v.name, selectedVariant?.id === v.id, () => setSelectedVariant(v));
                       })}
                     </div>
                   </div>

@@ -350,6 +350,28 @@
   gap: 8px;
 }
 
+.product-page__variant-options--cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 112px));
+  align-items: stretch;
+  overflow: visible;
+}
+
+.product-page__variant-options--compact {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.product-page__variant-options--compact .product-page__variant-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .product-page__variant-btn {
   display: inline-flex;
   align-items: center;
@@ -384,6 +406,92 @@
   border-color: #1a1a1a;
   background: #1a1a1a;
   color: #fff;
+}
+
+.product-page__variant-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid #d8d8d8;
+  border-radius: 9px;
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: left;
+  transition: border-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out), background 180ms var(--ease-out);
+}
+
+.product-page__variant-card:hover {
+  border-color: #777;
+}
+
+.product-page__variant-card.active {
+  border-color: #2563a6;
+  box-shadow: 0 0 0 2px #2563a6;
+  background: #f5f9ff;
+}
+
+.product-page__variant-card:focus-visible,
+.product-page__variant-options--compact .product-page__variant-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, #2563a6 45%, transparent);
+  outline-offset: 2px;
+}
+
+.product-page__variant-card-image {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 6px;
+  background: #f6f6f6;
+  color: #666;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.product-page__variant-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-page__variant-card-name {
+  overflow: hidden;
+  min-height: 2.4em;
+  font-size: 11px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.product-page__variant-card-price {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.product-page__variant-card-original-price {
+  color: #777;
+  font-size: 10px;
+  line-height: 1.2;
+  text-decoration: line-through;
+}
+
+.product-page__variant-card-stock {
+  color: #28734b;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.product-page__variant-card-stock.out-of-stock {
+  color: #b42318;
 }
 
 /* Quantity */
