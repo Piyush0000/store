@@ -74,7 +74,7 @@ export default async function ProductPage({ params }: PageProps) {
           enabled: true,
           title: testimonialSection?.title || "CUSTOMERS FEEDBACK",
           displayType: (testimonialSection as any)?.displayType || "classic",
-          testimonials: productReviews.slice(0, 20).map((r: any, idx: number) => {
+          testimonials: productReviews.map((r: any, idx: number) => {
             const rawLink = (r.ctaLink || "").trim();
             const safeLink = /^(javascript|data|vbscript):/i.test(rawLink) ? "" : rawLink;
             return {
