@@ -63,31 +63,32 @@ export default async function ProductPage({ params }: PageProps) {
 
   // Routing logic: product reviews take priority over homepage testimonials when set
   const reviewMode = customFields?.reviewMode || "homepage";
-  const productReviews = Array.isArray(customFields?.productReviews) ? customFields.productReviews : [];
+  const productReviews = Array.isArray(customFields?.productReviews)
+    ? customFields.productReviews
+    : [];
 
-  let effectiveTestimonials = testimonialSection;
-  if (reviewMode === "product" && productReviews.length > 0) {
-    const mappedReviews = productReviews.map((r: any, idx: number) => ({
-      id: r.id || `product-review-${idx}`,
-      name: r.name || r.author || "Customer",
-      rating: typeof r.rating === "number" ? r.rating : 5,
-      description: r.description || r.text || r.review || "",
-      image: r.image || r.avatar || "",
-      date: r.date || "",
-      ctaLink: r.ctaLink || "",
-      verified: true,
-    }));
-
-    effectiveTestimonials = {
-      ...(testimonialSection || {}),
-      enabled: true,
-      title: testimonialSection?.title || "Customer Reviews",
-      heading: (testimonialSection as any)?.heading || testimonialSection?.title || "Customer Reviews",
-      displayType: (testimonialSection as any)?.displayType || "classic",
-      testimonials: mappedReviews,
-      items: mappedReviews,
-    } as any;
-  }
+  const effectiveTestimonials =
+    reviewMode === "product" && productReviews.length > 0
+      ? {
+          ...(testimonialSection || {}),
+          enabled: true,
+          title: testimonialSection?.title || "CUSTOMERS FEEDBACK",
+          displayType: (testimonialSection as any)?.displayType || "classic",
+          testimonials: productReviews.slice(0, 20).map((r: any, idx: number) => {
+            const rawLink = (r.ctaLink || "").trim();
+            const safeLink = /^(javascript|data|vbscript):/i.test(rawLink) ? "" : rawLink;
+            return {
+              id: r.id || `product-review-${idx}`,
+              name: r.name || r.author || "Customer",
+              rating: typeof r.rating === "number" ? Math.max(1, Math.min(5, r.rating)) : 5,
+              description: r.description || r.text || r.review || "",
+              image: r.image || r.avatar || "",
+              date: r.date || "",
+              ctaLink: safeLink,
+            };
+          }),
+        }
+      : testimonialSection;
 
   const normalizedProduct = { ...product, customFields };
 
