@@ -888,7 +888,6 @@ export default function ProductClient({
                 <TestimonialsSection
                   testimonials={testimonials.testimonials}
                   title={testimonials.title || ""}
-                  displayType={(testimonials as any).displayType}
                 />
               </div>
             </div>
