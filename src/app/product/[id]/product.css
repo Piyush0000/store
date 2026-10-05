@@ -1161,6 +1161,34 @@
     overscroll-behavior-x: contain;
   }
 
+  .product-page__variant-options--cards {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 12px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: #b8b8b8 transparent;
+  }
+
+  .product-page__variant-options--cards::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .product-page__variant-options--cards::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #b8b8b8;
+  }
+
+  .product-page__variant-options--cards .product-page__variant-card {
+    flex: 0 0 112px;
+    scroll-snap-align: start;
+  }
+
   .product-page__variant-btn {
     flex: 0 0 auto;
     white-space: nowrap;
