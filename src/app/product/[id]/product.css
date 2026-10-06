@@ -1099,11 +1099,21 @@
     padding: 24px 16px 140px;
   }
 
-  .product-page__container {
-    grid-template-columns: 1fr;
+  /* A plain 1fr keeps the cards' min-content width and makes the entire
+     product column wider than the phone, so neither gallery nor cards fit. */
+  .product-page > .product-page__container {
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
+    width: 100%;
     max-width: 100%;
-    overflow: hidden;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .product-page__container > .product-page__info {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .product-page__gallery {
@@ -1122,11 +1132,12 @@
     grid-row: 1;
     display: grid;
     place-items: center;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: auto;
     min-height: 0;
-    height: auto;
+    height: clamp(220px, 75vw, 320px);
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     overflow: hidden;
     border-radius: 12px;
   }
