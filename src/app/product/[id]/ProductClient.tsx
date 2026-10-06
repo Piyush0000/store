@@ -22,6 +22,7 @@ import { trackViewContent } from "@/lib/pixel";
 import { isVideoUrl, videoMimeType } from "@/lib/media-type";
 import { availableStock, isOutOfStock } from "@/lib/stock";
 import type { TestimonialSection } from "@/lib/api";
+import VariantCardScroller from "./VariantCardScroller";
 import "./product.css";
 
 const pad = (num: number) => String(num).padStart(2, "0");
@@ -615,28 +616,31 @@ export default function ProductClient({
                         {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
                         <strong>{selectedVariant?.options?.[key]}</strong>
                       </label>
-                      <div className={`product-page__variant-options ${isCompactOption(key) ? "product-page__variant-options--compact" : "product-page__variant-options--cards"}`}>
-                        {getOptionValues(key).map((value: string) => {
-                          const optionVariant = getVariantForOption(key, value);
-                          const selected = selectedVariant?.options?.[key] === value;
-                          if (isCompactOption(key)) {
-                            return (
-                              <button
-                                key={value}
-                                type="button"
-                                className={`product-page__variant-btn ${selected ? "active" : ""}`}
-                                onClick={() => handleOptionChange(key, value)}
-                                aria-pressed={selected}
-                              >
-                                {value}
-                              </button>
-                            );
-                          }
-                          return optionVariant
-                            ? renderVariantCard(optionVariant, value, selected, () => handleOptionChange(key, value))
-                            : null;
-                        })}
-                      </div>
+                      {isCompactOption(key) ? (
+                        <div className="product-page__variant-options product-page__variant-options--compact">
+                          {getOptionValues(key).map((value: string) => (
+                            <button
+                              key={value}
+                              type="button"
+                              className={`product-page__variant-btn ${selectedVariant?.options?.[key] === value ? "active" : ""}`}
+                              onClick={() => handleOptionChange(key, value)}
+                              aria-pressed={selectedVariant?.options?.[key] === value}
+                            >
+                              {value}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <VariantCardScroller>
+                          {getOptionValues(key).map((value: string) => {
+                            const optionVariant = getVariantForOption(key, value);
+                            const selected = selectedVariant?.options?.[key] === value;
+                            return optionVariant
+                              ? renderVariantCard(optionVariant, value, selected, () => handleOptionChange(key, value))
+                              : null;
+                          })}
+                        </VariantCardScroller>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -644,11 +648,11 @@ export default function ProductClient({
                     <label>
                       {optionLabel}: <strong>{selectedVariant?.name}</strong>
                     </label>
-                    <div className="product-page__variant-options product-page__variant-options--cards">
+                    <VariantCardScroller>
                       {product.variants.map((v: any) => {
                         return renderVariantCard(v, v.name, selectedVariant?.id === v.id, () => setSelectedVariant(v));
                       })}
-                    </div>
+                    </VariantCardScroller>
                   </div>
                 )}
                 {selectedVariant && (

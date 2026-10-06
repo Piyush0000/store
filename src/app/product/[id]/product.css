@@ -110,8 +110,8 @@
   }
 }
 
-.product-page__main-image img,
-.product-page__main-image video {
+.product-page__main-image > img,
+.product-page__main-image > video {
   width: 100%;
   max-width: 100%;
   height: auto;
@@ -330,6 +330,15 @@
 
 .product-page__variant-group {
   margin-bottom: 20px;
+}
+
+.product-page__variant-scroller {
+  min-width: 0;
+  width: 100%;
+}
+
+.product-page__variant-scroll-controls {
+  display: none;
 }
 
 .product-page__variant-group label {
@@ -1102,30 +1111,43 @@
     top: 0;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column-reverse;
+    min-width: 0;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
 
   .product-page__main-image {
-    min-height: 350px;
-    height: 350px;
+    grid-row: 1;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1 / 1;
+    min-height: 0;
+    height: auto;
     width: 100%;
     max-width: 100%;
     overflow: hidden;
     border-radius: 12px;
   }
 
-  .product-page__main-image img,
-  .product-page__main-image video {
-    height: 350px;
+  .product-page__main-image > img,
+  .product-page__main-image > video {
+    position: absolute;
+    inset: 0;
+    display: block;
+    height: 100%;
     width: 100%;
-    max-width: 100%;
+    max-height: none;
+    max-width: none;
+    min-height: 0;
+    min-width: 0;
     object-fit: contain;
+    object-position: center;
   }
 
   .product-page__thumbnails {
+    grid-row: 2;
     display: flex;
     flex-direction: row;
     overflow-x: auto;
@@ -1171,22 +1193,59 @@
     overflow-y: hidden;
     padding: 4px 2px 12px;
     scroll-snap-type: x proximity;
-    scrollbar-width: thin;
-    scrollbar-color: #b8b8b8 transparent;
+    scrollbar-width: none;
+    touch-action: pan-x;
   }
 
   .product-page__variant-options--cards::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  .product-page__variant-options--cards::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: #b8b8b8;
+    display: none;
   }
 
   .product-page__variant-options--cards .product-page__variant-card {
     flex: 0 0 112px;
     scroll-snap-align: start;
+  }
+
+  .product-page__variant-scroll-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .product-page__variant-scroll-controls button {
+    display: grid;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border: 1px solid #d8d8d8;
+    border-radius: 50%;
+    background: #fff;
+    color: #222;
+    cursor: pointer;
+  }
+
+  .product-page__variant-scroll-controls button:disabled {
+    color: #aaa;
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .product-page__variant-scroll-progress {
+    position: relative;
+    flex: 1;
+    height: 4px;
+    border-radius: 999px;
+    background: #e5e5e5;
+  }
+
+  .product-page__variant-scroll-progress span {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #2563a6;
   }
 
   .product-page__variant-btn {
