@@ -37,7 +37,7 @@ import {
   verifyCashfreePayment,
 } from "@/actions/payment-actions";
 import { validateCouponAction } from "@/actions/coupon-actions";
-import { getInitialCheckoutState } from "@/actions/checkout-actions";
+import { getInitialCheckoutState, type EnabledPaymentMethods } from "@/actions/checkout-actions";
 import OtpStep from "@/components/OtpStep";
 import DetailsForm from "@/components/DetailsForm";
 import AddressSection from "@/components/AddressSection";
@@ -117,7 +117,11 @@ export default function CheckoutPage() {
   }, []);
   const [codFee, setCodFee] = useState(0);
   const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(0);
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<EnabledPaymentMethods | null>(null);
   const [onlineGateway, setOnlineGateway] = useState<OnlineGateway | null>(null);
+  const paymentOptionsReady = enabledPaymentMethods !== null;
+  const codEnabled = enabledPaymentMethods?.cod === true;
+  const onlineEnabled = Boolean(onlineGateway);
   const [shippingConfig, setShippingConfig] = useState({
     shippingFee: 0,
     freeShippingThreshold: 0,
@@ -325,6 +329,11 @@ export default function CheckoutPage() {
         if ((initialState as any).onlineDiscountPercent !== undefined) {
           setOnlineDiscountPercent((initialState as any).onlineDiscountPercent);
         }
+        if (initialState.enabledPaymentMethods) {
+          setEnabledPaymentMethods(initialState.enabledPaymentMethods);
+        } else {
+          setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
+        }
         setOnlineGateway(initialState.onlineGateway);
         if (initialState.sessionValid && initialState.phone) {
           setPhone(initialState.phone);
@@ -347,6 +356,8 @@ export default function CheckoutPage() {
         }
       } catch (err) {
         console.error("Failed to load checkout state:", err);
+        setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
+        setOnlineGateway(null);
         setStep("identify");
       }
     };
@@ -824,6 +835,12 @@ export default function CheckoutPage() {
     setIsLoading(true);
     setError(null);
 
+    if (!codEnabled) {
+      setError("Cash on Delivery is not enabled for this store.");
+      setIsLoading(false);
+      return false;
+    }
+
     // Validate cart has items
     if (!cartItems || cartItems.length === 0) {
       setError("Your cart is empty. Please add items before checkout.");
@@ -982,6 +999,7 @@ export default function CheckoutPage() {
     userId,
     clearCart,
     track,
+    codEnabled,
   ]);
 
   const completeOnlineCheckout = useCallback((
@@ -1026,6 +1044,12 @@ export default function CheckoutPage() {
   const handleInitiateOnlinePayment = useCallback(async (gateway: OnlineGateway): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
+
+    if (!onlineEnabled) {
+      setError("Online payment is not enabled for this store.");
+      setIsLoading(false);
+      return false;
+    }
 
     // Validate cart has items and valid prices
     if (!cartItems || cartItems.length === 0) {
@@ -1214,9 +1238,18 @@ export default function CheckoutPage() {
     userId,
     phone,
     completeOnlineCheckout,
+    onlineEnabled,
   ]);
 
   const handleFinalOrderClick = async (action: PaymentAction) => {
+    if (action === 'COD' && !codEnabled) {
+      setError("Cash on Delivery is not enabled for this store.");
+      return;
+    }
+    if (action !== 'COD' && !onlineGateway) {
+      setError("Online payment is not enabled for this store.");
+      return;
+    }
     setPendingAction(action);
     if (action === 'COD') setPaymentMethod('COD');
     if (isSessionVerified) {
@@ -1625,8 +1658,19 @@ export default function CheckoutPage() {
                   <span className="checkout__error" style={{ display: 'block', marginBottom: '12px' }}>{error}</span>
                 )}
 
-                {paymentMethod === null && (
+                {paymentMethod === null && !paymentOptionsReady && (
+                  <p className="checkout__step-desc">Loading payment methods...</p>
+                )}
+
+                {paymentMethod === null && paymentOptionsReady && !codEnabled && !onlineEnabled && (
+                  <p className="checkout__step-desc">
+                    No payment methods are available right now. Please contact the store.
+                  </p>
+                )}
+
+                {paymentMethod === null && paymentOptionsReady && (codEnabled || onlineEnabled) && (
                   <div className="checkout__payment-options">
+                    {codEnabled && (
                     <div className="checkout__payment-card" onClick={() => handleFinalOrderClick('COD')}>
                       <div className="checkout__payment-header">
                         <div className="checkout__payment-info-left">
@@ -1635,7 +1679,9 @@ export default function CheckoutPage() {
                           </div>
                           <div>
                             <p className="checkout__payment-title">Cash on Delivery</p>
-                            <p className="checkout__payment-note">+ Rs. {codFee} fee</p>
+                            {codFee > 0 && (
+                              <p className="checkout__payment-note">+ Rs. {codFee} fee</p>
+                            )}
                           </div>
                         </div>
                         <button className="checkout__payment-select-btn" type="button">
@@ -1643,19 +1689,15 @@ export default function CheckoutPage() {
                         </button>
                       </div>
                     </div>
+                    )}
 
+                    {onlineGateway && (
                     <div
                       className="checkout__payment-card"
                       onClick={() => {
-                        if (onlineGateway) {
-                          setPaymentMethod(onlineGateway);
-                          setError(null);
-                        } else {
-                          setError("Online payment is not enabled for this store.");
-                        }
+                        setPaymentMethod(onlineGateway);
+                        setError(null);
                       }}
-                      aria-disabled={!onlineGateway}
-                      style={!onlineGateway ? { opacity: 0.55, cursor: "not-allowed" } : undefined}
                     >
                       <div className="checkout__payment-header">
                         <div className="checkout__payment-info-left">
@@ -1684,10 +1726,11 @@ export default function CheckoutPage() {
                         </button>
                       </div>
                     </div>
+                    )}
                   </div>
                 )}
 
-                {paymentMethod === 'COD' && (
+                {paymentMethod === 'COD' && codEnabled && (
                   <div className="checkout__payment-inline-wrapper">
                     <div className="checkout__payment-confirm">
                       <div className="checkout__cod-info">
