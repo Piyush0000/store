@@ -1091,15 +1091,10 @@
   }
 
   .product-page__container {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
     gap: 24px;
     max-width: 100%;
-    min-width: 0;
-  }
-
-  .product-page__info {
-    width: 100%;
-    min-width: 0;
+    overflow: hidden;
   }
 
   .product-page__gallery {
@@ -1107,7 +1102,6 @@
     top: 0;
     width: 100%;
     max-width: 100%;
-    min-width: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column-reverse;
@@ -1119,8 +1113,6 @@
     height: 350px;
     width: 100%;
     max-width: 100%;
-    min-width: 0;
-    flex: none;
     overflow: hidden;
     border-radius: 12px;
   }
@@ -1130,7 +1122,6 @@
     height: 350px;
     width: 100%;
     max-width: 100%;
-    min-width: 0;
     object-fit: contain;
   }
 
@@ -1140,7 +1131,6 @@
     overflow-x: auto;
     width: 100%;
     max-width: 100%;
-    min-width: 0;
     padding-bottom: 8px;
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -1174,7 +1164,6 @@
   .product-page__variant-options--cards {
     display: flex;
     width: 100%;
-    max-width: 100%;
     min-width: 0;
     flex-wrap: nowrap;
     grid-template-columns: none;
