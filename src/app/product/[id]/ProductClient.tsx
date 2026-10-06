@@ -21,11 +21,101 @@ import ReelsSection from "@/components/ReelsSection";
 import { trackViewContent } from "@/lib/pixel";
 import { isVideoUrl, videoMimeType } from "@/lib/media-type";
 import { availableStock, isOutOfStock } from "@/lib/stock";
+import { resolveMediaUrl } from "@/lib/media";
 import type { TestimonialSection } from "@/lib/api";
 import VariantCardScroller from "./VariantCardScroller";
 import "./product.css";
 
 const pad = (num: number) => String(num).padStart(2, "0");
+
+const IGNORED_OPTION_KEYS = [
+  "isActive",
+  "compareAtPrice",
+  "status",
+  "sku",
+  "price",
+  "stock",
+  "id",
+  "name",
+  "images",
+];
+
+function parseVariantOptions(variant: any): Record<string, unknown> {
+  const raw = variant?.options;
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+}
+
+function extractImageUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item: unknown) => {
+      if (typeof item === "string") return resolveMediaUrl(item.trim());
+      if (item && typeof item === "object") {
+        const url = (item as { url?: unknown; src?: unknown }).url
+          ?? (item as { url?: unknown; src?: unknown }).src;
+        return typeof url === "string" ? resolveMediaUrl(url.trim()) : "";
+      }
+      return "";
+    })
+    .filter(Boolean);
+}
+
+function optionTypeKeys(variant: any): string[] {
+  const options = parseVariantOptions(variant);
+  return Object.keys(options)
+    .filter((key) => {
+      if (IGNORED_OPTION_KEYS.includes(key)) return false;
+      return typeof options[key] === "string";
+    })
+    .sort((a, b) => a.localeCompare(b));
+}
+
+function collectOptionTypeKeys(variants: any[] | undefined): string[] {
+  const keys: string[] = [];
+  for (const variant of variants || []) {
+    const options = parseVariantOptions(variant);
+    for (const key of Object.keys(options)) {
+      if (IGNORED_OPTION_KEYS.includes(key)) continue;
+      if (typeof options[key] !== "string") continue;
+      if (!keys.includes(key)) keys.push(key);
+    }
+  }
+  return keys;
+}
+
+/** True only when every SKU shares the same 2+ types, e.g. Color+Size on all rows. */
+function usesCombinationOptions(variants: any[] | undefined): string[] {
+  if (!variants?.length) return [];
+  const firstKeys = optionTypeKeys(variants[0]);
+  if (firstKeys.length < 2) return [];
+  const signature = firstKeys.join("|");
+  const allMatch = variants.every((variant) => optionTypeKeys(variant).join("|") === signature);
+  if (!allMatch) return [];
+  return firstKeys.filter((key) => {
+    const values = new Set(
+      variants
+        .map((variant) => parseVariantOptions(variant)[key])
+        .filter((value) => typeof value === "string" && value.trim()),
+    );
+    return values.size > 1;
+  });
+}
+
+function getVariantImages(variant: any): string[] {
+  const options = parseVariantOptions(variant);
+  const fromVariant = extractImageUrls(variant?.images);
+  if (fromVariant.length) return fromVariant;
+  return extractImageUrls(options.images);
+}
 
 const decodeAndFormatHtml = (content: string) => {
   if (!content) return "";
@@ -182,7 +272,10 @@ export default function ProductClient({
   }, []);
 
   useEffect(() => {
-    setSelectedVariant(null);
+    const rows = Array.isArray(product?.variants) ? product.variants : [];
+    const firstInStock = rows.find((variant: any) => Number(variant?.stock) > 0);
+    const firstActive = rows.find((variant: any) => parseVariantOptions(variant).isActive !== false);
+    setSelectedVariant(firstInStock || firstActive || rows[0] || null);
     if (product) {
       trackViewContent(product.name, product.id, Number(product.price));
     }
@@ -192,10 +285,11 @@ export default function ProductClient({
     ? Number(selectedVariant.price)
     : Number(product.price);
 
+  const selectedOptions = parseVariantOptions(selectedVariant);
   const originalPrice =
-    selectedVariant?.options?.compareAtPrice !== undefined &&
-    selectedVariant?.options?.compareAtPrice !== null
-      ? Number(selectedVariant.options.compareAtPrice)
+    selectedOptions.compareAtPrice !== undefined &&
+    selectedOptions.compareAtPrice !== null
+      ? Number(selectedOptions.compareAtPrice)
       : product.compareAtPrice
         ? Number(product.compareAtPrice)
         : null;
@@ -205,54 +299,33 @@ export default function ProductClient({
       ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100)
       : 0;
 
-  const IGNORED_OPTION_KEYS = [
-    "isActive",
-    "compareAtPrice",
-    "status",
-    "sku",
-    "price",
-    "stock",
-    "id",
-    "name",
-    "images",
-  ];
-
-  const getVariantImages = (variant: any): string[] => {
-    const options = variant?.options && typeof variant.options === "object" ? variant.options : {};
-    const raw = Array.isArray(variant?.images)
-      ? variant.images
-      : Array.isArray(options.images)
-        ? options.images
-        : [];
-    return raw.filter((url: unknown) => typeof url === "string" && url.trim());
-  };
-
-  const customOptionKeys =
-    product.variants?.length > 0
-      ? [
-          ...new Set<string>(
-            product.variants.flatMap((v: any) =>
-              Object.keys(v.options || {}).filter((k) => {
-                if (IGNORED_OPTION_KEYS.includes(k)) return false;
-                return typeof v.options?.[k] === "string";
-              }),
-            ),
-          ),
-        ]
-      : [];
+  const customOptionKeys = collectOptionTypeKeys(product.variants);
+  const combinationKeys = usesCombinationOptions(product.variants);
 
   const getOptionValues = (key: string) => [
     ...new Set<string>(
       product.variants
-        .map((v: any) => v.options?.[key])
+        .map((v: any) => parseVariantOptions(v)[key])
         .filter((value: unknown) => typeof value === "string" && value.trim()),
     ),
   ];
 
+  const isOptionAvailable = (key: string, value: string) => {
+    if (!combinationKeys.length) return true;
+    return product.variants.some(
+      (variant: any) =>
+        parseVariantOptions(variant)[key] === value &&
+        combinationKeys
+          .filter((optionKey) => optionKey !== key)
+          .every((optionKey) => {
+            if (!selectedOptions[optionKey]) return true;
+            return parseVariantOptions(variant)[optionKey] === selectedOptions[optionKey];
+          }),
+    );
+  };
+
   const galleryImages: string[] = useMemo(() => {
-    const defaults = Array.isArray(product.images)
-      ? product.images.filter((url: unknown) => typeof url === "string" && url.trim())
-      : [];
+    const defaults = extractImageUrls(product.images);
     if (!selectedVariant) return defaults;
     const variantImages = getVariantImages(selectedVariant);
     return variantImages.length ? variantImages : defaults;
@@ -268,45 +341,64 @@ export default function ProductClient({
   }, [selectedVariant?.id, selectedImageIndex, galleryImages[0]]);
 
   const handleOptionChange = (key: string, value: string) => {
+    if (combinationKeys.length && !isOptionAvailable(key, value)) return;
+    const matchKeys = combinationKeys.length ? combinationKeys : [];
     const compatibleVariant = product.variants.find(
       (v: any) =>
-        v.options?.[key] === value &&
-        customOptionKeys
+        parseVariantOptions(v)[key] === value &&
+        matchKeys
           .filter((k) => k !== key)
-          .every((k) => v.options?.[k] === selectedVariant?.options?.[k]),
+          .every((k) => {
+            if (!selectedOptions[k]) return true;
+            return parseVariantOptions(v)[k] === selectedOptions[k];
+          }),
     );
-    const match = compatibleVariant || product.variants.find((v: any) => v.options?.[key] === value);
+    const match =
+      compatibleVariant ||
+      product.variants.find((v: any) => parseVariantOptions(v)[key] === value);
     if (match) setSelectedVariant(match);
   };
 
-  const getVariantForOption = (key: string, value: string) =>
-    product.variants.find(
-      (variant: any) =>
-        variant.options?.[key] === value &&
-        customOptionKeys
-          .filter((optionKey) => optionKey !== key)
-          .every((optionKey) => variant.options?.[optionKey] === selectedVariant?.options?.[optionKey]),
-    ) || product.variants.find((variant: any) => variant.options?.[key] === value);
+  const getVariantForOption = (key: string, value: string) => {
+    const matchKeys = combinationKeys.length ? combinationKeys : [];
+    return (
+      product.variants.find(
+        (variant: any) =>
+          parseVariantOptions(variant)[key] === value &&
+          matchKeys
+            .filter((optionKey) => optionKey !== key)
+            .every((optionKey) => {
+              if (!selectedOptions[optionKey]) return true;
+              return parseVariantOptions(variant)[optionKey] === selectedOptions[optionKey];
+            }),
+      ) || product.variants.find((variant: any) => parseVariantOptions(variant)[key] === value)
+    );
+  };
 
-  const isCompactOption = (key: string) => /size/i.test(key);
-
-  const renderVariantCard = (variant: any, label: string, selected: boolean, onSelect: () => void) => {
-    const image = getVariantImages(variant)[0] || product.images?.[0];
+  const renderVariantCard = (
+    variant: any,
+    label: string,
+    selected: boolean,
+    onSelect: () => void,
+    available = true,
+  ) => {
+    const image = getVariantImages(variant)[0] || extractImageUrls(product.images)[0];
     const price = Number(variant?.price ?? product.price);
     const compareAtPrice = Number(
-      variant?.options?.compareAtPrice ?? product.compareAtPrice ?? 0,
+      parseVariantOptions(variant).compareAtPrice ?? product.compareAtPrice ?? 0,
     );
     const showCompareAtPrice = compareAtPrice > price;
-    const stock = variant?.stock == null ? null : Number(variant.stock);
 
     return (
       <button
         key={variant?.id || label}
         type="button"
-        className={`product-page__variant-card ${selected ? "active" : ""}`}
-        onClick={onSelect}
+        className={`product-page__variant-card ${selected ? "active" : ""} ${available ? "" : "is-unavailable"}`}
+        onClick={available ? onSelect : undefined}
+        disabled={!available}
         aria-pressed={selected}
-        title={label}
+        aria-disabled={!available}
+        title={available ? label : `${label} is not available with the current selection`}
       >
         <span className="product-page__variant-card-image">
           {image ? <img src={image} alt="" loading="lazy" /> : <span>{label.slice(0, 1)}</span>}
@@ -316,11 +408,6 @@ export default function ProductClient({
         {showCompareAtPrice && (
           <span className="product-page__variant-card-original-price">
             ₹{compareAtPrice.toLocaleString("en-IN")}
-          </span>
-        )}
-        {stock !== null && Number.isFinite(stock) && (
-          <span className={`product-page__variant-card-stock ${stock > 0 ? "" : "out-of-stock"}`}>
-            {stock > 0 ? "In stock" : "Sold out"}
           </span>
         )}
       </button>
@@ -351,7 +438,7 @@ export default function ProductClient({
         ? Object.fromEntries(
             customOptionKeys.map((k) => [
               k.charAt(0).toUpperCase() + k.slice(1),
-              selectedVariant.options?.[k],
+              parseVariantOptions(selectedVariant)[k],
             ]),
           )
         : { [optionLabel]: selectedVariant.name }
@@ -380,7 +467,7 @@ export default function ProductClient({
         ? Object.fromEntries(
             customOptionKeys.map((k) => [
               k.charAt(0).toUpperCase() + k.slice(1),
-              selectedVariant.options?.[k],
+              parseVariantOptions(selectedVariant)[k],
             ]),
           )
         : { [optionLabel]: selectedVariant.name }
@@ -614,33 +701,24 @@ export default function ProductClient({
                     <div key={key} className="product-page__variant-group">
                       <label>
                         {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
-                        <strong>{selectedVariant?.options?.[key]}</strong>
+                        <strong>{String(selectedOptions[key] ?? "")}</strong>
                       </label>
-                      {isCompactOption(key) ? (
-                        <div className="product-page__variant-options product-page__variant-options--compact">
-                          {getOptionValues(key).map((value: string) => (
-                            <button
-                              key={value}
-                              type="button"
-                              className={`product-page__variant-btn ${selectedVariant?.options?.[key] === value ? "active" : ""}`}
-                              onClick={() => handleOptionChange(key, value)}
-                              aria-pressed={selectedVariant?.options?.[key] === value}
-                            >
-                              {value}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <VariantCardScroller>
-                          {getOptionValues(key).map((value: string) => {
-                            const optionVariant = getVariantForOption(key, value);
-                            const selected = selectedVariant?.options?.[key] === value;
-                            return optionVariant
-                              ? renderVariantCard(optionVariant, value, selected, () => handleOptionChange(key, value))
-                              : null;
-                          })}
-                        </VariantCardScroller>
-                      )}
+                      <VariantCardScroller>
+                        {getOptionValues(key).map((value: string) => {
+                          const optionVariant = getVariantForOption(key, value);
+                          const selected = selectedOptions[key] === value;
+                          const available = isOptionAvailable(key, value);
+                          return optionVariant
+                            ? renderVariantCard(
+                                optionVariant,
+                                value,
+                                selected,
+                                () => handleOptionChange(key, value),
+                                available,
+                              )
+                            : null;
+                        })}
+                      </VariantCardScroller>
                     </div>
                   ))
                 ) : (
@@ -649,9 +727,14 @@ export default function ProductClient({
                       {optionLabel}: <strong>{selectedVariant?.name}</strong>
                     </label>
                     <VariantCardScroller>
-                      {product.variants.map((v: any) => {
-                        return renderVariantCard(v, v.name, selectedVariant?.id === v.id, () => setSelectedVariant(v));
-                      })}
+                      {product.variants.map((v: any) =>
+                        renderVariantCard(
+                          v,
+                          v.name,
+                          selectedVariant?.id === v.id,
+                          () => setSelectedVariant(v),
+                        ),
+                      )}
                     </VariantCardScroller>
                   </div>
                 )}

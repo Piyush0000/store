@@ -469,6 +469,13 @@
   object-fit: cover;
 }
 
+.product-page__variant-card.is-unavailable,
+.product-page__variant-card:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+}
+
 .product-page__variant-card-name {
   overflow: hidden;
   min-height: 2.4em;
