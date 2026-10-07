@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import type { StorefrontVariant } from '@/lib/product-variants';
 
 export interface WishlistItem {
   id: string;
@@ -8,6 +9,7 @@ export interface WishlistItem {
   price: number;
   images?: string[];
   variantId?: string;
+  variants?: StorefrontVariant[];
 }
 
 interface WishlistContextType {

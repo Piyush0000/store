@@ -2,6 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { useAnalytics } from './AnalyticsProvider';
+import { variantImages, variantSelection, type ProductWithVariants } from '@/lib/product-variants';
+import { isVideoUrl } from '@/lib/media-type';
+import VariantPicker from './VariantPicker';
 
 export interface CartItem {
   id: string;
@@ -25,6 +28,7 @@ export interface CartItem {
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (product: Omit<CartItem, 'quantity'>, quantity?: number, variants?: Record<string, string>) => void;
+  openVariantPicker: (product: ProductWithVariants, initialVariantId?: string, initialQuantity?: number) => void;
   addBundleToCart: (
     bundleId: string,
     title: string,
@@ -33,8 +37,8 @@ interface CartContextType {
     discountAmount: number,
     discountPercentage?: number
   ) => void;
-  removeFromCart: (productId: string, variants?: Record<string, string>) => void;
-  updateQuantity: (productId: string, variants?: Record<string, string>, quantity?: number) => void;
+  removeFromCart: (productId: string, variants?: Record<string, string>, variantId?: string) => void;
+  updateQuantity: (productId: string, variants?: Record<string, string>, quantity?: number, variantId?: string) => void;
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;
@@ -58,6 +62,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [variantPicker, setVariantPicker] = useState<{ product: ProductWithVariants; initialVariantId?: string; initialQuantity?: number } | null>(null);
+
+  const sameCartLine = (item: CartItem, id: string, variants: Record<string, string>, variantId?: string) =>
+    item.id === id && (variantId || item.variantId
+      ? Boolean(variantId && item.variantId === variantId)
+      : JSON.stringify(item.variants || {}) === JSON.stringify(variants));
+
+  const openVariantPicker = (product: ProductWithVariants, initialVariantId?: string, initialQuantity?: number) => {
+    setIsCartOpen(false);
+    setVariantPicker({ product, initialVariantId, initialQuantity });
+  };
+
+  const addPickedVariant = (product: ProductWithVariants, index: number, quantity: number) => {
+    const variant = product.variants?.[index];
+    if (!variant?.id) return;
+    const image = [...variantImages(variant), ...(product.images || [])].find((url) => !isVideoUrl(url));
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: Number(variant.price ?? product.price),
+      compareAtPrice: Number(variant.options?.compareAtPrice ?? product.compareAtPrice ?? 0) || undefined,
+      images: image ? [image] : [],
+      variantId: variant.id,
+    }, quantity, variantSelection(product, variant, index));
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('cart');
@@ -80,12 +109,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = (product: Omit<CartItem, 'quantity'>, quantity = 1, variants = {}) => {
     setCartItems((prev) => {
       const existing = prev.find(
-        (item) => item.id === product.id && JSON.stringify(item.variants) === JSON.stringify(variants)
+        (item) => sameCartLine(item, product.id, variants, product.variantId)
       );
 
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id && JSON.stringify(item.variants) === JSON.stringify(variants)
+          sameCartLine(item, product.id, variants, product.variantId)
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
@@ -152,23 +181,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId: string, variants = {}) => {
+  const removeFromCart = (productId: string, variants = {}, variantId?: string) => {
     setCartItems((prev) =>
       prev.filter(
-        (item) => !(item.id === productId && JSON.stringify(item.variants || {}) === JSON.stringify(variants || {}))
+        (item) => !sameCartLine(item, productId, variants, variantId)
       )
     );
   };
 
-  const updateQuantity = (productId: string, variants = {}, quantity?: number) => {
+  const updateQuantity = (productId: string, variants = {}, quantity?: number, variantId?: string) => {
     if (quantity === undefined || quantity <= 0) {
-      removeFromCart(productId, variants);
+      removeFromCart(productId, variants, variantId);
       return;
     }
 
     setCartItems((prev) =>
       prev.map((item) =>
-        item.id === productId && JSON.stringify(item.variants || {}) === JSON.stringify(variants || {})
+        sameCartLine(item, productId, variants, variantId)
           ? { ...item, quantity }
           : item
       )
@@ -194,6 +223,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       value={{
         cartItems,
         addToCart,
+        openVariantPicker,
         addBundleToCart,
         removeFromCart,
         updateQuantity,
@@ -206,6 +236,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {variantPicker && (
+        <VariantPicker
+          product={variantPicker.product}
+          initialVariantId={variantPicker.initialVariantId}
+          initialQuantity={variantPicker.initialQuantity}
+          onClose={() => setVariantPicker(null)}
+          onAdd={(index, quantity) => addPickedVariant(variantPicker.product, index, quantity)}
+        />
+      )}
     </CartContext.Provider>
   );
 }

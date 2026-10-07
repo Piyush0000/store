@@ -8,7 +8,7 @@ import './wishlist.css';
 
 export default function WishlistPage() {
   const { wishlistItems, removeFromWishlist, isHydrated } = useWishlist();
-  const { addToCart } = useCart();
+  const { addToCart, openVariantPicker } = useCart();
 
   return (
     <div className="wishlist">
@@ -48,15 +48,19 @@ export default function WishlistPage() {
                 <span className="wishlist__price">₹{Number(item.price).toLocaleString('en-IN')}</span>
                 <button
                   className="wishlist__add-cart"
-                  onClick={() =>
+                  onClick={() => {
+                    if (item.variants?.length) {
+                      openVariantPicker(item);
+                      return;
+                    }
                     addToCart({
                       id: item.id,
                       name: item.name,
                       price: item.price,
                       images: item.images,
                       variantId: item.variantId,
-                    })
-                  }
+                    });
+                  }}
                 >
                   Add to Cart
                 </button>

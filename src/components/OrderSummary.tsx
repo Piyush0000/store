@@ -90,7 +90,7 @@ const OrderSummary = React.memo(function OrderSummary({
           <div className="checkout__summary-items">
             {items.map((item) => (
               <div
-                key={`${item.id}-${JSON.stringify(item.variants || {})}`}
+                key={`${item.id}-${item.variantId || JSON.stringify(item.variants || {})}`}
                 className="checkout__summary-item"
               >
                 <img

@@ -80,7 +80,7 @@ export default function CartPage() {
       <div className="cart__layout">
         <div className="cart__items">
           {cartItems.map((item) => (
-            <div key={`${item.id}-${JSON.stringify(item.variants || {})}`} className="cart__item">
+            <div key={`${item.id}-${item.variantId || JSON.stringify(item.variants || {})}`} className="cart__item">
               <div className="cart__item-image">
                 <img src={item.images?.[0] || 'https://via.placeholder.com/120'} alt={item.name} />
               </div>
@@ -105,7 +105,7 @@ export default function CartPage() {
                       className="cart__quantity-btn"
                       onClick={() => {
                         console.log('[PAGE:Cart] Decrement quantity for:', item.id);
-                        updateQuantity(item.id, item.variants, item.quantity - 1);
+                        updateQuantity(item.id, item.variants, item.quantity - 1, item.variantId);
                       }}
                     >
                       −
@@ -115,7 +115,7 @@ export default function CartPage() {
                       className="cart__quantity-btn"
                       onClick={() => {
                         console.log('[PAGE:Cart] Increment quantity for:', item.id);
-                        updateQuantity(item.id, item.variants, item.quantity + 1);
+                        updateQuantity(item.id, item.variants, item.quantity + 1, item.variantId);
                       }}
                     >
                       +
@@ -126,7 +126,7 @@ export default function CartPage() {
                     className="cart__item-remove"
                     onClick={() => {
                       console.log('[PAGE:Cart] Remove item:', item.id);
-                      removeFromCart(item.id, item.variants);
+                      removeFromCart(item.id, item.variants, item.variantId);
                     }}
                     aria-label="Remove item"
                   >
