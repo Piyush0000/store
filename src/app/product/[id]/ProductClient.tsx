@@ -141,7 +141,7 @@ export default function ProductClient({
   );
   const recentSalesCount =
     customFields.recentSalesCount || product.recentSalesCount;
-  const { addToCart, setIsCartOpen } = useCart();
+  const { addToCart, openVariantPicker, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const liked = isInWishlist(product.id);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -345,29 +345,20 @@ export default function ProductClient({
   }, [outOfStock, stockLeft]);
 
   const handleAddToCart = () => {
+    if (product.variants?.length) {
+      if (!isOutOfStock(product)) openVariantPicker(product, selectedVariant?.id, quantity);
+      return;
+    }
     if (outOfStock) return;
-    const variantSelection = selectedVariant
-      ? customOptionKeys.length > 0
-        ? Object.fromEntries(
-            customOptionKeys.map((k) => [
-              k.charAt(0).toUpperCase() + k.slice(1),
-              selectedVariant.options?.[k],
-            ]),
-          )
-        : { [optionLabel]: selectedVariant.name }
-      : {};
-
     addToCart(
       {
         id: product.id,
         name: product.name,
-        price: displayPrice,
-        compareAtPrice: originalPrice || undefined,
-        images: galleryImages.length ? galleryImages : product.images,
-        variantId: selectedVariant?.id,
+        price: Number(product.price),
+        compareAtPrice: product.compareAtPrice || undefined,
+        images: product.images,
       },
       quantity,
-      variantSelection,
     );
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
@@ -690,7 +681,7 @@ export default function ProductClient({
               <button
                 className="product-page__add-cart"
                 onClick={handleAddToCart}
-                disabled={outOfStock}
+                disabled={product.variants?.length ? isOutOfStock(product) : outOfStock}
               >
                 <ShoppingBag size={16} />
                 {addedToCart ? "Added!" : "Add to Cart"}
@@ -720,6 +711,7 @@ export default function ProductClient({
                   name: product.name,
                   price: displayPrice,
                   images: galleryImages.length ? galleryImages : product.images,
+                  variants: product.variants,
                 })
               }
             >

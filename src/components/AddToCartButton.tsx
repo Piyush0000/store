@@ -6,12 +6,16 @@ import { useCart } from '@/components/CartProvider';
 import { isOutOfStock } from '@/lib/stock';
 
 export default function AddToCartButton({ product }: { product: any }) {
-  const { addToCart } = useCart();
+  const { addToCart, openVariantPicker } = useCart();
   const [added, setAdded] = useState(false);
   const outOfStock = isOutOfStock(product);
 
   const handleAddToCart = () => {
     if (outOfStock) return;
+    if (product.variants?.length) {
+      openVariantPicker(product);
+      return;
+    }
     addToCart({
       id: product.id,
       name: product.name,

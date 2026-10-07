@@ -1,4 +1,5 @@
 import { resolveMediaUrl } from './media';
+import type { StorefrontVariant } from './product-variants';
 
 export interface NormalizedProduct {
   id: string;
@@ -16,7 +17,7 @@ export interface NormalizedProduct {
   reviewCount?: number;
   images: string[];
   stock?: number;
-  variants?: { stock?: number }[];
+  variants?: StorefrontVariant[];
 }
 
 export interface HydratedSection {
@@ -67,7 +68,22 @@ function normalizeProduct(raw: any): NormalizedProduct {
     stock: raw.stock != null ? Number(raw.stock) : undefined,
     variants: Array.isArray(raw.variants)
       ? raw.variants.map((variant: any) => ({
+          id: String(variant?.id ?? ''),
+          name: String(variant?.name ?? ''),
+          sku: variant?.sku ? String(variant.sku) : undefined,
+          price: variant?.price != null ? Number(variant.price) : undefined,
           stock: variant?.stock != null ? Number(variant.stock) : undefined,
+          images: Array.isArray(variant?.images)
+            ? variant.images.map((image: string) => resolveMediaUrl(image))
+            : undefined,
+          options: variant?.options && typeof variant.options === 'object'
+            ? {
+                ...variant.options,
+                images: Array.isArray(variant.options.images)
+                  ? variant.options.images.map((image: string) => resolveMediaUrl(image))
+                  : variant.options.images,
+              }
+            : undefined,
         }))
       : undefined,
   };
