@@ -20,7 +20,7 @@ import SpecialOffersCard from "@/components/SpecialOffersCard";
 import ReelsSection from "@/components/ReelsSection";
 import { trackViewContent } from "@/lib/pixel";
 import { isVideoUrl, videoMimeType } from "@/lib/media-type";
-import { availableStock, isOutOfStock } from "@/lib/stock";
+import { availableStock, isOutOfStock, isVariantUnavailable } from "@/lib/stock";
 import { resolveMediaUrl } from "@/lib/media";
 import type { TestimonialSection } from "@/lib/api";
 import VariantCardScroller from "./VariantCardScroller";
@@ -69,16 +69,6 @@ function extractImageUrls(raw: unknown): string[] {
     .filter(Boolean);
 }
 
-function optionTypeKeys(variant: any): string[] {
-  const options = parseVariantOptions(variant);
-  return Object.keys(options)
-    .filter((key) => {
-      if (IGNORED_OPTION_KEYS.includes(key)) return false;
-      return typeof options[key] === "string";
-    })
-    .sort((a, b) => a.localeCompare(b));
-}
-
 function collectOptionTypeKeys(variants: any[] | undefined): string[] {
   const keys: string[] = [];
   for (const variant of variants || []) {
@@ -89,25 +79,18 @@ function collectOptionTypeKeys(variants: any[] | undefined): string[] {
       if (!keys.includes(key)) keys.push(key);
     }
   }
-  return keys;
+  return keys.sort((a, b) => {
+    const rank = (key: string) => (/color|colour/i.test(key) ? 0 : /size/i.test(key) ? 1 : 2);
+    return rank(a) - rank(b);
+  });
 }
 
-/** True only when every SKU shares the same 2+ types, e.g. Color+Size on all rows. */
-function usesCombinationOptions(variants: any[] | undefined): string[] {
-  if (!variants?.length) return [];
-  const firstKeys = optionTypeKeys(variants[0]);
-  if (firstKeys.length < 2) return [];
-  const signature = firstKeys.join("|");
-  const allMatch = variants.every((variant) => optionTypeKeys(variant).join("|") === signature);
-  if (!allMatch) return [];
-  return firstKeys.filter((key) => {
-    const values = new Set(
-      variants
-        .map((variant) => parseVariantOptions(variant)[key])
-        .filter((value) => typeof value === "string" && value.trim()),
-    );
-    return values.size > 1;
-  });
+function isImageOptionType(key: string) {
+  return /color|colour/i.test(key);
+}
+
+function isRequiredOptionType(key: string) {
+  return /color|colour/i.test(key) || /size/i.test(key);
 }
 
 function getVariantImages(variant: any): string[] {
@@ -236,6 +219,7 @@ export default function ProductClient({
   const liked = isInWishlist(product.id);
   const [addedToCart, setAddedToCart] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [pickedOptions, setPickedOptions] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [imageLoading, setImageLoading] = useState(true);
@@ -272,10 +256,8 @@ export default function ProductClient({
   }, []);
 
   useEffect(() => {
-    const rows = Array.isArray(product?.variants) ? product.variants : [];
-    const firstInStock = rows.find((variant: any) => Number(variant?.stock) > 0);
-    const firstActive = rows.find((variant: any) => parseVariantOptions(variant).isActive !== false);
-    setSelectedVariant(firstInStock || firstActive || rows[0] || null);
+    setSelectedVariant(null);
+    setPickedOptions({});
     if (product) {
       trackViewContent(product.name, product.id, Number(product.price));
     }
@@ -300,7 +282,6 @@ export default function ProductClient({
       : 0;
 
   const customOptionKeys = collectOptionTypeKeys(product.variants);
-  const combinationKeys = usesCombinationOptions(product.variants);
 
   const getOptionValues = (key: string) => [
     ...new Set<string>(
@@ -310,26 +291,19 @@ export default function ProductClient({
     ),
   ];
 
-  const isOptionAvailable = (key: string, value: string) => {
-    if (!combinationKeys.length) return true;
-    return product.variants.some(
-      (variant: any) =>
-        parseVariantOptions(variant)[key] === value &&
-        combinationKeys
-          .filter((optionKey) => optionKey !== key)
-          .every((optionKey) => {
-            if (!selectedOptions[optionKey]) return true;
-            return parseVariantOptions(variant)[optionKey] === selectedOptions[optionKey];
-          }),
-    );
-  };
+  const getVariantForOption = (key: string, value: string) =>
+    product.variants.find((variant: any) => parseVariantOptions(variant)[key] === value);
 
   const galleryImages: string[] = useMemo(() => {
     const defaults = extractImageUrls(product.images);
-    if (!selectedVariant) return defaults;
-    const variantImages = getVariantImages(selectedVariant);
-    return variantImages.length ? variantImages : defaults;
-  }, [selectedVariant, product.images]);
+    const fromSelected = selectedVariant ? getVariantImages(selectedVariant) : [];
+    if (fromSelected.length) return fromSelected;
+    const colorKey = customOptionKeys.find((key) => isImageOptionType(key));
+    const colorValue = colorKey ? pickedOptions[colorKey] : "";
+    const colorVariant = colorKey && colorValue ? getVariantForOption(colorKey, colorValue) : null;
+    const fromColor = colorVariant ? getVariantImages(colorVariant) : [];
+    return fromColor.length ? fromColor : defaults;
+  }, [selectedVariant, product.images, product.variants, customOptionKeys, pickedOptions]);
 
   useEffect(() => {
     const img = imgRef.current;
@@ -341,38 +315,27 @@ export default function ProductClient({
   }, [selectedVariant?.id, selectedImageIndex, galleryImages[0]]);
 
   const handleOptionChange = (key: string, value: string) => {
-    if (combinationKeys.length && !isOptionAvailable(key, value)) return;
-    const matchKeys = combinationKeys.length ? combinationKeys : [];
-    const compatibleVariant = product.variants.find(
-      (v: any) =>
-        parseVariantOptions(v)[key] === value &&
-        matchKeys
-          .filter((k) => k !== key)
-          .every((k) => {
-            if (!selectedOptions[k]) return true;
-            return parseVariantOptions(v)[k] === selectedOptions[k];
-          }),
-    );
-    const match =
-      compatibleVariant ||
-      product.variants.find((v: any) => parseVariantOptions(v)[key] === value);
-    if (match) setSelectedVariant(match);
-  };
+    const next = { ...pickedOptions };
+    if (pickedOptions[key] === value) {
+      delete next[key];
+    } else {
+      next[key] = value;
+    }
+    setPickedOptions(next);
 
-  const getVariantForOption = (key: string, value: string) => {
-    const matchKeys = combinationKeys.length ? combinationKeys : [];
-    return (
-      product.variants.find(
-        (variant: any) =>
-          parseVariantOptions(variant)[key] === value &&
-          matchKeys
-            .filter((optionKey) => optionKey !== key)
-            .every((optionKey) => {
-              if (!selectedOptions[optionKey]) return true;
-              return parseVariantOptions(variant)[optionKey] === selectedOptions[optionKey];
-            }),
-      ) || product.variants.find((variant: any) => parseVariantOptions(variant)[key] === value)
-    );
+    if (next[key]) {
+      const match = getVariantForOption(key, next[key]);
+      if (match) setSelectedVariant(match);
+      return;
+    }
+
+    const leftover = Object.entries(next);
+    if (!leftover.length) {
+      setSelectedVariant(null);
+      return;
+    }
+    const [fallbackKey, fallbackValue] = leftover[leftover.length - 1];
+    setSelectedVariant(getVariantForOption(fallbackKey, fallbackValue) || null);
   };
 
   const renderVariantCard = (
@@ -380,7 +343,6 @@ export default function ProductClient({
     label: string,
     selected: boolean,
     onSelect: () => void,
-    available = true,
   ) => {
     const image = getVariantImages(variant)[0] || extractImageUrls(product.images)[0];
     const price = Number(variant?.price ?? product.price);
@@ -388,17 +350,16 @@ export default function ProductClient({
       parseVariantOptions(variant).compareAtPrice ?? product.compareAtPrice ?? 0,
     );
     const showCompareAtPrice = compareAtPrice > price;
+    const unavailable = isVariantUnavailable(variant);
 
     return (
       <button
         key={variant?.id || label}
         type="button"
-        className={`product-page__variant-card ${selected ? "active" : ""} ${available ? "" : "is-unavailable"}`}
-        onClick={available ? onSelect : undefined}
-        disabled={!available}
+        className={`product-page__variant-card ${selected ? "active" : ""} ${unavailable ? "is-unavailable" : ""}`}
+        onClick={onSelect}
         aria-pressed={selected}
-        aria-disabled={!available}
-        title={available ? label : `${label} is not available with the current selection`}
+        title={unavailable ? `${label} is out of stock` : label}
       >
         <span className="product-page__variant-card-image">
           {image ? <img src={image} alt="" loading="lazy" /> : <span>{label.slice(0, 1)}</span>}
@@ -420,8 +381,31 @@ export default function ProductClient({
     ) ?? false;
   const optionLabel = isSizeVariant ? "Size" : "Option";
 
-  const stockLeft = availableStock(product, selectedVariant);
-  const outOfStock = isOutOfStock(product, selectedVariant);
+  const pickedVariants = customOptionKeys
+    .map((key) => {
+      const value = pickedOptions[key];
+      return value ? getVariantForOption(key, value) : null;
+    })
+    .filter(Boolean);
+  const pickedOutOfStock = pickedVariants.some((variant: any) => isVariantUnavailable(variant));
+  const stockLeft = pickedOutOfStock ? 0 : availableStock(product, selectedVariant);
+  const outOfStock = Boolean(selectedVariant) && (pickedOutOfStock || isOutOfStock(product, selectedVariant));
+  const requiredTypeKeys = customOptionKeys.filter(isRequiredOptionType);
+  const missingRequiredKeys = requiredTypeKeys.filter((key) => !pickedOptions[key]);
+  const needsRequiredTypes = missingRequiredKeys.length > 0;
+  const needsVariant =
+    Boolean(product.variants?.length) &&
+    (needsRequiredTypes || (requiredTypeKeys.length === 0 && !selectedVariant));
+  const purchaseBlocked = outOfStock || needsVariant;
+  const variantPrompt = (() => {
+    if (!needsVariant) return "";
+    const missingColor = missingRequiredKeys.some(isImageOptionType);
+    const missingSize = missingRequiredKeys.some((key) => /size/i.test(key));
+    if (missingColor && missingSize) return "Select color and size";
+    if (missingColor) return "Select a color";
+    if (missingSize) return "Select a size";
+    return "Select a variant";
+  })();
 
   useEffect(() => {
     if (outOfStock) {
@@ -432,7 +416,7 @@ export default function ProductClient({
   }, [outOfStock, stockLeft]);
 
   const handleAddToCart = () => {
-    if (outOfStock) return;
+    if (purchaseBlocked) return;
     const variantSelection = selectedVariant
       ? customOptionKeys.length > 0
         ? Object.fromEntries(
@@ -461,7 +445,7 @@ export default function ProductClient({
   };
 
   const handleBuyNow = () => {
-    if (outOfStock) return;
+    if (purchaseBlocked) return;
     const variantSelection = selectedVariant
       ? customOptionKeys.length > 0
         ? Object.fromEntries(
@@ -701,24 +685,44 @@ export default function ProductClient({
                     <div key={key} className="product-page__variant-group">
                       <label>
                         {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
-                        <strong>{String(selectedOptions[key] ?? "")}</strong>
+                        <strong>{String(pickedOptions[key] ?? "")}</strong>
                       </label>
-                      <VariantCardScroller>
-                        {getOptionValues(key).map((value: string) => {
-                          const optionVariant = getVariantForOption(key, value);
-                          const selected = selectedOptions[key] === value;
-                          const available = isOptionAvailable(key, value);
-                          return optionVariant
-                            ? renderVariantCard(
-                                optionVariant,
-                                value,
-                                selected,
-                                () => handleOptionChange(key, value),
-                                available,
-                              )
-                            : null;
-                        })}
-                      </VariantCardScroller>
+                      {isImageOptionType(key) ? (
+                        <VariantCardScroller>
+                          {getOptionValues(key).map((value: string) => {
+                            const optionVariant = getVariantForOption(key, value);
+                            return optionVariant
+                              ? renderVariantCard(
+                                  optionVariant,
+                                  value,
+                                  pickedOptions[key] === value,
+                                  () => handleOptionChange(key, value),
+                                )
+                              : null;
+                          })}
+                        </VariantCardScroller>
+                      ) : (
+                        <div className="product-page__variant-options product-page__variant-options--rects">
+                          {getOptionValues(key).map((value: string) => {
+                            const optionVariant = getVariantForOption(key, value);
+                            const unavailable = optionVariant
+                              ? isVariantUnavailable(optionVariant)
+                              : true;
+                            return (
+                              <button
+                                key={value}
+                                type="button"
+                                className={`product-page__variant-btn ${pickedOptions[key] === value ? "active" : ""} ${unavailable ? "is-unavailable" : ""}`}
+                                onClick={() => handleOptionChange(key, value)}
+                                aria-pressed={pickedOptions[key] === value}
+                                title={unavailable ? `${value} is out of stock` : value}
+                              >
+                                {value}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -732,7 +736,10 @@ export default function ProductClient({
                           v,
                           v.name,
                           selectedVariant?.id === v.id,
-                          () => setSelectedVariant(v),
+                          () =>
+                            setSelectedVariant((prev: any) =>
+                              prev?.id === v.id ? null : v,
+                            ),
                         ),
                       )}
                     </VariantCardScroller>
@@ -740,9 +747,7 @@ export default function ProductClient({
                 )}
                 {selectedVariant && (
                   <p className="product-page__variant-stock">
-                    {selectedVariant.stock > 0
-                      ? `${selectedVariant.stock} in stock`
-                      : "Out of stock"}
+                    {outOfStock ? "Out of stock" : `${stockLeft} in stock`}
                   </p>
                 )}
               </div>
@@ -773,7 +778,7 @@ export default function ProductClient({
               <button
                 className="product-page__add-cart"
                 onClick={handleAddToCart}
-                disabled={outOfStock}
+                disabled={purchaseBlocked}
               >
                 <ShoppingBag size={16} />
                 {addedToCart ? "Added!" : "Add to Cart"}
@@ -781,7 +786,7 @@ export default function ProductClient({
               <button
                 className="product-page__buy-now"
                 onClick={handleBuyNow}
-                disabled={outOfStock}
+                disabled={purchaseBlocked}
               >
                 <span>Buy Now</span>
                 <img
@@ -791,7 +796,9 @@ export default function ProductClient({
                 />
               </button>
             </div>
-            {outOfStock ? (
+            {needsVariant ? (
+              <p className="product-page__out-of-stock">{variantPrompt}</p>
+            ) : outOfStock ? (
               <p className="product-page__out-of-stock">This is out of stock</p>
             ) : null}
 
