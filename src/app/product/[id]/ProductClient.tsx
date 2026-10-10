@@ -810,6 +810,7 @@ export default function ProductClient({
                   name: product.name,
                   price: displayPrice,
                   images: galleryImages.length ? galleryImages : product.images,
+                  variants: product.variants,
                 })
               }
             >
@@ -982,6 +983,7 @@ export default function ProductClient({
                 <TestimonialsSection
                   testimonials={testimonials.testimonials}
                   title={testimonials.title || ""}
+                  displayType={(testimonials as any).displayType}
                 />
               </div>
             </div>

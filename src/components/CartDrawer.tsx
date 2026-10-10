@@ -70,7 +70,7 @@ export default function CartDrawer() {
           ) : (
             <ul className="cart-drawer__items">
               {cartItems.map((item) => (
-                <li key={`${item.id}-${JSON.stringify(item.variants || {})}`} className="cart-item">
+                <li key={`${item.id}-${item.variantId || JSON.stringify(item.variants || {})}`} className="cart-item">
                   <div className="cart-item__image">
                     <img
                       src={item.images?.[0] || 'https://via.placeholder.com/80'}
@@ -100,14 +100,14 @@ export default function CartDrawer() {
                     {item.variants && Object.keys(item.variants).length > 0 && (
                       <p className="cart-item__variants">
                         {Object.entries(item.variants).map(([key, value]) => (
-                          <span key={key}>{value}</span>
+                          <span key={key}>{key}: {value}</span>
                         ))}
                       </p>
                     )}
                     <div className="cart-item__bottom">
                       <div className="cart-item__quantity">
                         <button
-                          onClick={() => updateQuantity(item.id, item.variants, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.id, item.variants, item.quantity - 1, item.variantId)}
                           disabled={item.quantity <= 1}
                           aria-label="Decrease quantity"
                         >
@@ -115,7 +115,7 @@ export default function CartDrawer() {
                         </button>
                         <span>{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.variants, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.id, item.variants, item.quantity + 1, item.variantId)}
                           aria-label="Increase quantity"
                         >
                           <Plus size={14} />
@@ -126,7 +126,7 @@ export default function CartDrawer() {
                   </div>
                   <button
                     className="cart-item__remove"
-                    onClick={() => removeFromCart(item.id, item.variants)}
+                    onClick={() => removeFromCart(item.id, item.variants, item.variantId)}
                     aria-label="Remove item"
                   >
                     <X size={16} />

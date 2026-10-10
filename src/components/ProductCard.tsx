@@ -6,6 +6,7 @@ import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
 import { isVideoUrl, videoMimeType } from '@/lib/media-type';
 import { isOutOfStock } from '@/lib/stock';
+import type { StorefrontVariant } from '@/lib/product-variants';
 import './ProductCard.css';
 
 interface Product {
@@ -19,7 +20,7 @@ interface Product {
   averageRating?: number;
   reviewCount?: number;
   stock?: number;
-  variants?: { stock?: number }[];
+  variants?: StorefrontVariant[];
 }
 
 interface ProductCardProps {
@@ -34,7 +35,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  const { addToCart } = useCart();
+  const { addToCart, openVariantPicker } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const liked = isInWishlist(product.id);
 
@@ -123,6 +124,10 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     e.preventDefault();
     e.stopPropagation();
     if (outOfStock) return;
+    if (product.variants?.length) {
+      openVariantPicker(product);
+      return;
+    }
     addToCart({
       id: product.id,
       name: product.name,
@@ -140,6 +145,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       name: product.name,
       price: product.price,
       images: product.images,
+      variants: product.variants,
     });
   };
 
