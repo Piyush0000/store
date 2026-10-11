@@ -6,18 +6,19 @@ import dynamic from "next/dynamic";
 import {
   ShoppingBag,
   CheckCircle2,
+  Check,
   Truck,
-  Phone,
   ShieldCheck,
   PhoneCall,
   Lock,
   ChevronDown,
-  ChevronRight,
   Loader2,
-  Banknote,
-  CreditCard,
+  MapPin,
   RefreshCw,
-  ArrowRight,
+  Tag,
+  X,
+  IndianRupee,
+  Award,
 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { useAnalytics } from "@/components/AnalyticsProvider";
@@ -36,7 +37,7 @@ import {
   initiateCashfreePayment,
   verifyCashfreePayment,
 } from "@/actions/payment-actions";
-import { validateCouponAction } from "@/actions/coupon-actions";
+import { validateCouponAction, listPublicCouponsAction } from "@/actions/coupon-actions";
 import { getInitialCheckoutState, type EnabledPaymentMethods } from "@/actions/checkout-actions";
 import OtpStep from "@/components/OtpStep";
 import DetailsForm from "@/components/DetailsForm";
@@ -71,6 +72,7 @@ const IndiaFlag = () => (
 type Step = "identify" | "verify" | "details" | "payment" | "success";
 type OnlineGateway = "PAYU" | "RAZORPAY" | "CASHFREE";
 type PaymentAction = "COD" | OnlineGateway;
+type PaymentUi = "online" | "cod" | null;
 
 const gatewayLabels: Record<OnlineGateway, string> = {
   PAYU: "PayU",
@@ -115,6 +117,7 @@ export default function CheckoutPage() {
     }
     setBuyNowChecked(true);
   }, []);
+
   const [codFee, setCodFee] = useState(0);
   const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(0);
   const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<EnabledPaymentMethods | null>(null);
@@ -149,6 +152,31 @@ export default function CheckoutPage() {
   const [otpChannel, setOtpChannel] = useState<'whatsapp' | 'sms' | null>(null);
   const [otpVerified, setOtpVerified] = useState(false);
 
+  useEffect(() => {
+    document.documentElement.classList.add("store-checkout");
+    document.body.classList.add("store-checkout");
+    return () => {
+      document.documentElement.classList.remove("store-checkout");
+      document.body.classList.remove("store-checkout");
+      document.body.classList.remove("store-checkout-payment");
+      document.body.classList.remove("store-checkout-otp");
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle("store-checkout-payment", step === "payment");
+    document.body.classList.toggle("store-checkout-otp", isOtpModalOpen);
+  }, [step, isOtpModalOpen]);
+
+  const [successNotice, setSuccessNotice] = useState(false);
+
+  useEffect(() => {
+    if (step !== "success") return;
+    setSuccessNotice(true);
+    const timer = window.setTimeout(() => setSuccessNotice(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [step]);
+
   const [customerFirstName, setCustomerFirstName] = useState("");
   const [customerLastName, setCustomerLastName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -167,6 +195,7 @@ export default function CheckoutPage() {
   });
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentAction | null>(null);
+  const [paymentUi, setPaymentUi] = useState<PaymentUi>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [cartSessionId, setCartSessionId] = useState<string | null>(null);
@@ -186,6 +215,8 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [availableOffers, setAvailableOffers] = useState<any[]>([]);
+  const [offersOpen, setOffersOpen] = useState(false);
 
   const subtotal = useMemo(
     () => cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0),
@@ -243,6 +274,7 @@ export default function CheckoutPage() {
       if (result.success && result.coupon) {
         setAppliedCoupon(result.coupon);
         setDiscountAmount(result.discount || 0);
+        setOffersOpen(false);
       } else {
         setCouponError(result.message || "Invalid coupon code");
       }
@@ -259,6 +291,42 @@ export default function CheckoutPage() {
     setCouponInput("");
     setCouponError(null);
   }, []);
+
+  useEffect(() => {
+    if (step !== "payment") return;
+    let cancelled = false;
+    listPublicCouponsAction()
+      .then((result) => {
+        if (!cancelled) setAvailableOffers(result.coupons || []);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableOffers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [step]);
+
+  const applyOfferCode = useCallback(async (code: string) => {
+    if (!code.trim()) return;
+    setCouponInput(code.toUpperCase());
+    setIsApplyingCoupon(true);
+    setCouponError(null);
+    try {
+      const result = await validateCouponAction(code, subtotal);
+      if (result.success && result.coupon) {
+        setAppliedCoupon(result.coupon);
+        setDiscountAmount(result.discount || 0);
+        setOffersOpen(false);
+      } else {
+        setCouponError(result.message || "Invalid coupon code");
+      }
+    } catch {
+      setCouponError("Failed to validate coupon code. Please try again.");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  }, [subtotal]);
 
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
@@ -296,6 +364,19 @@ export default function CheckoutPage() {
     setPayUData(null);
     launchAttemptedRef.current = false;
   }, [payUData, pendingOrderId]);
+
+  useEffect(() => {
+    if (step !== "payment" || !paymentOptionsReady || paymentUi) return;
+    if (onlineEnabled && onlineGateway) {
+      setPaymentUi("online");
+      setPaymentMethod(onlineGateway);
+      return;
+    }
+    if (codEnabled) {
+      setPaymentUi("cod");
+      setPaymentMethod("COD");
+    }
+  }, [step, paymentOptionsReady, paymentUi, onlineEnabled, onlineGateway, codEnabled]);
 
   // Initialize device ID, fetch initial checkout data, and set step in single pass
   const sessionChecked = useRef(false);
@@ -350,7 +431,8 @@ export default function CheckoutPage() {
               setSelectedAddress(defaultAddr);
             }
           }
-          setStep(initialState.initialStep);
+          const isBuyNow = new URLSearchParams(window.location.search).get("buyNow") === "true";
+          setStep(isBuyNow ? "identify" : initialState.initialStep);
         } else {
           setStep("identify");
         }
@@ -1282,6 +1364,28 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleProceedToPay = () => {
+    if (paymentUi === "cod") {
+      handleFinalOrderClick("COD");
+      return;
+    }
+    if (onlineGateway && paymentUi === "online") {
+      handleFinalOrderClick(onlineGateway);
+      return;
+    }
+    setError("Select a payment method to continue.");
+  };
+
+  const selectPaymentUi = (ui: Exclude<PaymentUi, null>) => {
+    setPaymentUi(ui);
+    setError(null);
+    if (ui === "cod") {
+      setPaymentMethod("COD");
+      return;
+    }
+    if (onlineGateway) setPaymentMethod(onlineGateway);
+  };
+
   const handleFinalOtpVerify = async () => {
     const otpCode = otp.join('');
     if (!otpCode || otpCode.length !== 4) {
@@ -1320,6 +1424,10 @@ export default function CheckoutPage() {
     const isStepPayment = step === 'payment';
     return (
       <section className="checkout__section checkout__section--new-address">
+        <div className="checkout__address-intro">
+          <h2>Delivery Address</h2>
+          <p>Where should we send this order?</p>
+        </div>
         <div className="checkout__new-address-form">
           <div className="checkout__new-field">
             <input
@@ -1403,8 +1511,9 @@ export default function CheckoutPage() {
 
         <div className="checkout__mobile-sticky-bottom">
           <button className="checkout__continue-btn" onClick={handleContinueToPayment} disabled={isLoading}>
-            {isLoading ? <Loader2 className="animate-spin" size={18} /> : isStepPayment ? 'CONFIRM DETAILS' : 'CONTINUE TO PAYMENT'} <ChevronRight size={18} />
+            {isLoading ? <Loader2 className="animate-spin" size={18} /> : isStepPayment ? 'Confirm details' : 'Continue'}
           </button>
+          <p className="checkout__legal">By proceeding, I agree to T&amp;C &amp; Privacy Policy</p>
 
           <div className="checkout__powered-by-wrapper">
             <div className="checkout__powered-by">
@@ -1419,41 +1528,37 @@ export default function CheckoutPage() {
 
   const renderDeliveryCapsule = () => {
     if (!selectedAddress) return null;
-    const tagLabel = selectedAddress.type || 'HOME';
+    const addressLine = [
+      selectedAddress.flatHouse,
+      selectedAddress.areaStreet,
+      selectedAddress.city,
+      selectedAddress.state,
+      selectedAddress.pincode,
+    ].filter(Boolean).join(", ");
+    const displayName = `${customerFirstName} ${customerLastName}`.trim();
+    const displayPhone = phone ? `+91 ${phone.slice(0, 5)} ${phone.slice(5)}` : "";
 
     return (
-      <div className="checkout__delivery-capsule">
-        <div className="checkout__delivery-capsule-header">
-          <span className="checkout__delivery-capsule-title">Delivery details</span>
-          <button
-            type="button"
-            className="checkout__delivery-capsule-change"
-            onClick={() => setIsEditingDetails(true)}
-          >
+      <>
+        <div className="checkout__addr-head">
+          <h2>Your Address</h2>
+          <button type="button" onClick={() => setIsEditingDetails(true)}>
             Change
           </button>
         </div>
-        <div className="checkout__delivery-capsule-content">
-          <div className="checkout__delivery-capsule-name-row">
-            <span className="checkout__delivery-capsule-name">
-              {customerFirstName} {customerLastName}
-            </span>
-            <span className="checkout__delivery-capsule-tag">
-              {tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1).toLowerCase()}
-            </span>
-          </div>
-          <p className="checkout__delivery-capsule-address">
-            {selectedAddress.flatHouse}, {selectedAddress.areaStreet}, {selectedAddress.city}, {selectedAddress.state}
-          </p>
-          <p className="checkout__delivery-capsule-pincode">
-            {selectedAddress.pincode}
-          </p>
-          <div className="checkout__delivery-capsule-phone">
-            <Phone size={14} className="checkout__delivery-capsule-phone-icon" />
-            <span>{phone}</span>
+        <div className="checkout__addr-card">
+          <MapPin size={16} strokeWidth={2} />
+          <div className="checkout__addr-copy">
+            {displayName && <p className="checkout__addr-name">{displayName}</p>}
+            {displayPhone && <p className="checkout__addr-phone">{displayPhone}</p>}
+            <p className="checkout__addr-line">{addressLine}</p>
           </div>
         </div>
-      </div>
+        <div className="checkout__addr-eta">
+          <Truck size={15} strokeWidth={2} />
+          <span>{effectiveShippingFee === 0 ? "Free delivery in 3–6 days" : "Deliver in 3–6 days"}</span>
+        </div>
+      </>
     );
   };
 
@@ -1481,8 +1586,28 @@ export default function CheckoutPage() {
     );
   }
 
+  const loginDone = isStepActive(step, "details");
+  const addressDone = step === "payment" || step === "success";
+  const loginCurrent = step === "identify" || step === "verify";
+  const addressCurrent = step === "details";
+  const paymentCurrent = step === "payment" || step === "success";
+  const payableTotal = Math.max(
+    0,
+    displaySubtotal +
+      effectiveShippingFee +
+      (paymentUi === "cod" ? codFee : 0) -
+      displayDiscountTotal,
+  );
+  const onlineSaveAmount = Math.round(displaySubtotal * (onlineDiscountPercent / 100));
+  const offerCount = availableOffers.length + (onlineSaveAmount > 0 ? 1 : 0);
+
   return (
-    <div className="checkout">
+    <div className={`checkout${step === "details" || step === "payment" || step === "success" ? " checkout--clean" : ""}${step === "details" ? " checkout--details" : ""}${step === "payment" ? " checkout--payment" : ""}`}>
+      {successNotice && (
+        <div className="checkout__success-banner" role="status">
+          Order placed successfully
+        </div>
+      )}
       <link
         rel="preload"
         href="/otp-illustration.webp"
@@ -1492,26 +1617,24 @@ export default function CheckoutPage() {
       />
       <h1 className="checkout__title">Checkout</h1>
 
-      <div className="checkout__steps">
-        <div className={`checkout__step ${isStepActive(step, 'identify') ? 'active' : ''}`}>
-          <span className="checkout__step-content">
-            <span className="checkout__step-num">1.</span>
-            <span className="checkout__step-label">Login</span>
-          </span>
+      {(step === "details" || step === "payment" || step === "success") && (
+      <div className="checkout__progress" aria-label="Checkout progress">
+        <div className={`checkout__progress-item ${loginDone ? "is-done" : ""} ${loginCurrent ? "is-current" : ""}`}>
+          <span className="checkout__progress-dot">{loginDone ? <Check size={14} strokeWidth={2.5} /> : "1"}</span>
+          <span className="checkout__progress-label">Login</span>
         </div>
-        <div className={`checkout__step ${isStepActive(step, 'details') ? 'active' : ''}`}>
-          <span className="checkout__step-content">
-            <span className="checkout__step-num">2.</span>
-            <span className="checkout__step-label">Shipping</span>
-          </span>
+        <div className={`checkout__progress-line ${loginDone ? "is-done" : ""}`} />
+        <div className={`checkout__progress-item ${addressDone ? "is-done" : ""} ${addressCurrent ? "is-current" : ""}`}>
+          <span className="checkout__progress-dot">{addressDone ? <Check size={14} strokeWidth={2.5} /> : "2"}</span>
+          <span className="checkout__progress-label">Address</span>
         </div>
-        <div className={`checkout__step ${isStepActive(step, 'payment') ? 'active' : ''}`}>
-          <span className="checkout__step-content">
-            <span className="checkout__step-num">3.</span>
-            <span className="checkout__step-label">Payment</span>
-          </span>
+        <div className={`checkout__progress-line ${addressDone ? "is-done" : ""}`} />
+        <div className={`checkout__progress-item ${paymentCurrent ? "is-current" : ""} ${step === "success" ? "is-done" : ""}`}>
+          <span className="checkout__progress-dot">{step === "success" ? <Check size={14} strokeWidth={2.5} /> : "3"}</span>
+          <span className="checkout__progress-label">Payment</span>
         </div>
       </div>
+      )}
 
       <div className="checkout__layout">
         <div className="checkout__form">
@@ -1584,7 +1707,7 @@ export default function CheckoutPage() {
               {error && <span className="checkout__error" style={{ marginTop: '-16px', marginBottom: '16px' }}>{error}</span>}
 
               <button className="checkout__send-otp-btn" onClick={handleIdentifySubmit} disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'CONTINUE TO SHIPPING'} <ArrowRight size={18} />
+                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Continue'}
               </button>
               <div className="checkout__powered-by-wrapper" style={{ marginTop: '20px' }}>
                 <div className="checkout__powered-by">
@@ -1632,7 +1755,7 @@ export default function CheckoutPage() {
               </div>
 
               <button className="checkout__send-otp-btn" onClick={handleVerifyOtp} disabled={isLoading || otp.join('').length !== 4}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'VERIFY & CONTINUE'} <ArrowRight size={18} />
+                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Verify & continue'}
               </button>
               <div className="checkout__powered-by-wrapper" style={{ marginTop: '20px' }}>
                 <div className="checkout__powered-by">
@@ -1646,154 +1769,233 @@ export default function CheckoutPage() {
           {step === 'details' && renderDetailsForm()}
 
           {step === "payment" && (
-            <>
-              {isEditingDetails ? renderDetailsForm() : renderDeliveryCapsule()}
+            <div className="checkout__pay-sheet">
+              <div className="checkout__pay-group">
+                {isEditingDetails ? renderDetailsForm() : renderDeliveryCapsule()}
+              </div>
 
-              <section className="checkout__section" style={{ marginTop: isEditingDetails ? '24px' : '0' }}>
-                <div className="checkout__step-header">
-                  <h2>PAYMENT METHOD</h2>
-                </div>
-                <p className="checkout__step-desc">Select your preferred way to pay</p>
-                {error && paymentMethod === null && (
-                  <span className="checkout__error" style={{ display: 'block', marginBottom: '12px' }}>{error}</span>
-                )}
+              <button type="button" className="checkout__offers-tab" onClick={() => setOffersOpen(true)}>
+                <Tag size={18} />
+                <span className="checkout__offers-tab-copy">
+                  <strong>
+                    {appliedCoupon
+                      ? `${appliedCoupon.code} applied`
+                      : onlineSaveAmount > 0
+                        ? `Save up to ₹${onlineSaveAmount.toLocaleString("en-IN")}`
+                        : "Offers for you"}
+                  </strong>
+                  <em>
+                    {appliedCoupon
+                      ? `You save ₹${discountAmount.toLocaleString("en-IN")}`
+                      : `${offerCount} offer${offerCount === 1 ? "" : "s"} available`}
+                  </em>
+                </span>
+                <span className="checkout__offers-tab-cta">OFFERS</span>
+              </button>
 
-                {paymentMethod === null && !paymentOptionsReady && (
-                  <p className="checkout__step-desc">Loading payment methods...</p>
-                )}
+              <div className="checkout__pay-group">
+              <div className="checkout__pay-head">
+                <h2>Payment Method</h2>
+                <span className="checkout__pay-safe"><ShieldCheck size={13} /> 100% SAFE PAYMENTS</span>
+              </div>
 
-                {paymentMethod === null && paymentOptionsReady && !codEnabled && !onlineEnabled && (
-                  <p className="checkout__step-desc">
-                    No payment methods are available right now. Please contact the store.
-                  </p>
-                )}
+              {!paymentOptionsReady && (
+                <p className="checkout__pay-empty">Loading payment methods...</p>
+              )}
 
-                {paymentMethod === null && paymentOptionsReady && (codEnabled || onlineEnabled) && (
-                  <div className="checkout__payment-options">
-                    {codEnabled && (
-                    <div className="checkout__payment-card" onClick={() => handleFinalOrderClick('COD')}>
-                      <div className="checkout__payment-header">
-                        <div className="checkout__payment-info-left">
-                          <div className="checkout__payment-icon">
-                            <Banknote size={24} />
-                          </div>
-                          <div>
-                            <p className="checkout__payment-title">Cash on Delivery</p>
-                            {codFee > 0 && (
-                              <p className="checkout__payment-note">+ Rs. {codFee} fee</p>
-                            )}
-                          </div>
-                        </div>
-                        <button className="checkout__payment-select-btn" type="button">
-                          Select <ChevronRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    )}
+              {paymentOptionsReady && !codEnabled && !onlineEnabled && (
+                <p className="checkout__pay-empty">
+                  No payment methods are available right now. Please contact the store.
+                </p>
+              )}
 
-                    {onlineGateway && (
-                    <div
-                      className="checkout__payment-card"
-                      onClick={() => {
-                        setPaymentMethod(onlineGateway);
-                        setError(null);
-                      }}
-                    >
-                      <div className="checkout__payment-header">
-                        <div className="checkout__payment-info-left">
-                          <div className="checkout__payment-icon">
-                            <CreditCard size={24} />
-                          </div>
-                          <div>
-                            <p className="checkout__payment-title">Online Payment</p>
-                            <p className="checkout__payment-note">
-                              {onlineGateway ? `Secure checkout with ${gatewayLabels[onlineGateway]}` : "Currently unavailable"}
-                            </p>
-                            <img
-                              className="checkout__payment-logos"
-                              src="/upi-icons.png"
-                              alt="Google Pay, PhonePe, Paytm and UPI"
-                            />
-                            {onlineDiscountPercent > 0 && (
-                              <p className="checkout__payment-note" style={{ color: '#16a34a', fontWeight: 600 }}>
-                                🎉 {onlineDiscountPercent}% off
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <button className="checkout__payment-select-btn" type="button">
-                          Select <ChevronRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    )}
-                  </div>
-                )}
+              {onlineEnabled && (
+                <button
+                  type="button"
+                  className={`checkout__pay-row ${paymentUi === "online" ? "is-active" : ""}`}
+                  onClick={() => selectPaymentUi("online")}
+                >
+                  <span className="checkout__pay-radio" aria-hidden />
+                  <span className="checkout__pay-row-body">
+                    <span className="checkout__pay-row-top">
+                      <span className="checkout__pay-row-title">Online Payment</span>
+                      {onlineSaveAmount > 0 && (
+                        <span className="checkout__pay-save">
+                          {onlineDiscountPercent}% off up to ₹{onlineSaveAmount.toLocaleString("en-IN")}
+                        </span>
+                      )}
+                    </span>
+                    <span className="checkout__pay-inline">
+                      <span className="checkout__pay-logos" aria-hidden>
+                        <img src="/UPI.svg" alt="" />
+                        <img src="/PhonePe.svg" alt="" />
+                        <img src="/RuPay.svg" alt="" />
+                      </span>
+                      <span className="checkout__pay-sub">
+                        {onlineGateway ? `UPI, cards & more via ${gatewayLabels[onlineGateway]}` : "UPI, cards & more"}
+                      </span>
+                    </span>
+                  </span>
+                </button>
+              )}
 
-                {paymentMethod === 'COD' && codEnabled && (
-                  <div className="checkout__payment-inline-wrapper">
-                    <div className="checkout__payment-confirm">
-                      <div className="checkout__cod-info">
-                        <p>Pay with cash when your order arrives.</p>
-                      </div>
-                      {error && <span className="checkout__error">{error}</span>}
-                      {error && (error.includes('Unable to verify') || error.includes('stock')) ? (
-                        <div className="checkout__payment-actions">
-                          <Link href="/catalogue" className="checkout__btn-secondary">
-                            Go Back to Shop
-                          </Link>
-                          <button className="checkout__btn-secondary" onClick={() => { setPaymentMethod(null); setError(null); }}>
-                            Choose Different Payment
-                          </button>
-                        </div>
+              {codEnabled && (
+                <button
+                  type="button"
+                  className={`checkout__pay-row ${paymentUi === "cod" ? "is-active" : ""}`}
+                  onClick={() => selectPaymentUi("cod")}
+                >
+                  <span className="checkout__pay-radio" aria-hidden />
+                  <span className="checkout__pay-row-body">
+                    <span className="checkout__pay-row-title">Cash on Delivery</span>
+                    <span className="checkout__pay-sub">
+                      {codFee > 0 ? `Pay when you receive · + ₹${codFee} fee` : "Pay when you receive"}
+                    </span>
+                  </span>
+                </button>
+              )}
+              </div>
+
+              {error && (
+                <span className="checkout__error" style={{ display: "block" }}>{error}</span>
+              )}
+              {error && (error.includes("Unable to verify") || error.includes("stock")) && (
+                <Link href="/catalogue" className="checkout__btn-secondary">
+                  Go Back to Shop
+                </Link>
+              )}
+
+              <div className="checkout__product-summary">
+                <h3>Product Summary</h3>
+                <div className="checkout__product-summary-list">
+                  {cartItems.map((item) => (
+                    <div key={`${item.id}-${JSON.stringify(item.variants || {})}`} className="checkout__product-summary-item">
+                      {item.images?.[0] || item.image ? (
+                        <img src={item.images?.[0] || item.image} alt={item.name} />
                       ) : (
-                        <div className="checkout__payment-actions">
-                          <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
-                          <button className="checkout__place-order-btn" onClick={() => handleFinalOrderClick('COD')} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="animate-spin" size={18} /> : `CONFIRM ORDER - ₹${(displaySubtotal + codFee - displayDiscountTotal).toLocaleString()}`}
-                          </button>
+                        <ShoppingBag size={16} />
+                      )}
+                      <div>
+                        <p>{item.name}</p>
+                        <span>{item.quantity} × ₹{item.price.toLocaleString("en-IN")}</span>
+                      </div>
+                      <strong>₹{(item.price * item.quantity).toLocaleString("en-IN")}</strong>
+                    </div>
+                  ))}
+                </div>
+                <div className="checkout__product-summary-rows">
+                  <div><span>Subtotal</span><span>₹{displaySubtotal.toLocaleString("en-IN")}</span></div>
+                  {displayDiscountTotal > 0 && (
+                    <div className="is-green"><span>Discount</span><span>-₹{displayDiscountTotal.toLocaleString("en-IN")}</span></div>
+                  )}
+                  {paymentUi === "cod" && codFee > 0 && (
+                    <div><span>COD Fee</span><span>₹{codFee}</span></div>
+                  )}
+                  <div className={effectiveShippingFee === 0 ? "is-green" : ""}>
+                    <span>Shipping</span>
+                    <span>{effectiveShippingFee === 0 ? "FREE" : `₹${effectiveShippingFee}`}</span>
+                  </div>
+                  <div className="is-total"><span>Total</span><span>₹{payableTotal.toLocaleString("en-IN")}</span></div>
+                </div>
+              </div>
+
+              <div className="checkout__trust">
+                <div className="checkout__trust-item">
+                  <span className="checkout__trust-icon"><IndianRupee size={18} /></span>
+                  <strong>Lowest Price</strong>
+                  <small>Best value, always</small>
+                </div>
+                <div className="checkout__trust-item">
+                  <span className="checkout__trust-icon"><Truck size={18} /></span>
+                  <strong>Next day dispatch</strong>
+                  <small>Faster than expected</small>
+                </div>
+                <div className="checkout__trust-item">
+                  <span className="checkout__trust-icon checkout__trust-icon--badge"><Award size={18} /></span>
+                  <strong>Superior Quality</strong>
+                  <small>Built to last</small>
+                </div>
+              </div>
+
+              <div className="checkout__pay-group">
+                <button
+                  type="button"
+                  className="checkout__pay-proceed"
+                  onClick={handleProceedToPay}
+                  disabled={isLoading || !paymentUi}
+                >
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : "Confirm Order"}
+                </button>
+                <div className="checkout__pay-meta">
+                  <span><Lock size={12} /> Secure &amp; Encrypted</span>
+                  <div className="checkout__powered-by">
+                    <span>Powered by</span>
+                    <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+                  </div>
+                </div>
+              </div>
+
+              {offersOpen && (
+                <div className="checkout__offers-overlay" onClick={(e) => { if (e.target === e.currentTarget) setOffersOpen(false); }}>
+                  <div className="checkout__offers-modal" role="dialog" aria-label="Offers">
+                    <div className="checkout__offers-modal-head">
+                      <h3>Offers</h3>
+                      <button type="button" onClick={() => setOffersOpen(false)} aria-label="Close offers"><X size={18} /></button>
+                    </div>
+                    <div className="checkout__offers-modal-body">
+                      {onlineSaveAmount > 0 && (
+                        <div className="checkout__offer-card">
+                          <div>
+                            <strong>{onlineDiscountPercent}% off on online payment</strong>
+                            <span>Save up to ₹{onlineSaveAmount.toLocaleString("en-IN")} when you pay online</span>
+                          </div>
                         </div>
                       )}
-                    </div>
-                    <div className="checkout__powered-by-wrapper" style={{ marginTop: '24px' }}>
-                      <div className="checkout__powered-by">
-                        <span>Powered by</span>
-                        <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod && paymentMethod !== 'COD' && !payUData && (
-                  <div className="checkout__payment-inline-wrapper">
-                    <div className="checkout__payment-confirm">
-                      <div className="checkout__online-info">
-                        <p>Pay securely via {gatewayLabels[paymentMethod]}.</p>
-                        <p className="checkout__secure-badge">🔒 256-bit SSL Encrypted</p>
-                        {onlineDiscountPercent > 0 && (
-                          <p className="checkout__coupon-success">
-                            🎉 {onlineDiscountPercent}% off applied for online payment!
-                          </p>
+                      {availableOffers.map((offer) => {
+                        const title = offer.title || (offer.type === "PERCENTAGE" ? `${offer.value}% OFF` : offer.type === "FLAT" ? `₹${offer.value} OFF` : offer.code);
+                        const applied = appliedCoupon?.code === offer.code;
+                        return (
+                          <div key={offer.id || offer.code} className="checkout__offer-card">
+                            <div>
+                              <strong>{title}</strong>
+                              <span>{offer.code ? `Code ${offer.code}` : "Merchant offer"}</span>
+                            </div>
+                            {offer.code && (
+                              <button type="button" disabled={applied || isApplyingCoupon} onClick={() => applyOfferCode(offer.code)}>
+                                {applied ? "Applied" : "Apply"}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {availableOffers.length === 0 && onlineSaveAmount <= 0 && (
+                        <p className="checkout__pay-empty">No offers available right now.</p>
+                      )}
+                      <div className="checkout__offers-apply">
+                        <input
+                          type="text"
+                          placeholder="Enter coupon code"
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value.toUpperCase());
+                            setCouponError(null);
+                          }}
+                          disabled={isApplyingCoupon || appliedCoupon !== null}
+                        />
+                        {appliedCoupon ? (
+                          <button type="button" onClick={handleRemoveCoupon}>Remove</button>
+                        ) : (
+                          <button type="button" onClick={handleApplyCoupon} disabled={isApplyingCoupon || !couponInput.trim()}>
+                            {isApplyingCoupon ? <Loader2 className="animate-spin" size={14} /> : "Apply"}
+                          </button>
                         )}
                       </div>
-                      {error && <span className="checkout__error">{error}</span>}
-                      <div className="checkout__payment-actions">
-                        <button className="checkout__btn-secondary" onClick={() => setPaymentMethod(null)}>Choose Different Payment</button>
-                        <button className="checkout__place-order-btn checkout__place-order-btn--online" onClick={() => handleFinalOrderClick(paymentMethod)} disabled={isLoading}>
-                          {isLoading ? <Loader2 className="animate-spin" size={18} /> : `PAY NOW - ₹${Math.max(0, displaySubtotal + effectiveShippingFee - displayDiscountTotal).toLocaleString()}`}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="checkout__powered-by-wrapper" style={{ marginTop: '24px' }}>
-                      <div className="checkout__powered-by">
-                        <span>Powered by</span>
-                        <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
-                      </div>
+                      {couponError && <p className="checkout__error">{couponError}</p>}
                     </div>
                   </div>
-                )}
-              </section>
-            </>
+                </div>
+              )}
+            </div>
           )}
 
           {isOtpModalOpen && (
@@ -1944,7 +2146,7 @@ export default function CheckoutPage() {
 
         <div className={`checkout__summary ${isSummaryOpen ? 'open' : ''}`}>
           <div className="checkout__summary-header" onClick={() => setIsSummaryOpen(!isSummaryOpen)}>
-            <h2 className="checkout__summary-title">ORDER SUMMARY</h2>
+            <h2 className="checkout__summary-title">Bag</h2>
             <div className="checkout__summary-toggle">
               <span className="checkout__summary-toggle-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) + effectiveShippingFee - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
               <ChevronDown size={20} className="checkout__summary-toggle-icon" />
