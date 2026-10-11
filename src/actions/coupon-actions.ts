@@ -58,29 +58,3 @@ export async function validateCouponAction(code: string, orderTotal: number) {
     return { success: false, message: error.message || 'Failed to validate coupon' };
   }
 }
-
-export async function listPublicCouponsAction() {
-  try {
-    const subdomain = await getServerSubdomain();
-    if (!subdomain) return { success: true, coupons: [] };
-
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
-    let listUrl = '';
-    if (apiBase.includes('/storefront/public')) {
-      listUrl = `${apiBase.replace(/\/+$/, '')}/${encodeURIComponent(subdomain)}/coupons`;
-    } else {
-      const sanitizedBase = apiBase.replace(/\/+$/, '');
-      listUrl = sanitizedBase.endsWith('/api')
-        ? `${sanitizedBase}/storefront/public/${encodeURIComponent(subdomain)}/coupons`
-        : `${sanitizedBase}/api/storefront/public/${encodeURIComponent(subdomain)}/coupons`;
-    }
-
-    const response = await fetch(listUrl, { cache: 'no-store' });
-    const data = await response.json();
-    const coupons = data.data || data.coupons || [];
-    return { success: true, coupons: Array.isArray(coupons) ? coupons : [] };
-  } catch (error: any) {
-    console.error('[listPublicCouponsAction] Error:', error);
-    return { success: true, coupons: [] };
-  }
-}
