@@ -39,7 +39,7 @@
 }
 
 .about__section h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-heading);
   font-size: 28px;
   font-weight: 600;
   color: #1a1a1a;
@@ -48,7 +48,7 @@
 }
 
 .about__section p {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.8;
   color: #666;
@@ -76,7 +76,7 @@
 }
 
 .about__features h3 {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
@@ -105,7 +105,7 @@
 }
 
 .about__contact-item span {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
   color: #888;
@@ -115,7 +115,7 @@
 
 .about__contact-item a,
 .about__contact-item p {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: #1a1a1a;
   text-decoration: none;
@@ -133,7 +133,7 @@
 }
 
 .about__cta h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-heading);
   font-size: 32px;
   color: #1a1a1a;
   margin-bottom: 12px;
@@ -150,7 +150,7 @@
   padding: 14px 36px;
   background: #1a1a1a;
   color: #fff;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
