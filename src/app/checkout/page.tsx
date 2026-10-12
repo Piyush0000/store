@@ -1917,7 +1917,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <div className="checkout__pay-group">
+              <div className="checkout__pay-sticky">
                 <button
                   type="button"
                   className="checkout__pay-proceed"

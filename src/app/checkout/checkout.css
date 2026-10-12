@@ -1,21 +1,21 @@
-@import url("https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap");
-
 /* ── Checkout Page ─────────────────────────────────────── */
 .checkout {
-  --checkout-blue: #0f62fe;
-  --checkout-blue-hover: #0043ce;
-  --checkout-blue-light: #edf5ff;
+  --ck-brand: var(--checkout-accent, var(--gold));
+  --ck-on-brand: var(--on-checkout-accent, var(--on-gold, #fff));
+  --checkout-blue: var(--ck-brand);
+  --checkout-blue-hover: color-mix(in srgb, var(--ck-brand) 82%, #000);
+  --checkout-blue-light: color-mix(in srgb, var(--ck-brand) 14%, #fff);
   --checkout-text-dark: #0f172a;
   --checkout-text-gray: #475569;
   --checkout-text-light: #64748b;
   --checkout-border: #e2e8f0;
-  --checkout-bg: #f8fafc;
+  --checkout-bg: var(--page-background, #f8fafc);
 
   min-height: 100vh;
-  background-color: #f3f6fc;
+  background-color: var(--page-background, #f3f6fc);
   background-image:
-    radial-gradient(circle at 0% 0%, rgba(15, 98, 254, 0.09) 0%, transparent 45%),
-    radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.09) 0%, transparent 45%);
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--ck-brand) 12%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--gold-light, var(--ck-brand)) 12%, transparent) 0%, transparent 45%);
   padding: 60px 24px 80px;
   position: relative;
   overflow: visible;
@@ -279,7 +279,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #edf5ff;
+  background: var(--checkout-blue-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -287,7 +287,7 @@
 }
 
 .checkout__badge-icon {
-  color: #0f62fe;
+  color: var(--checkout-blue);
 }
 
 .checkout__badge-text {
@@ -325,8 +325,8 @@
 }
 
 .checkout__phone-input-container:focus-within {
-  border-color: #0f62fe;
-  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.12);
+  border-color: var(--checkout-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--checkout-blue) 12%, transparent);
 }
 
 .checkout__country-selector {
@@ -389,8 +389,8 @@
   gap: 8px;
   width: 100%;
   height: 56px;
-  background: #0f62fe;
-  color: #fff;
+  background: var(--checkout-blue);
+  color: var(--ck-on-brand);
   border: none;
   border-radius: 12px;
   font-family: var(--font-body);
@@ -400,11 +400,11 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: background 200ms var(--ease-out), transform 160ms var(--ease-out);
-  box-shadow: 0 4px 12px rgba(15, 98, 254, 0.15);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--checkout-blue) 15%, transparent);
 }
 
 .checkout__send-otp-btn:hover:not(:disabled) {
-  background: #0043ce;
+  background: var(--checkout-blue-hover);
 }
 
 .checkout__send-otp-btn:active:not(:disabled) {
@@ -412,7 +412,7 @@
 }
 
 .checkout__send-otp-btn:disabled {
-  background: #a8caff;
+  background: color-mix(in srgb, var(--checkout-blue) 40%, #fff);
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -464,7 +464,7 @@
 .checkout__field input:focus,
 .checkout__field select:focus {
   border-color: var(--checkout-blue);
-  box-shadow: 0 0 0 4px rgba(15, 98, 254, 0.08);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--checkout-blue) 8%, transparent);
 }
 
 .checkout__field input.error,
@@ -514,7 +514,7 @@
 .checkout__otp-digit:focus {
   outline: none;
   border-color: var(--checkout-blue);
-  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.12);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--checkout-blue) 12%, transparent);
 }
 
 .checkout__otp-digit.error {
@@ -556,7 +556,7 @@
   height: 56px;
   margin-top: 32px;
   background: var(--checkout-blue);
-  color: #fff;
+  color: var(--ck-on-brand);
   border: none;
   border-radius: 12px;
   font-family: var(--font-body);
@@ -566,11 +566,11 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: background 200ms var(--ease-out), transform 160ms var(--ease-out);
-  box-shadow: 0 4px 12px rgba(15, 98, 254, 0.15);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--checkout-blue) 15%, transparent);
 }
 
 .checkout__continue-btn:hover:not(:disabled) {
-  background: #0043ce;
+  background: var(--checkout-blue-hover);
 }
 
 .checkout__continue-btn:active:not(:disabled) {
@@ -614,7 +614,7 @@
   border: 2px dashed var(--border);
   border-radius: 12px;
   background: none;
-  color: var(--gold);
+  color: var(--ck-brand);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
@@ -623,7 +623,7 @@
 }
 
 .checkout__add-address-btn:hover {
-  border-color: var(--gold);
+  border-color: var(--ck-brand);
   background: var(--color-gold-bg);
 }
 
@@ -663,8 +663,8 @@
 }
 
 .checkout__address-type-btn.active {
-  background: var(--gold);
-  border-color: var(--gold);
+  background: var(--ck-brand);
+  border-color: var(--ck-brand);
   color: #fff;
 }
 
@@ -700,7 +700,7 @@
 }
 
 .checkout__address-card.selected {
-  border-color: var(--gold);
+  border-color: var(--ck-brand);
   background: var(--color-gold-bg);
 }
 
@@ -721,7 +721,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--gold);
+  color: var(--ck-brand);
 }
 
 .checkout__address-default {
@@ -735,7 +735,7 @@
 
 .checkout__address-check {
   margin-left: auto;
-  color: var(--gold);
+  color: var(--ck-brand);
 }
 
 .checkout__address-detail {
@@ -779,7 +779,7 @@
 
 .checkout__payment-card:hover {
   border-color: var(--checkout-blue);
-  box-shadow: 0 6px 20px rgba(15, 98, 254, 0.08);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--checkout-blue) 8%, transparent);
   transform: translateY(-2px);
 }
 
@@ -788,7 +788,7 @@
 }
 
 .checkout__payment-card.active {
-  border-color: var(--gold);
+  border-color: var(--ck-brand);
   background: var(--color-gold-bg);
 }
 
@@ -820,7 +820,7 @@
   border: none;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(15, 98, 254, 0.05);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--checkout-blue) 5%, transparent);
 }
 
 .checkout__payment-select-btn svg {
@@ -830,7 +830,7 @@
 .checkout__payment-card:hover .checkout__payment-select-btn {
   background-color: var(--checkout-blue);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(15, 98, 254, 0.2);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--checkout-blue) 20%, transparent);
 }
 
 .checkout__payment-card:hover .checkout__payment-select-btn svg {
@@ -906,7 +906,7 @@
 }
 
 .checkout__cod-fee {
-  color: var(--gold);
+  color: var(--ck-brand);
   font-weight: 600;
   font-size: 15px !important;
 }
@@ -939,7 +939,7 @@
   justify-content: center;
   width: 100%;
   height: 56px;
-  background: var(--gold);
+  background: var(--ck-brand);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -1004,7 +1004,7 @@
   margin-top: 16px;
   padding: 8px 16px;
   background: var(--color-gold-bg);
-  color: var(--gold);
+  color: var(--ck-brand);
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -1022,7 +1022,7 @@
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
-  color: var(--gold);
+  color: var(--ck-brand);
   margin-bottom: 16px;
 }
 
@@ -1304,7 +1304,7 @@
 }
 
 .checkout__btn-primary {
-  background: var(--gold);
+  background: var(--ck-brand);
   color: #fff;
 }
 
@@ -1666,7 +1666,7 @@
   margin-top: 16px;
   padding: 10px 20px;
   background: var(--color-gold-bg);
-  color: var(--gold);
+  color: var(--ck-brand);
   border-radius: 24px;
   font-family: var(--font-body);
   font-size: 12px;
@@ -1890,7 +1890,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px 32px;
-  background: var(--gold);
+  background: var(--ck-brand);
   color: #fff;
   text-decoration: none;
   font-family: var(--font-body);
@@ -1913,7 +1913,7 @@
 /* ── Loading Spinner ─────────────────────────────────────── */
 .checkout__loading-spinner {
   animation: spin 1s linear infinite;
-  color: var(--gold);
+  color: var(--ck-brand);
 }
 
 @keyframes spin {
@@ -2405,7 +2405,7 @@
 .checkout__coupon-input:focus {
   border-color: var(--checkout-blue);
   background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--checkout-blue) 15%, transparent);
 }
 
 .checkout__coupon-input.error {
@@ -2714,8 +2714,8 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 }
 
 .checkout__new-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--ck-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ck-brand) 16%, transparent);
 }
 
 .checkout__new-input--readonly {
@@ -2830,15 +2830,15 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 
 /* ── Clean checkout (circle stepper + Variation 5 payment) ── */
 .checkout--clean {
-  --checkout-gold: #c9a227;
-  --checkout-gold-hover: #b38f1c;
+  --checkout-gold: var(--ck-brand);
+  --checkout-gold-hover: color-mix(in srgb, var(--ck-brand) 82%, #000);
   --checkout-navy: #0b1a30;
   --ck-gap: 16px;
   --ck-ink: #111827;
   --ck-muted: #6b7280;
   --ck-soft: #9ca3af;
   --ck-line: #e5e7eb;
-  background-color: #ffffff;
+  background-color: var(--page-background, #ffffff);
   background-image: none;
   padding: 24px 20px 40px;
   overflow: visible;
@@ -2895,7 +2895,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 .checkout__progress-item.is-done .checkout__progress-dot {
   background: var(--checkout-gold);
   border-color: var(--checkout-gold);
-  color: #fff;
+  color: var(--ck-on-brand);
 }
 
 .checkout__progress-label {
@@ -2925,7 +2925,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 .checkout--details .checkout__continue-btn,
 .checkout--payment .checkout__continue-btn {
   background: var(--checkout-gold);
-  color: #fff;
+  color: var(--ck-on-brand);
   text-transform: none;
   letter-spacing: 0.01em;
   font-size: 15px;
@@ -2942,7 +2942,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 
 .checkout--details .checkout__continue-btn:disabled,
 .checkout--payment .checkout__continue-btn:disabled {
-  background: #e4d49a;
+  background: color-mix(in srgb, var(--ck-brand) 45%, #fff);
   color: #fff;
 }
 
@@ -2981,7 +2981,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
   border: 0;
   background: none;
   padding: 0;
-  color: #2563eb;
+  color: var(--ck-brand);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -3066,8 +3066,8 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 }
 
 .checkout__pay-row.is-active {
-  border-color: #2563eb;
-  background: #f8fbff;
+  border-color: var(--ck-brand);
+  background: color-mix(in srgb, var(--ck-brand) 8%, #fff);
 }
 
 .checkout__pay-radio {
@@ -3083,7 +3083,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 }
 
 .checkout__pay-row.is-active .checkout__pay-radio {
-  border-color: #2563eb;
+  border-color: var(--ck-brand);
 }
 
 .checkout__pay-row.is-active .checkout__pay-radio::after {
@@ -3091,7 +3091,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
   position: absolute;
   inset: 3px;
   border-radius: 50%;
-  background: #2563eb;
+  background: var(--ck-brand);
 }
 
 .checkout__pay-row-body {
@@ -3232,8 +3232,8 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
   height: 48px;
   border: none;
   border-radius: 12px;
-  background: #16a34a;
-  color: #fff;
+  background: var(--ck-brand);
+  color: var(--ck-on-brand);
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
@@ -3246,6 +3246,33 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 .checkout__pay-proceed:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.checkout__pay-sticky {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  background: var(--page-background, #fff);
+  box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
+}
+
+.checkout__pay-sticky .checkout__pay-proceed,
+.checkout__pay-sticky .checkout__pay-meta {
+  width: 100%;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.checkout--payment.checkout--clean {
+  padding-bottom: calc(132px + env(safe-area-inset-bottom));
 }
 
 .checkout__pay-meta {
@@ -3300,15 +3327,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
 
 .checkout--payment {
   --ck-green: #15803d;
-  --font-body: "Satoshi", sans-serif;
-  --font-heading: "Satoshi", sans-serif;
-  font-family: "Satoshi", sans-serif;
-  font-weight: 400;
-}
-
-.checkout--payment,
-.checkout--payment *:not(svg):not(path) {
-  font-family: "Satoshi", sans-serif;
+  font-family: var(--font-body);
 }
 
 .checkout--payment h2,
@@ -3483,17 +3502,17 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
-  color: #fff;
+  background: linear-gradient(180deg, var(--gold-light, var(--ck-brand)) 0%, var(--ck-brand) 100%);
+  color: var(--ck-on-brand);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--ck-brand) 22%, transparent);
 }
 
 .checkout__trust-icon--badge {
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, #60a5fa 0%, #1d4ed8 70%);
+  background: radial-gradient(circle at 50% 35%, var(--gold-light, var(--ck-brand)) 0%, var(--ck-brand) 70%);
 }
 
 .checkout__trust-item strong {
@@ -3516,7 +3535,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
   z-index: 25000;
   background: rgba(15, 23, 42, 0.45);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   padding: 16px;
 }
@@ -3734,6 +3753,10 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
   .checkout--payment.checkout--clean {
     padding: 24px 40px 28px;
   }
+
+  .checkout--payment.checkout--clean {
+    padding-bottom: calc(132px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (max-width: 900px) {
@@ -3750,5 +3773,9 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
     padding: 0;
     border: none;
     box-shadow: none;
+  }
+
+  .checkout--payment.checkout--clean {
+    padding-bottom: calc(132px + env(safe-area-inset-bottom));
   }
 }

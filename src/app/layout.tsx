@@ -87,7 +87,7 @@ export default async function RootLayout({
     : null;
 
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
         <link rel="icon" href={faviconUrl} />
         <link rel="preconnect" href="https://images.unsplash.com" />
@@ -111,7 +111,7 @@ export default async function RootLayout({
           </noscript>
         )}
       </head>
-      <body className={`${inter.variable} ${playfair.variable}`}>
+      <body>
         <SmoothScroll />
         <ScrollObserver />
         <PageLoader />
