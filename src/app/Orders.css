@@ -6,7 +6,7 @@
 }
 
 .orders__title {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-heading);
   font-size: 36px;
   text-align: center;
   margin-bottom: 40px;

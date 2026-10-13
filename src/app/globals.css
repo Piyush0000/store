@@ -58,7 +58,7 @@ html {
 }
 
 body {
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-body);
   background-color: var(--page-background, var(--bg-primary));
   color: var(--text-primary);
   line-height: 1.6;
@@ -132,7 +132,7 @@ body {
   .text-gold { color: var(--gold); }
   .bg-gold { background-color: var(--gold); }
   .border-gold { border-color: var(--gold); }
-  .font-display { font-family: var(--font-playfair), serif; }
+  .font-display { font-family: var(--font-heading); }
   .font-elegant { font-family: 'Cormorant Garamond', serif; }
 
   @keyframes slideUpFade {

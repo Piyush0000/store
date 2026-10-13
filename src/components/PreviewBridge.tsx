@@ -94,6 +94,10 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
     const accentColor = customization?.brandColors?.accent;
     const secondaryColor = customization?.brandColors?.secondary;
     const pageBackground = customization?.brandColors?.background;
+    // Presets pair a dark primary with a vivid secondary; checkout accents use the
+    // vivid one unless it is too light to carry white button text.
+    const checkoutAccent =
+      secondaryColor && !isLightColor(secondaryColor) ? secondaryColor : primaryColor;
 
     let headerStyle = customization?.headerStyle;
     if (headerStyle && typeof headerStyle === 'string') {
@@ -128,6 +132,7 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
           --accent: ${primaryColor} !important;
           --gold-dark: ${primaryColor} !important;
           --color-gold-dark: ${primaryColor} !important;
+          --on-gold: ${isLightColor(primaryColor) ? '#14181f' : '#ffffff'};
         ` : ''}
         ${accentColor ? `
           --gold-light: ${accentColor} !important;
@@ -136,6 +141,10 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
         ` : ''}
         ${secondaryColor ? `
           --color-accent-coral: ${secondaryColor} !important;
+        ` : ''}
+        ${checkoutAccent ? `
+          --checkout-accent: ${checkoutAccent};
+          --on-checkout-accent: ${isLightColor(checkoutAccent) ? '#14181f' : '#ffffff'};
         ` : ''}
         ${pageBackground ? `
           --page-background: ${pageBackground};
@@ -148,6 +157,16 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
           --font-heading: "${headingFont}", var(--font-playfair), serif !important;
         ` : ''}
       }
+      ${bodyFont ? `
+        html, body {
+          font-family: var(--font-body) !important;
+        }
+      ` : ''}
+      ${headingFont ? `
+        h1, h2, h3, h4, .font-display, .hero-carousel__content h1 {
+          font-family: var(--font-heading) !important;
+        }
+      ` : ''}
       ${pageBackground ? `
         html, body, .home {
           background-color: var(--page-background) !important;
