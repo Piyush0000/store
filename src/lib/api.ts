@@ -166,12 +166,18 @@ export interface ProductVariant {
   options: Record<string, string>;
 }
 
+export interface ProductReviewMedia {
+  url: string;
+  type: 'image' | 'video';
+}
+
 export interface ProductReview {
   id: string;
   userName: string;
   rating: number;
   title: string;
   content: string;
+  media?: ProductReviewMedia[];
   createdAt: string;
 }
 
@@ -422,13 +428,24 @@ export async function fetchPageBySlug(slug: string, subdomain?: string): Promise
   }
 }
 
+export async function uploadReviewMedia(file: File, subdomain?: string): Promise<ProductReviewMedia> {
+  const apiUrl = withStoreId(`${getApiUrl(subdomain)}/reviews/media`);
+  const body = new FormData();
+  body.append('file', file);
+  const res = await fetch(apiUrl, { method: 'POST', body });
+  const data = await res.json();
+  if (!data.success || !data.url) throw new Error(data.message || 'Failed to upload review media');
+  return { url: data.url, type: data.type === 'video' ? 'video' : 'image' };
+}
+
 export async function submitReview(review: {
   productId: string;
   userName: string;
-  userEmail: string;
+  userEmail?: string;
   rating: number;
-  title: string;
+  title?: string;
   content: string;
+  media?: ProductReviewMedia[];
 }, subdomain?: string): Promise<{ message: string; review: Partial<ProductReview> }> {
   const apiUrl = withStoreId(`${getApiUrl(subdomain)}/reviews`);
 
