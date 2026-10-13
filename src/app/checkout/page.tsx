@@ -1509,7 +1509,7 @@ export default function CheckoutPage() {
 
         {error && <span className="checkout__error" style={{ marginTop: '16px' }}>{error}</span>}
 
-        <div className="checkout__mobile-sticky-bottom">
+        <div className={`checkout__mobile-sticky-bottom${isStepPayment ? '' : ' checkout__step-sticky'}`}>
           <button className="checkout__continue-btn" onClick={handleContinueToPayment} disabled={isLoading}>
             {isLoading ? <Loader2 className="animate-spin" size={18} /> : isStepPayment ? 'Confirm details' : 'Continue'}
           </button>
@@ -1706,13 +1706,15 @@ export default function CheckoutPage() {
               </div>
               {error && <span className="checkout__error" style={{ marginTop: '-16px', marginBottom: '16px' }}>{error}</span>}
 
-              <button className="checkout__send-otp-btn" onClick={handleIdentifySubmit} disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Continue'}
-              </button>
-              <div className="checkout__powered-by-wrapper" style={{ marginTop: '20px' }}>
-                <div className="checkout__powered-by">
-                  <span className="checkout__powered-by-text">Powered by</span>
-                  <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+              <div className="checkout__step-sticky">
+                <button className="checkout__send-otp-btn" onClick={handleIdentifySubmit} disabled={isLoading}>
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Continue'}
+                </button>
+                <div className="checkout__powered-by-wrapper">
+                  <div className="checkout__powered-by">
+                    <span className="checkout__powered-by-text">Powered by</span>
+                    <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+                  </div>
                 </div>
               </div>
             </section>
@@ -1754,13 +1756,15 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
-              <button className="checkout__send-otp-btn" onClick={handleVerifyOtp} disabled={isLoading || otp.join('').length !== 4}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Verify & continue'}
-              </button>
-              <div className="checkout__powered-by-wrapper" style={{ marginTop: '20px' }}>
-                <div className="checkout__powered-by">
-                  <span className="checkout__powered-by-text">Powered by</span>
-                  <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+              <div className="checkout__step-sticky">
+                <button className="checkout__send-otp-btn" onClick={handleVerifyOtp} disabled={isLoading || otp.join('').length !== 4}>
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Verify & continue'}
+                </button>
+                <div className="checkout__powered-by-wrapper">
+                  <div className="checkout__powered-by">
+                    <span className="checkout__powered-by-text">Powered by</span>
+                    <img src="/evoc-logo.png" alt="EvocLabs" className="checkout__evoc-logo" />
+                  </div>
                 </div>
               </div>
             </section>
