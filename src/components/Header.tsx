@@ -10,7 +10,6 @@ import { getSubdomain } from '@/lib/config';
 import './Header.css';
 import NavigationLinks from './NavigationLinks';
 import { readHeaderStyle, usesBannerBackground, boundedNumber } from '@/lib/navigation-style';
-import HeaderAnimationLayer, { HEADER_ANIMATIONS } from './HeaderAnimationLayer';
 
 const HomeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -71,13 +70,6 @@ export default function Header({ initialCustomization, storeName: propStoreName,
   const pathname = usePathname();
   const [navigationConfig, setNavigationConfig] = useState(initialCustomization || {});
   const navigationStyle = readHeaderStyle(navigationConfig);
-  const headerAnimation = navigationStyle.headerAnimation || {};
-  const animationEffect = headerAnimation.enabled === false
-    ? 'none'
-    : HEADER_ANIMATIONS.find((effect) => effect === headerAnimation.effect) || 'none';
-  const animationSpeedSeconds = headerAnimation.speed === 'slow' ? 8 : headerAnimation.speed === 'fast' ? 3.4 : 5.2;
-  const animationFrequencyMultiplier = headerAnimation.frequency === 'occasional' ? 2.8 : headerAnimation.frequency === 'continuous' ? 0.72 : 1.45;
-  const animationIntensity = headerAnimation.intensity === 'subtle' ? '.48' : headerAnimation.intensity === 'bold' ? '.92' : '.72';
   const bannerBackground = usesBannerBackground(navigationConfig, pathname);
   const customBackground = navigationStyle.navBackgroundMode === 'image' && navigationStyle.navBackgroundImage;
   const navMenus = Array.isArray(navigationStyle.navMenus) ? navigationStyle.navMenus : [];
@@ -114,11 +106,6 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     '--mobile-drawer-width': `${boundedNumber(navigationStyle.mobileDrawerWidth, 82, 65, 100)}vw`,
     '--mobile-overlay-alpha': boundedNumber(navigationStyle.mobileOverlayOpacity, 45, 15, 75) / 100,
     '--mobile-blur': `${boundedNumber(navigationStyle.mobileBlur, 0, 0, 24)}px`,
-  } as CSSProperties;
-  const headerStyleVariables = {
-    ...navVariables,
-    '--header-animation-duration': `${(animationSpeedSeconds * animationFrequencyMultiplier).toFixed(1)}s`,
-    '--header-animation-alpha': animationIntensity,
   } as CSSProperties;
   const { cartCount, isHydrated, setIsCartOpen } = useCart();
 
@@ -456,8 +443,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   return (
     <>
-      <header style={headerStyleVariables} data-nav-hover={navigationStyle.navHoverEffect || 'default'} className={`header ${bannerBackground ? 'header--banner-nav' : ''} ${customBackground ? 'header--image-nav' : ''} ${navigationStyle.navSticky === false ? 'header--not-sticky' : ''} header--logo-${logoPosition} header--nav-${navVariant} header--mobile-${mobileHeaderVariant} ${mobileHeaderOverHero ? 'header--mobile-over-hero' : ''} ${scrolled ? 'header--scrolled' : ''} ${animationEffect !== 'none' ? `header--animation-${animationEffect}` : ''}`}>
-        <HeaderAnimationLayer config={{ ...headerAnimation, effect: animationEffect }} />
+      <header style={navVariables} data-nav-hover={navigationStyle.navHoverEffect || 'default'} className={`header ${bannerBackground ? 'header--banner-nav' : ''} ${customBackground ? 'header--image-nav' : ''} ${navigationStyle.navSticky === false ? 'header--not-sticky' : ''} header--logo-${logoPosition} header--nav-${navVariant} header--mobile-${mobileHeaderVariant} ${mobileHeaderOverHero ? 'header--mobile-over-hero' : ''} ${scrolled ? 'header--scrolled' : ''}`}>
         {logoPosition === 'above' && <div className="header__logo-row">{renderLogo()}</div>}
         <div className="header__main">
           <div className="header__left">
