@@ -24,6 +24,7 @@ import { availableStock, isOutOfStock, isVariantUnavailable } from "@/lib/stock"
 import { resolveMediaUrl } from "@/lib/media";
 import type { TestimonialSection } from "@/lib/api";
 import VariantCardScroller from "./VariantCardScroller";
+import ProductReviews from "./ProductReviews";
 import "./product.css";
 
 const pad = (num: number) => String(num).padStart(2, "0");
@@ -863,14 +864,12 @@ export default function ProductClient({
           >
             Description
           </button>
-          {/* 
           <button
             className={`product-page__tab ${activeTab === "reviews" ? "active" : ""}`}
             onClick={() => setActiveTab("reviews")}
           >
-            Reviews ({product.reviewCount || 0})
+            Reviews ({product.reviewCount || product.reviews?.length || 0})
           </button>
-          */}
           <button
             className={`product-page__tab ${activeTab === "shipping" ? "active" : ""}`}
             onClick={() => setActiveTab("shipping")}
@@ -924,37 +923,14 @@ export default function ProductClient({
             </div>
           )}
 
-          {/* 
           {activeTab === "reviews" && (
-            <div className="product-page__reviews">
-              {product.reviews?.length === 0 ? (
-                <p className="product-page__no-reviews">
-                  No reviews yet. Be the first!
-                </p>
-              ) : (
-                product.reviews?.map((review: any) => (
-                  <div key={review.id} className="product-page__review">
-                    <div className="product-page__review-header">
-                      <span className="product-page__review-name">
-                        {review.userName}
-                      </span>
-                    </div>
-                    <div className="product-page__review-rating">
-                      {renderStars(review.rating)}
-                      <span>
-                        {new Date(review.createdAt).toLocaleDateString("en-IN")}
-                      </span>
-                    </div>
-                    <strong>{review.title}</strong>
-                    <p className="product-page__review-text">
-                      {review.content}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
+            <ProductReviews
+              productId={product.id}
+              subdomain={subdomain}
+              initialReviews={product.reviews || []}
+              renderStars={renderStars}
+            />
           )}
-          */}
 
           {activeTab === "shipping" && (
             <div className="product-page__shipping-info">
