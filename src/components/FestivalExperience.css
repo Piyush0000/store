@@ -1,0 +1,31 @@
+.festival-offer-bar { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:9px 16px; padding:10px 18px; background:var(--festival-primary); color:var(--festival-text); font-size:13px; line-height:1.4; text-align:center; }
+.festival-offer-bar__spark { color:var(--festival-accent); font-size:18px; }
+.festival-offer-bar strong { color:var(--festival-accent); font-weight:700; }
+.festival-offer-bar__timer { padding:3px 9px; border:1px solid currentColor; border-radius:999px; font-variant-numeric:tabular-nums; }
+body[data-festival-announcement="true"] .announcement-bar { display:none; }
+.festival-offer-bar ~ .announcement-bar { display:none; }
+.festival-checkout-note { margin:12px auto; width:min(100% - 32px, 1100px); padding:9px 15px; border:1px solid var(--festival-accent); border-radius:10px; background:var(--festival-surface); color:var(--festival-primary); text-align:center; font-size:13px; }
+.festival-hero { position:relative; display:flex; align-items:center; min-height:clamp(360px,45vw,600px); overflow:hidden; background-size:cover; background-position:center; color:var(--festival-text,#fff); }
+.festival-hero::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,rgba(0,0,0,.12),transparent 80%); }
+.festival-hero__content { position:relative; z-index:1; width:min(100%,1200px); margin:auto; padding:60px clamp(24px,7vw,100px); }
+.festival-hero__eyebrow { display:inline-block; margin-bottom:14px; color:var(--festival-accent); font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
+.festival-hero h1 { max-width:560px; font-family:var(--font-heading); font-size:clamp(36px,5vw,70px); font-weight:600; line-height:1.06; text-wrap:balance; }
+.festival-hero p { max-width:520px; margin:18px 0 0; font-size:clamp(14px,1.5vw,18px); line-height:1.6; }
+.festival-hero__offer { display:table; margin-top:20px; padding:7px 13px; border:1px solid var(--festival-accent); border-radius:6px; color:var(--festival-accent); font-weight:700; font-size:13px; }
+.festival-hero__button { display:inline-flex; align-items:center; justify-content:center; min-height:46px; margin-top:25px; padding:12px 24px; border-radius:8px; background:var(--festival-accent); color:var(--festival-primary); font-size:14px; font-weight:700; text-decoration:none; transition:transform .2s ease,filter .2s ease; }
+.festival-hero__button:hover { transform:translateY(-2px); filter:brightness(1.07); }
+body[data-festival-header="true"] .header { background:var(--festival-primary)!important; border-color:var(--festival-accent); }
+body[data-festival-header="true"] .header__nav { background:var(--festival-primary)!important; box-shadow:inset 0 -2px var(--festival-accent); }
+body[data-festival-header="true"] .header__nav-link, body[data-festival-header="true"] .header__logo-text { color:var(--festival-text)!important; }
+body[data-festival-header="true"] .header { --gold-light:var(--festival-accent); --nav-hover-text:var(--festival-accent); }
+body[data-festival-header="true"] .header__icon-btn, body[data-festival-header="true"] .header__mobile-toggle { color:var(--festival-text)!important; }
+body[data-festival-header="true"] .header__cart-count { background:var(--festival-accent); color:var(--festival-primary); }
+body[data-festival-products="true"] .product-card { border:1px solid color-mix(in srgb,var(--festival-accent) 48%, transparent); border-radius:12px; }
+body[data-festival-products="true"] .product-card__badge { background:var(--festival-primary); color:var(--festival-text); }
+body[data-festival-products="true"] .product-card__add-btn { background:var(--festival-primary); color:var(--festival-text); }
+body[data-festival-categories="true"] .home h2 { color:var(--festival-primary); }
+body[data-festival-categories="true"] .shop-category__card { border-color:var(--festival-accent); box-shadow:0 8px 30px color-mix(in srgb,var(--festival-primary) 12%, transparent); }
+body[data-festival-cart="true"] .cart, body[data-festival-cart="true"] .checkout { --gold:var(--festival-primary); --gold-light:var(--festival-accent); --ck-brand:var(--festival-primary); }
+body[data-festival-footer="true"] footer { --footer-text:var(--festival-text); --footer-text-secondary:color-mix(in srgb,var(--festival-text) 76%, transparent); --footer-border:color-mix(in srgb,var(--festival-accent) 35%, transparent); border-top:3px solid var(--festival-accent); background:linear-gradient(90deg,var(--festival-primary),color-mix(in srgb,var(--festival-primary) 86%, transparent)),var(--festival-art) center/cover!important; color:var(--festival-text); }
+@media(max-width:640px){.festival-hero{min-height:450px;background-position:62% center}.festival-hero__content{padding:46px 22px;background:linear-gradient(90deg,rgba(0,0,0,.35),transparent)}.festival-hero h1{max-width:340px}.festival-offer-bar{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.festival-hero__button{transition:none}.festival-hero__button:hover{transform:none}}
