@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 520" role="img" aria-label="Decorative Diwali lamp">
+  <defs><radialGradient id="aura"><stop stop-color="#ffc659" stop-opacity=".62"/><stop offset="1" stop-color="#ffc659" stop-opacity="0"/></radialGradient><linearGradient id="clay" x2="0" y2="1"><stop stop-color="#f0ae62"/><stop offset=".47" stop-color="#aa462e"/><stop offset="1" stop-color="#4b1e2a"/></linearGradient><linearGradient id="flame" x2="0" y2="1"><stop stop-color="#fff8ca"/><stop offset=".48" stop-color="#ffd263"/><stop offset="1" stop-color="#ef6b38"/></linearGradient></defs>
+  <circle cx="280" cy="235" r="225" fill="url(#aura)"/>
+  <path d="M280 65c59 93 65 129 34 163-23 27-62 30-84 3-32-40 6-94 50-166Z" fill="url(#flame)" stroke="#ffdc88" stroke-width="4"/>
+  <path d="M280 130c24 44 25 66 13 80-11 13-28 10-36-3-10-17 4-42 23-77Z" fill="#fff8d2"/>
+  <path d="M50 260c70 31 134 40 230 40s160-9 230-40c-14 96-75 159-230 166C125 419 64 356 50 260Z" fill="url(#clay)" stroke="#e6a568" stroke-width="6"/>
+  <ellipse cx="280" cy="261" rx="230" ry="49" fill="#6b2932" stroke="#f6c678" stroke-width="7"/>
+  <ellipse cx="280" cy="251" rx="184" ry="29" fill="#a83f2d"/><path d="M90 324c94 52 286 52 380 0" fill="none" stroke="#f3c376" stroke-width="7"/>
+  <path d="M120 352c88 47 232 47 320 0" fill="none" stroke="#742d31" stroke-width="9"/>
+  <path d="M155 339c54 42 196 42 250 0" fill="none" stroke="#f5c274" stroke-width="2" stroke-dasharray="4 12"/>
+  <circle cx="170" cy="341" r="7" fill="#f9d994"/><circle cx="280" cy="364" r="9" fill="#f9d994"/><circle cx="390" cy="341" r="7" fill="#f9d994"/>
+</svg>

@@ -19,6 +19,8 @@ import {
 } from "@/lib/category-card-style";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { videoMimeType } from "@/lib/media-type";
+import { FestivalCollection, FestivalHero } from "@/components/FestivalExperience";
+import { festivalAreaEnabled, festivalIsActive, type FestivalTheme } from "@/lib/festival-theme";
 import "./page.css";
 
 interface Product {
@@ -31,6 +33,7 @@ interface Product {
 }
 
 interface Customization {
+  festivalTheme?: FestivalTheme;
   heroSection?: {
     title: string;
     subtitle: string;
@@ -239,6 +242,13 @@ export default function HomeClient({
 }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [customizationState, setCustomizationState] = useState(customization);
+  const [festivalNow, setFestivalNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!customizationState?.festivalTheme?.enabled) return;
+    const interval = window.setInterval(() => setFestivalNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [customizationState?.festivalTheme?.enabled]);
 
   const liveProductSections = productSections.map((section, index) => {
     const configuredSections = Array.isArray(customizationState?.productSections)
@@ -298,6 +308,10 @@ export default function HomeClient({
   };
 
   const renderHero = () => {
+    const festival = customizationState?.festivalTheme;
+    if (festivalIsActive(festival, festivalNow) && festival && festivalAreaEnabled(festival, 'hero')) {
+      return <><FestivalHero theme={festival} /><FestivalCollection theme={festival} /></>;
+    }
     if (
       customizationState?.homePageConfig?.heroEnabled === false ||
       heroSlides.length === 0
@@ -405,7 +419,7 @@ export default function HomeClient({
           style={{ position: "relative" }}
         >
           <div
-           id="category-grid"
+            id="category-grid"
             className={`shop-category__grid shop-category__grid--${cardStyle.shape}`}
             style={categoryCardStyleVars(cardStyle)}
           >

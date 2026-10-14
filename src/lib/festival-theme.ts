@@ -1,0 +1,77 @@
+import festivalDesigns from './festival-designs.json';
+
+export type FestivalArea = 'announcement' | 'header' | 'hero' | 'products' | 'categories' | 'collection' | 'cart' | 'footer';
+export type FestivalIntensity = 'off' | 'subtle' | 'balanced' | 'festive';
+export type FestivalEffect = 'lights' | 'glimmer' | 'color' | 'threads' | 'petals' | 'stars' | 'ribbons' | 'sunlight' | 'kites' | 'embers' | 'lanterns' | 'snow' | 'hearts';
+export interface FestivalVisual {
+  effect: FestivalEffect;
+  composition: 'split' | 'center' | 'editorial';
+  typography: 'heritage' | 'modern' | 'expressive';
+  eyebrow: string;
+  buttonStyle: 'solid' | 'outline' | 'soft' | 'glow';
+  intensity: FestivalIntensity;
+  decorations: boolean;
+  motion: boolean;
+  recipe: 'cinematic' | 'elegant' | 'playful' | 'minimal' | 'off';
+  speed: 'slow' | 'normal' | 'fast';
+}
+
+export interface FestivalTheme {
+  enabled?: boolean;
+  preview?: boolean;
+  reducedMotionPreview?: boolean;
+  source?: 'predefined' | 'custom';
+  customFestivalId?: string;
+  basePresetId?: string;
+  description?: string;
+  category?: string;
+  region?: string;
+  mobileImageUrl?: string;
+  thumbnailUrl?: string;
+  presetId?: string;
+  name?: string;
+  greeting?: string;
+  message?: string;
+  imageUrl?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  startsAt?: string;
+  endsAt?: string;
+  couponCode?: string;
+  offerLabel?: string;
+  palette?: { primary?: string; accent?: string; surface?: string; text?: string };
+  areas?: Partial<Record<FestivalArea, boolean>>;
+  visual?: Partial<FestivalVisual>;
+  merchandising?: { badgeText?: string; collectionTitle?: string; collectionLink?: string };
+}
+
+const designs = festivalDesigns as Record<string, Omit<FestivalVisual, 'intensity' | 'decorations' | 'motion' | 'recipe' | 'speed'>>;
+export function festivalVisual(theme: FestivalTheme): FestivalVisual {
+  const base = designs[theme.presetId || ''] || designs.custom;
+  return { ...base, intensity:'balanced', decorations:true, motion:true, recipe:'cinematic', speed:'normal', ...theme.visual };
+}
+
+export const FESTIVAL_AREAS: FestivalArea[] = ['announcement', 'header', 'hero', 'products', 'categories', 'collection', 'cart', 'footer'];
+
+export function festivalIsActive(theme: FestivalTheme | null | undefined, now = Date.now()): boolean {
+  if (!theme || theme.enabled !== true) return false;
+  if (theme.preview === true) return true;
+  const start = theme.startsAt ? Date.parse(theme.startsAt) : NaN;
+  const end = theme.endsAt ? Date.parse(theme.endsAt) : NaN;
+  if (Number.isFinite(start) && now < start) return false;
+  if (Number.isFinite(end) && now >= end) return false;
+  return true;
+}
+
+export function festivalAreaEnabled(theme: FestivalTheme, area: FestivalArea): boolean {
+  return theme.areas?.[area] !== false;
+}
+
+export function festivalColor(value: unknown, fallback: string): string {
+  return typeof value === 'string' && /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(value) ? value : fallback;
+}
+
+export function festivalImage(value: unknown, presetId?: string): string {
+  if (typeof value === 'string' && (value.startsWith('/') && !value.startsWith('//') || /^https:\/\//i.test(value) || /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\//i.test(value))) return value;
+  return `/festivals/${presetId && /^[a-z0-9-]+$/.test(presetId) ? presetId : 'custom'}.svg`;
+}
