@@ -984,3 +984,217 @@
   .header__mobile-overlay,
   .header__mobile-menu { animation: none !important; }
 }
+
+/* Optional merchant-selected header effects. Configuration is read from
+   headerStyle.headerAnimation and updates immediately in editor previews. */
+.header { isolation: isolate; }
+.header__main,
+.header__nav,
+.header__logo-row { position: relative; z-index: 5; }
+.header__animation-layer {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--header-animation-alpha, .72);
+}
+
+.header__animation-layer--pastel {
+  --ha-pink: #f3a9c4; --ha-blue: #92c9eb; --ha-gold: #e8c77b; --ha-green: #a8d9b8;
+  --ha-star: #ffe9a6; --ha-petal: #efb5c9; --ha-confetti: #d893ad;
+}
+.header__animation-layer--vibrant {
+  --ha-pink: #ff4e92; --ha-blue: #38bdf8; --ha-gold: #facc15; --ha-green: #4ade80;
+  --ha-star: #fff176; --ha-petal: #ff6b9a; --ha-confetti: #ff4d4d;
+}
+.header__animation-layer--monochrome {
+  --ha-pink: #d6d6d6; --ha-blue: #aeb5bf; --ha-gold: #f1f1f1; --ha-green: #c5cbd2;
+  --ha-star: #fff; --ha-petal: #e2e2e2; --ha-confetti: #fff;
+}
+.header__animation-layer--custom {
+  --ha-pink: var(--header-animation-custom); --ha-blue: var(--header-animation-custom);
+  --ha-gold: var(--header-animation-custom); --ha-green: var(--header-animation-custom);
+  --ha-star: var(--header-animation-custom); --ha-petal: var(--header-animation-custom);
+  --ha-confetti: var(--header-animation-custom);
+}
+.header__animation-layer--subtle { --header-animation-alpha: .42; }
+.header__animation-layer--balanced { --header-animation-alpha: .7; }
+.header__animation-layer--bold { --header-animation-alpha: .95; }
+
+.header__animation-ribbon {
+  position: absolute;
+  top: -35%;
+  width: 34px;
+  height: 145%;
+  color: var(--ha-pink);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.12));
+  animation: header-ribbon-float var(--header-animation-duration, 7.5s) ease-in-out infinite;
+}
+.header__animation-ribbon:nth-child(2n) { color: var(--ha-blue); }
+.header__animation-ribbon:nth-child(3n) { color: var(--ha-gold); }
+.header__animation-ribbon:nth-child(4n) { color: var(--ha-green); }
+@keyframes header-ribbon-float {
+  0% { transform: translate3d(-18px,-25%,0) rotate(-20deg); opacity: 0; }
+  16% { opacity: .95; }
+  55% { transform: translate3d(18px,15%,0) rotate(22deg); opacity: .86; }
+  100% { transform: translate3d(-12px,75%,0) rotate(52deg); opacity: 0; }
+}
+
+.header__animation-sparkle,
+.header__animation-emoji,
+.header__animation-petal,
+.header__animation-confetti {
+  position: absolute;
+  display: block;
+  animation-duration: var(--header-animation-duration, 7.5s);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-delay: calc(var(--particle-index, 0) * -0.47s);
+}
+.header__animation-sparkle {
+  color: var(--ha-star);
+  font-size: 15px;
+  line-height: 1;
+  text-shadow: 0 0 8px currentColor;
+  animation-name: header-sparkle-twinkle;
+}
+@keyframes header-sparkle-twinkle {
+  0%, 100% { opacity: 0; transform: scale(.35) rotate(-25deg); }
+  35%, 65% { opacity: 1; transform: scale(1) rotate(20deg); }
+}
+.header__animation-emoji {
+  font-size: 17px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.12));
+  animation-name: header-emoji-drift;
+}
+@keyframes header-emoji-drift {
+  0%, 100% { opacity: 0; transform: translate3d(0,18px,0) rotate(-16deg) scale(.8); }
+  20%, 78% { opacity: .95; }
+  50% { opacity: .9; transform: translate3d(14px,-24px,0) rotate(18deg) scale(1.04); }
+}
+.header__animation-layer--emoji-garden .header__animation-emoji { animation-name: header-emoji-garden; }
+@keyframes header-emoji-garden {
+  0%, 100% { opacity: 0; transform: translateY(12px) rotate(-15deg) scale(.82); }
+  25%, 75% { opacity: .96; }
+  50% { opacity: .9; transform: translateY(-10px) rotate(18deg) scale(1.06); }
+}
+.header__animation-petal {
+  width: 12px;
+  height: 19px;
+  border-radius: 80% 12% 80% 12%;
+  background: linear-gradient(135deg, #fff8, var(--ha-petal) 55%, #d98ca8);
+  box-shadow: inset -2px -2px 3px #9b536533;
+  animation-name: header-petal-fall;
+}
+@keyframes header-petal-fall {
+  0% { opacity: 0; transform: translate3d(0,-25px,0) rotate(0deg); }
+  15% { opacity: .9; }
+  100% { opacity: 0; transform: translate3d(22px,145px,0) rotate(240deg); }
+}
+.header__animation-confetti {
+  width: 6px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--ha-confetti);
+  animation-name: header-confetti-fall;
+}
+.header__animation-confetti:nth-child(3n) { background: var(--ha-blue); }
+.header__animation-confetti:nth-child(3n + 1) { background: var(--ha-gold); }
+@keyframes header-confetti-fall {
+  0% { opacity: 0; transform: translateY(-20px) rotate(0deg); }
+  15% { opacity: .9; }
+  100% { opacity: 0; transform: translate(16px,130px) rotate(300deg); }
+}
+
+/* Particle positions hug the outer edges and logo area, keeping nav labels clear. */
+.header__animation-sparkle:nth-child(1) { left: 43%; top: 18%; }
+.header__animation-sparkle:nth-child(2) { left: 48%; top: 10%; }
+.header__animation-sparkle:nth-child(3) { left: 55%; top: 22%; }
+.header__animation-sparkle:nth-child(4) { left: 40%; top: 56%; }
+.header__animation-sparkle:nth-child(5) { left: 60%; top: 58%; }
+.header__animation-sparkle:nth-child(6) { left: 46%; top: 75%; }
+.header__animation-sparkle:nth-child(7) { left: 52%; top: 80%; }
+.header__animation-sparkle:nth-child(8) { left: 57%; top: 43%; }
+.header__animation-sparkle:nth-child(9) { left: 4%; top: 18%; }
+.header__animation-sparkle:nth-child(10) { left: 94%; top: 25%; }
+.header__animation-sparkle:nth-child(11) { left: 7%; top: 70%; }
+.header__animation-sparkle:nth-child(12) { left: 91%; top: 68%; }
+.header__animation-emoji:nth-child(1) { left: 3%; top: 15%; }
+.header__animation-emoji:nth-child(2) { left: 13%; top: 64%; }
+.header__animation-emoji:nth-child(3) { left: 27%; top: 22%; }
+.header__animation-emoji:nth-child(4) { left: 38%; top: 68%; }
+.header__animation-emoji:nth-child(5) { left: 61%; top: 17%; }
+.header__animation-emoji:nth-child(6) { left: 73%; top: 66%; }
+.header__animation-emoji:nth-child(7) { left: 86%; top: 22%; }
+.header__animation-emoji:nth-child(8) { left: 96%; top: 60%; }
+.header__animation-emoji:nth-child(9) { left: 8%; top: 48%; }
+.header__animation-emoji:nth-child(10) { left: 92%; top: 43%; }
+.header__animation-emoji:nth-child(11) { left: 32%; top: 42%; }
+.header__animation-emoji:nth-child(12) { left: 68%; top: 42%; }
+.header__animation-petal:nth-child(1) { left: 5%; top: 4%; }
+.header__animation-petal:nth-child(2) { left: 18%; top: 1%; }
+.header__animation-petal:nth-child(3) { left: 33%; top: 7%; }
+.header__animation-petal:nth-child(4) { left: 66%; top: 0; }
+.header__animation-petal:nth-child(5) { left: 82%; top: 6%; }
+.header__animation-petal:nth-child(6) { left: 94%; top: 2%; }
+.header__animation-petal:nth-child(7) { left: 43%; top: -5%; }
+.header__animation-petal:nth-child(8) { left: 57%; top: 3%; }
+.header__animation-confetti:nth-child(1) { left: 3%; top: 2%; }
+.header__animation-confetti:nth-child(2) { left: 8%; top: 16%; }
+.header__animation-confetti:nth-child(3) { left: 14%; top: 3%; }
+.header__animation-confetti:nth-child(4) { left: 19%; top: 18%; }
+.header__animation-confetti:nth-child(5) { left: 83%; top: 4%; }
+.header__animation-confetti:nth-child(6) { left: 88%; top: 19%; }
+.header__animation-confetti:nth-child(7) { left: 94%; top: 3%; }
+.header__animation-confetti:nth-child(8) { left: 98%; top: 16%; }
+.header__animation-confetti:nth-child(9) { left: 6%; top: 62%; }
+.header__animation-confetti:nth-child(10) { left: 91%; top: 61%; }
+.header__animation-confetti:nth-child(11) { left: 16%; top: 74%; }
+.header__animation-confetti:nth-child(12) { left: 84%; top: 77%; }
+
+.header--animation-aurora-gradient .header__nav { background-color: transparent !important; }
+.header__animation-layer--aurora-gradient::before {
+  content: '';
+  position: absolute;
+  inset: -80% -30%;
+  background:
+    radial-gradient(ellipse at 22% 45%, color-mix(in srgb, var(--ha-blue) 70%, transparent) 0%, transparent 44%),
+    radial-gradient(ellipse at 74% 40%, color-mix(in srgb, var(--ha-pink) 62%, transparent) 0%, transparent 42%),
+    radial-gradient(ellipse at 52% 85%, color-mix(in srgb, var(--ha-green) 54%, transparent) 0%, transparent 48%);
+  background-size: 140% 140%;
+  animation: header-aurora-flow var(--header-animation-duration, 7.5s) ease-in-out infinite alternate;
+}
+@keyframes header-aurora-flow {
+  0% { transform: translate3d(-5%,3%,0) scale(.96); background-position: 0% 50%; }
+  100% { transform: translate3d(5%,-3%,0) scale(1.06); background-position: 100% 50%; }
+}
+
+.header--animation-logo-shimmer .header__logo { overflow: hidden; }
+.header--animation-logo-shimmer.header--logo-middle .header__logo {
+  position: absolute; left: 50%; transform: translateX(-50%);
+}
+.header--animation-logo-shimmer.header--logo-left .header__logo,
+.header--animation-logo-shimmer.header--logo-right .header__logo { position: relative; left: auto; transform: none; }
+.header--animation-logo-shimmer .header__logo::after {
+  content: '';
+  position: absolute;
+  inset: -20% -55%;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.08) 47%, rgba(255,255,255,.82) 50%, rgba(255,255,255,.1) 54%, transparent 60%);
+  opacity: var(--header-animation-alpha, .72);
+  transform: translateX(-100%);
+  animation: header-logo-shimmer var(--header-animation-duration, 7.5s) ease-in-out infinite;
+}
+@keyframes header-logo-shimmer {
+  0%, 54% { transform: translateX(-100%); }
+  78%, 100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header__animation-layer *,
+  .header--animation-aurora-gradient,
+  .header--animation-logo-shimmer .header__logo::after { animation: none !important; }
+  .header__animation-layer { display: none; }
+}
