@@ -242,6 +242,13 @@ export default function HomeClient({
 }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [customizationState, setCustomizationState] = useState(customization);
+  const [festivalNow, setFestivalNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!customizationState?.festivalTheme?.enabled) return;
+    const interval = window.setInterval(() => setFestivalNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [customizationState?.festivalTheme?.enabled]);
 
   const liveProductSections = productSections.map((section, index) => {
     const configuredSections = Array.isArray(customizationState?.productSections)
