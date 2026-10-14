@@ -20,6 +20,7 @@ import MetaPixel from "@/components/MetaPixel";
 import { getServerSubdomain, getServerStoreId } from "@/lib/server-utils";
 import Image from "next/image";
 import PreviewBridge from "@/components/PreviewBridge";
+import FestivalExperience from "@/components/FestivalExperience";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { CustomerAiMount } from "@/features/customer-ai/components/customer-ai-mount";
 
@@ -139,6 +140,7 @@ export default async function RootLayout({
           >
             <CartProvider>
               <CartDrawer />
+              <FestivalExperience initialTheme={customization?.festivalTheme} />
               <AnnouncementBar
                 initialCustomization={customization}
                 storeSubdomain={storeSubdomain}

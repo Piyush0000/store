@@ -19,6 +19,8 @@ import {
 } from "@/lib/category-card-style";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { videoMimeType } from "@/lib/media-type";
+import { FestivalHero } from "@/components/FestivalExperience";
+import { festivalAreaEnabled, festivalIsActive, type FestivalTheme } from "@/lib/festival-theme";
 import "./page.css";
 
 interface Product {
@@ -31,6 +33,7 @@ interface Product {
 }
 
 interface Customization {
+  festivalTheme?: FestivalTheme;
   heroSection?: {
     title: string;
     subtitle: string;
@@ -239,6 +242,13 @@ export default function HomeClient({
 }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [customizationState, setCustomizationState] = useState(customization);
+  const [festivalNow, setFestivalNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!customizationState?.festivalTheme?.enabled) return;
+    const interval = window.setInterval(() => setFestivalNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [customizationState?.festivalTheme?.enabled]);
 
   const liveProductSections = productSections.map((section, index) => {
     const configuredSections = Array.isArray(customizationState?.productSections)
@@ -254,7 +264,7 @@ export default function HomeClient({
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
         console.log("[HomeClient] Received customizer update:", e.data.data);
-        setCustomizationState(e.data.data);
+        setCustomizationState((previous) => ({ ...(previous || {}), ...e.data.data }));
       }
     };
     window.addEventListener("message", handleMessage);
@@ -298,6 +308,10 @@ export default function HomeClient({
   };
 
   const renderHero = () => {
+    const festival = customizationState?.festivalTheme;
+    if (festivalIsActive(festival, festivalNow) && festival && festivalAreaEnabled(festival, 'hero')) {
+      return <FestivalHero theme={festival} />;
+    }
     if (
       customizationState?.homePageConfig?.heroEnabled === false ||
       heroSlides.length === 0
@@ -710,6 +724,12 @@ export default function HomeClient({
   // In case of dynamic sync updates where new productSections are added/removed but homepageSections is not yet saved,
   // ensure we dynamically include any productSections not present in homepageSections at the bottom
   const syncedSections = [...homepageSections];
+  const festivalHero = customizationState?.festivalTheme;
+  if (festivalIsActive(festivalHero, festivalNow) && festivalHero && festivalAreaEnabled(festivalHero, 'hero')) {
+    const heroIndex = syncedSections.findIndex((section: any) => section.type === 'heroSection');
+    if (heroIndex === -1) syncedSections.unshift({ id: 'festival-hero', type: 'heroSection', name: 'Festival hero', enabled: true });
+    else syncedSections[heroIndex] = { ...syncedSections[heroIndex], enabled: true };
+  }
   liveProductSections.forEach((sec, idx) => {
     const exists = syncedSections.some(
       (s: any) =>
