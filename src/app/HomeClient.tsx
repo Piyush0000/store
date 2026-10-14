@@ -33,6 +33,7 @@ interface Product {
 }
 
 interface Customization {
+  festivalTheme?: FestivalTheme;
   heroSection?: {
     title: string;
     subtitle: string;
