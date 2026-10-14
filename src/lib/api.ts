@@ -17,7 +17,6 @@ export interface BrandColors {
 }
 
 export interface Customization {
-  festivalTheme?: import('./festival-theme').FestivalTheme;
   logo: string | null;
   favicon: string | null;
   brandColors: BrandColors;
