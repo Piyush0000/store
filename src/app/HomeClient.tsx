@@ -19,7 +19,7 @@ import {
 } from "@/lib/category-card-style";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { videoMimeType } from "@/lib/media-type";
-import { FestivalHero } from "@/components/FestivalExperience";
+import { FestivalCollection, FestivalHero } from "@/components/FestivalExperience";
 import { festivalAreaEnabled, festivalIsActive, type FestivalTheme } from "@/lib/festival-theme";
 import "./page.css";
 
@@ -310,7 +310,7 @@ export default function HomeClient({
   const renderHero = () => {
     const festival = customizationState?.festivalTheme;
     if (festivalIsActive(festival, festivalNow) && festival && festivalAreaEnabled(festival, 'hero')) {
-      return <FestivalHero theme={festival} />;
+      return <><FestivalHero theme={festival} /><FestivalCollection theme={festival} /></>;
     }
     if (
       customizationState?.homePageConfig?.heroEnabled === false ||

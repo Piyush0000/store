@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 370" role="img" aria-label="Decorative Sankranti kite">
+  <defs><linearGradient id="silk" x2="1" y2="1"><stop stop-color="#f9bc57"/><stop offset=".52" stop-color="#ef674c"/><stop offset="1" stop-color="#bd3150"/></linearGradient><linearGradient id="tail" x2="1" y2="1"><stop stop-color="#f2d27a"/><stop offset="1" stop-color="#e65f62"/></linearGradient></defs>
+  <path d="M120 10 221 124 120 251 19 124Z" fill="url(#silk)" stroke="#71334e" stroke-width="5"/>
+  <path d="M120 10v241M19 124h202" stroke="#fff4cc" stroke-opacity=".85" stroke-width="3"/>
+  <path d="M120 13 18 124l102 38 101-38Z" fill="#ffd973" opacity=".6"/>
+  <path d="M120 162 19 124l101 127 101-127Z" fill="#922e69" opacity=".53"/>
+  <path d="M120 250c-19 20 24 31 0 54-18 17-2 34 9 41" fill="none" stroke="#904663" stroke-width="3"/>
+  <path d="m115 272-22 8 21 9 17-12Zm1 35-24 10 21 7 20-12Z" fill="url(#tail)" stroke="#934861" stroke-width="2"/>
+  <path d="M60 80h120M49 163h142" stroke="#fff4cb" stroke-opacity=".4"/>
+  <circle cx="120" cy="124" r="10" fill="#fff5d1"/><circle cx="120" cy="124" r="4" fill="#9e3557"/>
+</svg>

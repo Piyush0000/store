@@ -29,6 +29,16 @@ PALETTES = {
     "eid-al-fitr": ("#103f42", "#297c6c", "#dbd29c"),
     "eid-al-adha": ("#263d52", "#557d79", "#e7d6a6"),
     "christmas": ("#183f37", "#3d745d", "#e5c994"),
+    "valentines-day": ("#68283d", "#a7596d", "#f6cad0"),
+    "new-year": ("#172647", "#4e527d", "#efd49d"),
+    "mothers-day": ("#754459", "#b78189", "#f4d4c1"),
+    "fathers-day": ("#304957", "#60787b", "#dec69b"),
+    "friendship-day": ("#3e4382", "#a568ac", "#f6d77f"),
+    "childrens-day": ("#275b70", "#75aba0", "#f9dc8d"),
+    "ramadan": ("#1a3d4d", "#476e70", "#dccd9b"),
+    "easter": ("#55536f", "#b9a9b7", "#f3d8a9"),
+    "independence-day": ("#244c66", "#418076", "#f0bd81"),
+    "republic-day": ("#233f62", "#477878", "#f0c58e"),
     "custom": ("#313e52", "#876c87", "#e5d2aa"),
 }
 
@@ -54,6 +64,16 @@ MOTIFS = {
     "eid-al-fitr": '<path d="M55 -140 A148 148 0 1 0 125 105 A128 128 0 1 1 55 -140Z"/><path d="M124 -120 L137 -84 L173 -71 L137 -57 L124 -20 L111 -57 L75 -71 L111 -84Z"/><circle cx="144" cy="68" r="13"/>',
     "eid-al-adha": '<path d="M-125 155 V-42 Q-125 -100 0 -155 Q125 -100 125 -42 V155Z"/><path d="M-78 155 V-25 Q-78 -60 0 -105 Q78 -60 78 -25 V155"/><path d="M50 -135 A88 88 0 1 0 99 15 A72 72 0 1 1 50 -135Z"/>',
     "christmas": '<path d="M0 -160 L-95 -25 H-58 L-128 65 H-73 L-150 142 H150 L73 65 H128 L58 -25 H95Z"/><path d="M0 142 V175 M0 -215 L17 -177 L56 -172 L26 -145 L34 -108 L0 -128 L-34 -108 L-26 -145 L-56 -172 L-17 -177Z"/><circle cx="-18" cy="15" r="9"/><circle cx="31" cy="70" r="9"/>',
+    "valentines-day": '<path d="M0 145 C-25 118 -140 48 -140 -38 C-140 -118 -46 -148 0 -72 C46 -148 140 -118 140 -38 C140 48 25 118 0 145Z"/><path d="M-160 105 Q-118 80 -102 30 M160 105 Q118 80 102 30"/><circle cx="-148" cy="-123" r="15"/><circle cx="148" cy="-123" r="15"/>',
+    "new-year": '<circle r="124"/><path d="M0 -124 V-162 M0 124 V162 M-124 0 H-162 M124 0 H162 M-90 -90 L-117 -117 M90 -90 L117 -117 M-90 90 L-117 117 M90 90 L117 117"/><path d="M-55 50 V-40 L-22 10 L12 -40 V50 M38 -36 H92 L48 50 H96"/><circle cx="-146" cy="-158" r="8"/><circle cx="148" cy="138" r="7"/>',
+    "mothers-day": '<path d="M0 120 C-90 44 -155 -30 -93 -95 C-50 -140 -6 -95 0 -75 C6 -95 50 -140 93 -95 C155 -30 90 44 0 120Z"/><path d="M-148 124 Q-90 30 -30 86 M148 124 Q90 30 30 86"/><path d="M-158 -38 Q-180 -88 -128 -102 M158 -38 Q180 -88 128 -102"/>',
+    "fathers-day": '<path d="M-138 -96 H138 V94 H-138Z"/><path d="M-98 -56 H98 M-98 -12 H60 M-98 31 H26 M-98 65 H78"/><path d="M-110 128 Q0 155 110 128"/><circle cx="145" cy="-95" r="37"/>',
+    "friendship-day": '<circle cx="-57" cy="0" r="83"/><circle cx="57" cy="0" r="83"/><path d="M-145 100 Q0 160 145 100 M-128 -115 Q0 -170 128 -115"/><circle cx="0" cy="0" r="27"/>',
+    "childrens-day": '<path d="M0 -144 L112 -20 L0 104 L-112 -20Z M0 104 Q62 145 0 190"/><path d="M0 -144 V104 M-112 -20 H112"/><circle cx="-140" cy="-118" r="20"/><circle cx="145" cy="112" r="24"/><path d="M-145 65 L-125 85 M140 -140 L160 -120"/>',
+    "ramadan": '<path d="M40 -146 A150 150 0 1 0 122 105 A124 124 0 1 1 40 -146Z"/><path d="M115 -118 V-72 M85 -72 H145 L134 85 H96Z M91 -30 H139 M98 94 H132"/><path d="M154 -110 L164 -86 L188 -76 L164 -66 L154 -42 L144 -66 L120 -76 L144 -86Z"/>',
+    "easter": '<path d="M-82 120 Q-135 45 -94 -55 Q-65 -135 0 -135 Q65 -135 94 -55 Q135 45 82 120 Q0 165 -82 120Z"/><path d="M-103 35 Q0 -12 103 35 M-100 74 Q0 25 100 74"/><path d="M-170 132 Q-115 70 -80 107 M170 132 Q115 70 80 107"/>',
+    "independence-day": '<path d="M-160 -110 Q-35 -165 130 -105 M-160 -38 Q-35 -93 130 -33 M-160 34 Q-35 -21 130 39"/><circle cx="0" cy="105" r="50"/><circle cx="0" cy="105" r="18"/><path d="M0 55 V155 M-50 105 H50 M-35 70 L35 140 M35 70 L-35 140"/>',
+    "republic-day": '<circle r="110"/><circle r="77"/><circle r="18"/><path d="M0 -110 V110 M-110 0 H110 M-78 -78 L78 78 M78 -78 L-78 78 M-160 -145 H160 M-160 145 H160"/>',
     "custom": '<circle r="125"/><path d="M0 -90 V90 M-90 0 H90 M-63 -63 L63 63 M63 -63 L-63 63"/><circle r="30"/>',
 }
 
@@ -63,7 +83,7 @@ for destination in DESTINATIONS:
         motif = MOTIFS[name]
         svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 720" role="img" aria-label="{name.replace('-', ' ').title()} festival artwork">
 <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="{dark}"/><stop offset="1" stop-color="{mid}"/></linearGradient><radialGradient id="glow"><stop stop-color="{light}" stop-opacity=".28"/><stop offset="1" stop-color="{light}" stop-opacity="0"/></radialGradient><pattern id="dots" width="54" height="54" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r="1.4" fill="{light}" opacity=".32"/></pattern></defs>
-<rect width="1440" height="720" fill="url(#bg)"/><rect width="1440" height="720" fill="url(#dots)"/><circle cx="1050" cy="345" r="350" fill="url(#glow)"/><circle cx="1060" cy="345" r="240" fill="none" stroke="{light}" opacity=".22"/><circle cx="1060" cy="345" r="270" fill="none" stroke="{light}" opacity=".13"/>
+<rect width="1440" height="720" fill="url(#bg)"/><rect width="1440" height="720" fill="url(#dots)"/><circle cx="1050" cy="345" r="350" fill="url(#glow)"/><circle cx="1060" cy="345" r="240" fill="none" stroke="{light}" opacity=".22"/><circle cx="1060" cy="345" r="270" fill="none" stroke="{light}" opacity=".13"/><path d="M740 64 Q1060 -40 1384 64 V656 Q1060 760 740 656" fill="none" stroke="{light}" stroke-width="2" opacity=".24"/><path d="M775 95 Q1060 8 1349 95 V625 Q1060 712 775 625" fill="none" stroke="{light}" opacity=".18"/>
 <g transform="translate(1060 345)" fill="none" stroke="{light}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">{motif}</g>
 <path d="M0 660 Q360 600 720 660 T1440 660" fill="none" stroke="{light}" opacity=".15" stroke-width="2"/><circle cx="130" cy="100" r="4" fill="{light}" opacity=".7"/><circle cx="220" cy="590" r="3" fill="{light}" opacity=".6"/><circle cx="660" cy="110" r="2" fill="{light}" opacity=".6"/>
 </svg>'''

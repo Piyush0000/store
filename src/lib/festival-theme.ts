@@ -1,8 +1,33 @@
-export type FestivalArea = 'announcement' | 'header' | 'hero' | 'products' | 'categories' | 'cart' | 'footer';
+import festivalDesigns from './festival-designs.json';
+
+export type FestivalArea = 'announcement' | 'header' | 'hero' | 'products' | 'categories' | 'collection' | 'cart' | 'footer';
+export type FestivalIntensity = 'off' | 'subtle' | 'balanced' | 'festive';
+export type FestivalEffect = 'lights' | 'glimmer' | 'color' | 'threads' | 'petals' | 'stars' | 'ribbons' | 'sunlight' | 'kites' | 'embers' | 'lanterns' | 'snow' | 'hearts';
+export interface FestivalVisual {
+  effect: FestivalEffect;
+  composition: 'split' | 'center' | 'editorial';
+  typography: 'heritage' | 'modern' | 'expressive';
+  eyebrow: string;
+  buttonStyle: 'solid' | 'outline' | 'soft' | 'glow';
+  intensity: FestivalIntensity;
+  decorations: boolean;
+  motion: boolean;
+  recipe: 'cinematic' | 'elegant' | 'playful' | 'minimal' | 'off';
+  speed: 'slow' | 'normal' | 'fast';
+}
 
 export interface FestivalTheme {
   enabled?: boolean;
   preview?: boolean;
+  reducedMotionPreview?: boolean;
+  source?: 'predefined' | 'custom';
+  customFestivalId?: string;
+  basePresetId?: string;
+  description?: string;
+  category?: string;
+  region?: string;
+  mobileImageUrl?: string;
+  thumbnailUrl?: string;
   presetId?: string;
   name?: string;
   greeting?: string;
@@ -16,9 +41,17 @@ export interface FestivalTheme {
   offerLabel?: string;
   palette?: { primary?: string; accent?: string; surface?: string; text?: string };
   areas?: Partial<Record<FestivalArea, boolean>>;
+  visual?: Partial<FestivalVisual>;
+  merchandising?: { badgeText?: string; collectionTitle?: string; collectionLink?: string };
 }
 
-export const FESTIVAL_AREAS: FestivalArea[] = ['announcement', 'header', 'hero', 'products', 'categories', 'cart', 'footer'];
+const designs = festivalDesigns as Record<string, Omit<FestivalVisual, 'intensity' | 'decorations' | 'motion' | 'recipe' | 'speed'>>;
+export function festivalVisual(theme: FestivalTheme): FestivalVisual {
+  const base = designs[theme.presetId || ''] || designs.custom;
+  return { ...base, intensity:'balanced', decorations:true, motion:true, recipe:'cinematic', speed:'normal', ...theme.visual };
+}
+
+export const FESTIVAL_AREAS: FestivalArea[] = ['announcement', 'header', 'hero', 'products', 'categories', 'collection', 'cart', 'footer'];
 
 export function festivalIsActive(theme: FestivalTheme | null | undefined, now = Date.now()): boolean {
   if (!theme || theme.enabled !== true) return false;

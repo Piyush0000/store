@@ -7,7 +7,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 import Script from "next/script";
-import { Inter, Playfair_Display } from "next/font/google";
 import PageLoader from "@/components/PageLoader";
 import FakeSalesPopup from "@/components/FakeSalesPopup";
 import FloatingLogo from "@/components/FloatingLogo";
@@ -24,19 +23,6 @@ import FestivalExperience from "@/components/FestivalExperience";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { CustomerAiMount } from "@/features/customer-ai/components/customer-ai-mount";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
-});
 
 export default async function RootLayout({
   children,
@@ -88,7 +74,7 @@ export default async function RootLayout({
     : null;
 
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en">
       <head>
         <link rel="icon" href={faviconUrl} />
         <link rel="preconnect" href="https://images.unsplash.com" />
