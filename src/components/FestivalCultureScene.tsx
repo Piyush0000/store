@@ -15,7 +15,7 @@ const ART_DIRECTION: Record<string, { className: string; defaults: [string, stri
   'ganesh-chaturthi': { className: 'ganesh', defaults: ['#783b25', '#e6a849', '#fff4df', '#fffaf2'], title: 'A season for new beginnings', foot: 'Celebrate with warmth and joy' },
   navratri: { className: 'navratri', defaults: ['#54234e', '#e8ae52', '#fff5e8', '#fffaf5'], title: 'Nine nights, one joyful rhythm', foot: 'Move to the rhythm of celebration' },
   'durga-puja': { className: 'durga', defaults: ['#7b283b', '#e5b96c', '#fff6ea', '#fffaf4'], title: 'A city dressed for celebration', foot: 'Tradition, artistry, togetherness' },
-  dussehra: { className: 'dussehra', defaults: ['#542b3d', '#efb957', '#fff7e9', '#fffaf4'], title: 'Welcome a brighter chapter', foot: 'Celebrate courage and renewal' },
+  dussehra: { className: 'dussehra', defaults: ['#291b3a', '#f2b64f', '#fff4e2', '#fff9ef'], title: 'A night when good shines through', foot: 'The joy of Vijayadashami' },
   pongal: { className: 'pongal', defaults: ['#5b482d', '#e3ba65', '#fff4dc', '#fffaf1'], title: 'Gather for a season of plenty', foot: 'Celebrate the joy of the harvest' },
   lohri: { className: 'lohri', defaults: ['#492a2c', '#efad55', '#fff1d8', '#fff9ed'], title: 'Warm moments, shared together', foot: 'A winter evening in celebration' },
   onam: { className: 'onam', defaults: ['#25463c', '#e3c16d', '#f6f1d7', '#fffbed'], title: 'Welcome a season in bloom', foot: 'A celebration of Kerala traditions' },
@@ -43,7 +43,7 @@ const MOTION: Record<string, { target: string; values: gsap.TweenVars; duration:
   'ganesh-chaturthi': { target: '.culture-art__modak svg', values: { y: -12, scale: 1.025, transformOrigin: '50% 70%' }, duration: 3.8 },
   navratri: { target: '.culture-art__mandala svg', values: { rotation: 8, transformOrigin: '50% 50%' }, duration: 17 },
   'durga-puja': { target: '.culture-art__arch svg', values: { yPercent: -2, scale: 1.012, transformOrigin: '50% 100%' }, duration: 5.2 },
-  dussehra: { target: '.culture-art__sun svg', values: { scale: 1.035, transformOrigin: '55% 48%' }, duration: 4.5 },
+  dussehra: { target: '.dussehra__firelight', values: { opacity: .62, scale: 1.12, transformOrigin: '50% 50%' }, duration: 2.4 },
   pongal: { target: '.culture-art__pongal svg', values: { y: -9, rotation: .8, transformOrigin: '50% 80%' }, duration: 4.2 },
   lohri: { target: '.culture-art__lohri svg path:nth-of-type(2)', values: { scale: 1.08, opacity: .82, transformOrigin: '50% 75%' }, duration: .9 },
   onam: { target: '.culture-art__onam svg', values: { rotation: -7, transformOrigin: '50% 53%' }, duration: 18 },
@@ -67,6 +67,44 @@ const MOTION: Record<string, { target: string; values: gsap.TweenVars; duration:
 };
 
 function SceneArt({ id }: { id: string }) {
+  if (id === 'dussehra') return <div className="culture-art__dussehra" aria-hidden="true"><svg viewBox="0 0 620 620" fill="none">
+    <defs>
+      <linearGradient id="dussehra-arch" x1="310" y1="78" x2="310" y2="478" gradientUnits="userSpaceOnUse"><stop stopColor="#f6ce82"/><stop offset="1" stopColor="#d96f50"/></linearGradient>
+      <linearGradient id="dussehra-robe" x1="430" y1="243" x2="430" y2="505" gradientUnits="userSpaceOnUse"><stop stopColor="#c45c42"/><stop offset="1" stopColor="#642743"/></linearGradient>
+      <radialGradient id="dussehra-glow"><stop stopColor="#ffd77a" stopOpacity=".72"/><stop offset="1" stopColor="#f27b45" stopOpacity="0"/></radialGradient>
+    </defs>
+    <ellipse cx="430" cy="340" rx="178" ry="225" fill="url(#dussehra-glow)" className="dussehra__firelight"/>
+    <circle cx="157" cy="153" r="74" fill="#f2ae54" fillOpacity=".16"/><circle cx="157" cy="153" r="53" stroke="#ffd995" strokeOpacity=".42" strokeWidth="2"/>
+    <path d="M61 490V270C61 157 141 75 246 75c106 0 186 82 186 195v70" stroke="url(#dussehra-arch)" strokeWidth="8"/>
+    <path d="M89 490V279c0-97 67-164 157-164s157 67 157 164v66" stroke="#f7d795" strokeOpacity=".45" strokeWidth="2"/>
+    <path d="M119 489V292c0-77 52-130 127-130s127 53 127 130v62" stroke="#e98560" strokeOpacity=".62" strokeWidth="5"/>
+    <path d="M49 214c83 49 162 49 237 0s154-49 237 0" stroke="#f5c46d" strokeWidth="3"/>
+    <path d="M63 218v43m56-18v41m56-26v46m56-47v49m56-67v54m56-33v51m56-84v52m56-65v43" stroke="#f5c46d" strokeWidth="2"/>
+    <g fill="#ffdf91"><circle cx="63" cy="263" r="5"/><circle cx="119" cy="284" r="5"/><circle cx="175" cy="304" r="5"/><circle cx="231" cy="306" r="5"/><circle cx="287" cy="275" r="5"/><circle cx="343" cy="273" r="5"/><circle cx="399" cy="266" r="5"/><circle cx="455" cy="249" r="5"/></g>
+    <path d="M359 501h157l-18-174c-4-34-29-59-61-59h-1c-32 0-57 25-61 59l-16 174Z" fill="url(#dussehra-robe)" stroke="#f0be67" strokeWidth="4"/>
+    <path d="m359 501 77-66 77 66m-125-182 48 35 48-35m-91 60 43 33 43-33" stroke="#f7d48a" strokeOpacity=".84" strokeWidth="3"/>
+    <path d="M348 509c-12-16 7-27 1-45 18 12 21 23 14 34 12-7 15-17 12-26 17 17 16 32 3 42-10 8-23 6-30-5Zm174 0c12-16-7-27-1-45-18 12-21 23-14 34-12-7-15-17-12-26-17 17-16 32-3 42 10 8 23 6 30-5Z" fill="#f38a4e" stroke="#ffd176" strokeWidth="2"/>
+    <path d="M358 507c-5-10 5-16 3-25 9 8 10 14 5 21m147 4c5-10-5-16-3-25-9 8-10 14-5 21" stroke="#fff0a7" strokeWidth="3" strokeLinecap="round"/>
+    <path d="M436 267v-28m-56 54 17-27m95 27-17-27" stroke="#f0be67" strokeWidth="4"/>
+    <g stroke="#f7d48a" strokeWidth="2.5">
+      <circle cx="341" cy="205" r="18" fill="#7b3545"/><path d="m324 195 17-20 17 20m-26 1h18" fill="#d27455"/>
+      <circle cx="379" cy="177" r="19" fill="#7b3545"/><path d="m361 167 18-22 18 22m-27 1h18" fill="#d27455"/>
+      <circle cx="417" cy="160" r="20" fill="#7b3545"/><path d="m398 150 19-23 19 23m-28 1h18" fill="#d27455"/>
+      <circle cx="455" cy="160" r="20" fill="#7b3545"/><path d="m436 150 19-23 19 23m-28 1h18" fill="#d27455"/>
+      <circle cx="493" cy="177" r="19" fill="#7b3545"/><path d="m475 167 18-22 18 22m-27 1h18" fill="#d27455"/>
+      <circle cx="531" cy="205" r="18" fill="#7b3545"/><path d="m514 195 17-20 17 20m-26 1h18" fill="#d27455"/>
+      <circle cx="360" cy="151" r="16" fill="#7b3545"/><path d="m345 143 15-18 15 18m-23 1h16" fill="#d27455"/>
+      <circle cx="398" cy="126" r="17" fill="#7b3545"/><path d="m382 117 16-20 16 20m-24 1h16" fill="#d27455"/>
+      <circle cx="474" cy="126" r="17" fill="#7b3545"/><path d="m458 117 16-20 16 20m-24 1h16" fill="#d27455"/>
+      <circle cx="512" cy="151" r="16" fill="#7b3545"/><path d="m497 143 15-18 15 18m-23 1h16" fill="#d27455"/>
+    </g>
+    <path d="M560 273 441 329" stroke="#fff0c5" strokeWidth="3"/><path d="m454 317-13 12 18 2" stroke="#fff0c5" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M65 512c64-25 124-32 181-20 48 10 86 11 113 0m-302 23h507" stroke="#f1bd68" strokeOpacity=".72" strokeWidth="3"/>
+    <path d="M80 513v48m58-43v43m58-39v39m58-35v35m58-36v36m58-42v42m58-49v49m58-57v57m58-60v60" stroke="#e68a5a" strokeOpacity=".45" strokeWidth="2"/>
+    <path d="M44 562c59-22 117-22 174 0m194-1c55-26 109-26 164 0" stroke="#d66f4e" strokeOpacity=".65" strokeWidth="5"/>
+    <g fill="#ffd77a"><circle cx="85" cy="115" r="4"/><circle cx="270" cy="104" r="4"/><circle cx="563" cy="91" r="5"/><circle cx="583" cy="244" r="3"/><circle cx="298" cy="190" r="3"/></g>
+    <path d="m95 348 8 19 20 1-16 12 6 19-18-11-17 11 6-19-16-12 20-1 7-19Zm493-93 6 14 15 1-12 9 5 15-14-9-13 9 5-15-12-9 15-1 5-14Z" fill="#ffd77a"/>
+  </svg></div>;
   if (id === 'valentines-day') return <div className="culture-art__valentine" aria-hidden="true"><svg viewBox="0 0 620 620" fill="none"><path d="M310 496S112 382 112 246c0-78 96-114 156-54 19 19 31 39 42 56 11-17 23-37 42-56 60-60 156-24 156 54 0 136-198 250-198 250Z" stroke="#edb1a8" strokeWidth="5"/><path d="M310 435S163 344 163 250c0-48 59-70 97-33 24 24 37 55 50 76 13-21 26-52 50-76 38-37 97-15 97 33 0 94-147 185-147 185Z" fill="#d77d83" fillOpacity=".22" stroke="#f8d5c8" strokeWidth="2"/><path d="M310 202c-22 25-22 52 0 78 22-26 22-53 0-78Z" fill="#f5c97d"/><circle cx="178" cy="183" r="5" fill="#f5c97d"/><circle cx="445" cy="185" r="5" fill="#f5c97d"/></svg></div>;
   if (id === 'new-year') return <div className="culture-art__new-year" aria-hidden="true"><svg viewBox="0 0 620 620" fill="none"><circle cx="310" cy="310" r="205" stroke="#e6c579" strokeOpacity=".3" strokeWidth="2"/><circle cx="310" cy="310" r="151" stroke="#e6c579" strokeOpacity=".52" strokeWidth="2"/><circle cx="310" cy="310" r="98" stroke="#fff0c8" strokeWidth="2"/><path d="M310 210v105l81 49" stroke="#f4d68d" strokeWidth="6" strokeLinecap="round"/><circle cx="310" cy="310" r="10" fill="#f4d68d"/>{Array.from({length:12},(_,i)=><g key={i} transform={`rotate(${i*30} 310 310)`}><path d="M310 73v20" stroke="#e9ce89" strokeWidth="3" strokeLinecap="round"/></g>)}<path d="m119 167 10 23 24 1-19 15 7 23-22-14-21 14 7-23-19-15 24-1 9-23Zm370 116 7 15 16 1-13 10 5 16-15-10-14 10 5-16-13-10 16-1 6-15Z" fill="#f4d68d"/></svg></div>;
   if (id === 'mothers-day') return <div className="culture-art__mothers" aria-hidden="true"><svg viewBox="0 0 620 620" fill="none"><path d="M310 500V255m0 102c-70-9-108-47-101-103 55-6 91 28 101 103Zm0-69c67-18 92-63 68-114-53 8-80 46-68 114Zm0 166c-65-18-116-17-154 3m154-3c65-18 116-17 154 3" stroke="#91a878" strokeWidth="6" strokeLinecap="round"/><path d="M310 175c-37 39-37 80 0 119 37-39 37-80 0-119Zm-72 46c-6 49 17 77 67 83 6-49-17-77-67-83Zm144 0c6 49-17 77-67 83-6-49 17-77 67-83Zm-106-94c-22 44-9 78 38 99 22-44 9-78-38-99Z" fill="#e9a79f"/><path d="M95 520c66-30 137-45 215-45s149 15 215 45" stroke="#e4c882" strokeWidth="3"/></svg></div>;
