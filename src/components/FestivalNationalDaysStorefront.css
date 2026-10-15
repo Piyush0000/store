@@ -1,0 +1,71 @@
+/* National days use respectful tricolour accents without turning the flag into a background texture. */
+body[data-festival-preset="independence-day"] { --national-ink:#24434a; --national-paper:#f3f8f4; --national-deep:#1d4850; --national-saffron:#d88943; --national-green:#4f866d; background:var(--national-paper); }
+body[data-festival-preset="republic-day"] { --national-ink:#253f56; --national-paper:#f6f4ec; --national-deep:#233e55; --national-saffron:#d18c4a; --national-green:#557b62; background:var(--national-paper); }
+
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-header="true"] :is(.header,.header__nav),
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-announcement="true"] .festival-offer-bar { background:var(--national-deep)!important; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-header="true"] :is(.header__nav-link,.header__logo-text,.header__icon-btn,.header__mobile-toggle) { color:var(--national-paper)!important; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-header="true"] .header { border-color:var(--national-saffron); box-shadow:0 4px 24px color-mix(in srgb,var(--national-deep) 22%,transparent); }
+
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home,
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) :is(.catalogue,.product-page) { background:radial-gradient(ellipse at 50% 0,color-mix(in srgb,var(--national-green) 10%,transparent),transparent 42%),var(--national-paper); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home :is(.section-title,.products-section__title,.faq-section-title),
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .catalogue__header h1,
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .product-page__title { color:var(--national-ink); font-family:var(--font-playfair),Georgia,serif; font-size:clamp(28px,3.5vw,46px); font-weight:500; letter-spacing:-.025em; text-transform:none; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home :is(.section-title,.products-section__title)::after { background:linear-gradient(90deg,var(--national-saffron),#eee9d9,var(--national-green)); }
+
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home .trust-badges-section { --trust-badges-background:var(--national-deep)!important; padding-block:25px; border-block:2px solid var(--national-saffron); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home .trust-badge-card { border-color:color-mix(in srgb,var(--national-saffron) 60%,transparent); background:color-mix(in srgb,var(--national-paper) 10%,var(--national-deep)); color:var(--national-paper); }
+body[data-festival-preset="independence-day"] .home .trust-badges-section { background-image:radial-gradient(ellipse at 18% 100%,#de9a4d46,transparent 45%),radial-gradient(ellipse at 82% 100%,#65a17b46,transparent 45%); }
+body[data-festival-preset="republic-day"] .home .trust-badges-section { background-image:radial-gradient(circle at 50% 50%,transparent 0 42px,#d6b66022 43px 44px,transparent 45px 64px,#d6b66015 65px 66px,transparent 67px); }
+
+body[data-festival-preset="independence-day"][data-festival-categories="true"] .home .shop-category { background:linear-gradient(118deg,#f7eee0,#edf5ef 52%,#e5f0e8); }
+body[data-festival-preset="republic-day"][data-festival-categories="true"] .home .shop-category { background:radial-gradient(circle at 50% 50%,transparent 0 55px,#d8c78b20 56px 57px,transparent 58px 79px),#eeeae0; }
+body[data-festival-preset="independence-day"][data-festival-categories="true"] .home .shop-category__card { border:2px solid #9eaf91; border-radius:50% 50% 12px 12px; box-shadow:inset 0 0 0 5px #f8f6eb,0 12px 28px #24434a20; }
+body[data-festival-preset="republic-day"][data-festival-categories="true"] .home .shop-category__card { border:2px solid #b89754; border-radius:8px; box-shadow:inset 0 0 0 5px #faf8f0,0 12px 28px #253f5620; }
+
+body[data-festival-preset="independence-day"][data-festival-products="true"] .home .products-section { --products-bg:#f1f7f2!important; --products-title:#24434a!important; --products-text:#566f69!important; --products-accent:#c88743!important; border-block:1px solid #b7c7b7; background-image:radial-gradient(ellipse at 0 50%,#e3a25724,transparent 35%),radial-gradient(ellipse at 100% 50%,#6d9a7524,transparent 35%); }
+body[data-festival-preset="republic-day"][data-festival-products="true"] .home .products-section { --products-bg:#f4f2e9!important; --products-title:#253f56!important; --products-text:#586a73!important; --products-accent:#c58a46!important; border-block:1px solid #c7b77d; background-image:radial-gradient(circle at 50% 50%,transparent 0 55px,#d7c78417 56px 57px,transparent 58px 82px); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-products="true"] .home .product-card { border:1px solid var(--national-green); background:#fffdf8; box-shadow:0 12px 28px color-mix(in srgb,var(--national-deep) 13%,transparent); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-products="true"] .home .product-card__add-btn { background:var(--national-deep); color:var(--national-paper); }
+body[data-festival-preset="independence-day"][data-festival-products="true"] .home .featured-collection { background:radial-gradient(ellipse at 12% 50%,#df974b35,transparent 38%),radial-gradient(ellipse at 88% 50%,#68a17a35,transparent 38%),#21464b; }
+body[data-festival-preset="republic-day"][data-festival-products="true"] .home .featured-collection { background:radial-gradient(circle at 50% 50%,transparent 0 68px,#dfc87b25 69px 70px,transparent 71px 94px),linear-gradient(120deg,#233e55,#2d4c61); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-products="true"] .home .featured-collection .section-title { color:var(--national-paper); }
+
+body[data-festival-preset="independence-day"] .home :is(.most-buy-section,.testimonials-section,.banners-section) { background:#eaf2eb!important; }
+body[data-festival-preset="republic-day"] .home :is(.most-buy-section,.testimonials-section,.banners-section) { background:#eeece3!important; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home :is(.most-buy-card,.testimonials-section__card,.testimonials-bento__tile,.testimonials-summary__panel,.testimonials-marquee__card,.banners-section__card) { border:1px solid color-mix(in srgb,var(--national-green) 55%,var(--national-saffron)); background:var(--national-paper); box-shadow:0 12px 30px color-mix(in srgb,var(--national-deep) 12%,transparent); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home :is(.most-buy-heading,.banners-section__heading,.testimonials-section__heading) { color:var(--national-ink); font-family:var(--font-playfair),Georgia,serif; font-weight:500; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home .most-buy-btn { background:var(--national-deep)!important; color:var(--national-paper)!important; }
+body[data-festival-preset="independence-day"] .home .ticker-bar { --ticker-bg:#1d4850!important; --ticker-fg:#f3f8f4!important; --ticker-accent:#e3a45c!important; }
+body[data-festival-preset="republic-day"] .home .ticker-bar { --ticker-bg:#233e55!important; --ticker-fg:#f6f4ec!important; --ticker-accent:#e0bd6d!important; }
+
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home .faq-section-container { background:var(--national-paper); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home .faq-section-title { color:var(--national-ink)!important; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home .faq-section-badge { background:var(--national-deep); color:var(--national-paper); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home .faq-item-card { border-color:var(--national-saffron); background:#fffdf8; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .catalogue__sidebar { padding:22px; border:1px solid var(--national-saffron); border-radius:12px; background:#fffdf8; align-self:flex-start; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .catalogue__filter-group h3 { color:var(--national-ink); border-bottom-color:var(--national-green); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .catalogue__toolbar select { border-color:var(--national-green); background:#fffdf8; }
+body[data-festival-preset="independence-day"][data-festival-products="true"] .catalogue .product-card, body[data-festival-preset="republic-day"][data-festival-products="true"] .catalogue .product-card { border:1px solid var(--national-green); background:#fffdf8; box-shadow:0 10px 26px color-mix(in srgb,var(--national-deep) 12%,transparent); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .product-page__main-image { border-color:var(--national-saffron); box-shadow:0 12px 30px color-mix(in srgb,var(--national-deep) 14%,transparent); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .product-page__price { color:var(--national-deep); }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) :is(.product-page__add-btn,.cart__checkout-btn,.cart__empty-btn) { background:var(--national-deep); color:var(--national-paper); }
+body[data-festival-preset="independence-day"] .product-page__buy-now { background:#e5a256; color:#24434a; }
+body[data-festival-preset="republic-day"] .product-page__buy-now { background:#dfc36f; color:#253f56; }
+
+body[data-festival-preset="independence-day"][data-festival-cart="true"] .cart { background:radial-gradient(ellipse at 0 0,#e3a25725,transparent 38%),radial-gradient(ellipse at 100% 100%,#6d9a7525,transparent 38%),#f3f8f4; }
+body[data-festival-preset="republic-day"][data-festival-cart="true"] .cart { background:radial-gradient(circle at 50% 0,transparent 0 55px,#d7c78425 56px 57px,transparent 58px 82px),#f6f4ec; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-cart="true"] .cart__title, body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-cart="true"] .checkout__title { color:var(--national-ink); font-family:var(--font-playfair),Georgia,serif; text-transform:none; }
+body[data-festival-preset="independence-day"][data-festival-cart="true"] .checkout { --ck-brand:#1d4850; --ck-on-brand:#f3f8f4; --checkout-border:#afc6b2; background:#f3f8f4; }
+body[data-festival-preset="republic-day"][data-festival-cart="true"] .checkout { --ck-brand:#233e55; --ck-on-brand:#f6f4ec; --checkout-border:#c7b77d; background:#f6f4ec; }
+
+body[data-festival-preset="independence-day"][data-festival-collection="true"] .home .festival-collection { border-block:1px solid #b6c6b5; background:#e6f0e8; color:#24434a; }
+body[data-festival-preset="republic-day"][data-festival-collection="true"] .home .festival-collection { border-block:1px solid #c7b77d; background:#eae9df; color:#253f56; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-collection="true"] .home .festival-collection a { background:var(--national-deep); color:var(--national-paper); }
+body[data-festival-preset="independence-day"][data-festival-footer="true"] .footer-design { --fd-bg:#183c42!important; --fd-text:#f3f8f4!important; --fd-heading:#efb16a!important; --fd-hover:#a8cba9!important; }
+body[data-festival-preset="republic-day"][data-festival-footer="true"] .footer-design { --fd-bg:#1d3549!important; --fd-text:#f6f4ec!important; --fd-heading:#e0bd6d!important; --fd-hover:#a9c39c!important; }
+body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-footer="true"] .footer-design__surface { border-top:3px solid var(--national-saffron); background-image:radial-gradient(circle at 50% 0,transparent 0 58px,#d7c78420 59px 60px,transparent 61px 84px)!important; }
+
+@media(max-width:800px) { body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"])[data-festival-products="true"] .home .products-section { padding-block:52px; } }
+@media(prefers-reduced-motion:reduce) { body:is([data-festival-preset="independence-day"],[data-festival-preset="republic-day"]) .home :is(.product-card,.shop-category__card) { transition:none; } }

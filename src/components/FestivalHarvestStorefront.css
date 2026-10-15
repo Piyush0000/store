@@ -1,0 +1,223 @@
+/* Pongal: a sunlit Tamil harvest, kolam lines and overflowing-pot warmth. */
+body[data-festival-preset="pongal"] {
+  --harvest-ink: #50351f;
+  --harvest-paper: #fff5dc;
+  --harvest-accent: #bd793d;
+  --harvest-deep: #684628;
+  background: var(--harvest-paper);
+}
+/* Makar Sankranti: open winter sky, bright kites and long wind lines. */
+body[data-festival-preset="makar-sankranti"] {
+  --harvest-ink: #173b58;
+  --harvest-paper: #f1f9fb;
+  --harvest-accent: #d68a43;
+  --harvest-deep: #164b70;
+  background: var(--harvest-paper);
+}
+/* Lohri: a Punjabi winter gathering, with a firelit centre and phulkari trim. */
+body[data-festival-preset="lohri"] {
+  --harvest-ink: #39263b;
+  --harvest-paper: #fff4e6;
+  --harvest-accent: #e59c45;
+  --harvest-deep: #281d32;
+  background: var(--harvest-paper);
+}
+
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"])[data-festival-header="true"] :is(.header, .header__nav),
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"])[data-festival-announcement="true"] .festival-offer-bar {
+  background: var(--harvest-deep) !important;
+}
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"])[data-festival-header="true"] .header {
+  border-color: var(--harvest-accent);
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--harvest-deep) 24%, transparent);
+}
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home,
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) :is(.catalogue, .product-page) {
+  background: radial-gradient(ellipse at 50% 0, color-mix(in srgb, var(--harvest-accent) 16%, transparent), transparent 40%), var(--harvest-paper);
+}
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title),
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .catalogue__header h1,
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .product-page__title {
+  color: var(--harvest-ink);
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(28px, 3.5vw, 46px);
+  font-weight: 500;
+  letter-spacing: -.025em;
+  text-transform: none;
+}
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title)::before,
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .catalogue__header::before {
+  display: block;
+  margin: 0 auto 13px;
+  color: var(--harvest-accent);
+  font-family: Georgia, serif;
+  font-size: 15px;
+  letter-spacing: .48em;
+}
+body[data-festival-preset="pongal"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title)::before,
+body[data-festival-preset="pongal"] .catalogue__header::before { content: "❋  ·  ❋  ·  ❋"; }
+body[data-festival-preset="makar-sankranti"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title)::before,
+body[data-festival-preset="makar-sankranti"] .catalogue__header::before { content: "◇  ✦  ◇  ✦  ◇"; }
+body[data-festival-preset="lohri"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title)::before,
+body[data-festival-preset="lohri"] .catalogue__header::before { content: "✦  ·  ✦  ·  ✦"; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home :is(.section-title, .products-section__title)::after { background: linear-gradient(90deg, var(--harvest-accent), #f0cc79, var(--harvest-accent)); }
+
+/* The benefits strip becomes a distinct festival chapter. */
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .trust-badges-section {
+  --trust-badges-background: var(--harvest-deep) !important;
+  padding-block: 25px;
+  border-block: 1px solid var(--harvest-accent);
+}
+body[data-festival-preset="pongal"] .home .trust-badges-section { background-image: repeating-radial-gradient(circle at 50% 100%, transparent 0 36px, #f0cc7933 37px 38px, transparent 39px 60px); }
+body[data-festival-preset="makar-sankranti"] .home .trust-badges-section { background-image: linear-gradient(165deg, transparent 49.6%, #ffffff20 50%, transparent 50.4%), linear-gradient(15deg, transparent 49.6%, #ffffff20 50%, transparent 50.4%); }
+body[data-festival-preset="lohri"] .home .trust-badges-section { background-image: radial-gradient(ellipse at 50% 130%, #eb813b66, transparent 66%), repeating-linear-gradient(45deg, transparent 0 18px, #f3c87819 19px 20px, transparent 21px 38px); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .trust-badge-card {
+  --trust-badge-background: var(--harvest-paper) !important;
+  --trust-badge-title-color: var(--harvest-ink) !important;
+  --trust-badge-description-color: color-mix(in srgb, var(--harvest-ink) 72%, #fff) !important;
+  --trust-badge-icon-color: var(--harvest-deep) !important;
+  --trust-badge-border-color: var(--harvest-accent) !important;
+}
+body[data-festival-preset="pongal"] .home .trust-badge-card { border-radius: 28px 4px 28px 4px; }
+body[data-festival-preset="makar-sankranti"] .home .trust-badge-card { border-radius: 4px 18px; }
+body[data-festival-preset="lohri"] .home .trust-badge-card { border-radius: 4px; }
+
+/* Category and product chapters keep the festival motif behind clear products. */
+body[data-festival-preset="pongal"][data-festival-categories="true"] .home .shop-category {
+  max-width: none;
+  padding-block: 76px;
+  background: repeating-radial-gradient(circle at 50% 110%, transparent 0 68px, #a66a3830 69px 70px, transparent 71px 106px), #fff1d3;
+}
+body[data-festival-preset="pongal"][data-festival-categories="true"] .home .shop-category__slider-wrapper { max-width: 1280px; margin-inline: auto; }
+body[data-festival-preset="pongal"][data-festival-categories="true"] .home .shop-category__card { border: 2px solid #b7793d; border-radius: 40% 40% 12px 12px; box-shadow: inset 0 0 0 5px #fff5dc, 0 12px 28px #68462824; }
+body[data-festival-preset="pongal"][data-festival-categories="true"] .home .shop-category__card::after { content: "✺"; position: absolute; top: 12px; right: 14px; z-index: 2; display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #c8894b; border-radius: 50%; background: #fff5dce8; color: #925c31; pointer-events: none; }
+body[data-festival-preset="makar-sankranti"][data-festival-categories="true"] .home .shop-category { max-width: none; padding-block: 76px; background: linear-gradient(165deg, transparent 49.8%, #4b8bad22 50%, transparent 50.4%), #e4f3f8; }
+body[data-festival-preset="makar-sankranti"][data-festival-categories="true"] .home .shop-category__slider-wrapper { max-width: 1280px; margin-inline: auto; }
+body[data-festival-preset="makar-sankranti"][data-festival-categories="true"] .home .shop-category__card { border: 2px solid #d6954b; box-shadow: 0 12px 28px #164b7024, inset 0 0 0 5px #f1f9fb; }
+body[data-festival-preset="makar-sankranti"][data-festival-categories="true"] .home .shop-category__card::after { content: "◇"; position: absolute; top: 12px; right: 14px; z-index: 2; display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #d6954b; background: #164b70e8; color: #ffe0a6; pointer-events: none; }
+body[data-festival-preset="lohri"][data-festival-categories="true"] .home .shop-category { max-width: none; padding-block: 76px; background: radial-gradient(ellipse at 50% 130%, #e77a3b55, transparent 50%), repeating-linear-gradient(45deg, #f7e6cb 0 22px, #f1d7ae 23px 24px, #f7e6cb 25px 46px); }
+body[data-festival-preset="lohri"][data-festival-categories="true"] .home .shop-category__slider-wrapper { max-width: 1280px; margin-inline: auto; }
+body[data-festival-preset="lohri"][data-festival-categories="true"] .home .shop-category__card { border: 2px solid #bf713a; border-radius: 4px; box-shadow: 0 12px 28px #281d3230, inset 0 0 0 5px #fff4e6; }
+body[data-festival-preset="lohri"][data-festival-categories="true"] .home .shop-category__card::after { content: "✦"; position: absolute; top: 12px; right: 14px; z-index: 2; display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #e59c45; background: #281d32e8; color: #ffd48a; pointer-events: none; }
+
+body[data-festival-preset="pongal"][data-festival-products="true"] .home .products-section { --products-bg: #fff6e2 !important; --products-title: #50351f !important; --products-text: #72543b !important; --products-accent: #bd793d !important; padding-block: 76px; border-block: 1px solid #d8b16e; background-image: radial-gradient(ellipse at 50% -40%, #e9b34b32, transparent 60%); }
+body[data-festival-preset="makar-sankranti"][data-festival-products="true"] .home .products-section { --products-bg: #edf7fa !important; --products-title: #173b58 !important; --products-text: #42677c !important; --products-accent: #d68a43 !important; padding-block: 76px; border-block: 1px solid #8cb9c9; background-image: linear-gradient(165deg, transparent 49.8%, #4b8bad18 50%, transparent 50.4%); }
+body[data-festival-preset="lohri"][data-festival-products="true"] .home .products-section { --products-bg: #fff2df !important; --products-title: #39263b !important; --products-text: #72596a !important; --products-accent: #c66d3f !important; padding-block: 76px; border-block: 1px solid #d29a5c; background-image: radial-gradient(ellipse at 50% -30%, #e77a3b30, transparent 58%); }
+body[data-festival-preset="pongal"][data-festival-products="true"] .home .product-card,
+body[data-festival-preset="makar-sankranti"][data-festival-products="true"] .home .product-card,
+body[data-festival-preset="lohri"][data-festival-products="true"] .home .product-card { border: 1px solid var(--harvest-accent); background: #fffdf8; box-shadow: 0 12px 30px color-mix(in srgb, var(--harvest-deep) 13%, transparent); }
+body[data-festival-preset="pongal"][data-festival-products="true"] .home .product-card__add-btn { background: #684628; color: #fff5dc; }
+body[data-festival-preset="makar-sankranti"][data-festival-products="true"] .home .product-card__add-btn { background: #164b70; color: #f1f9fb; }
+body[data-festival-preset="lohri"][data-festival-products="true"] .home .product-card__add-btn { background: #39263b; color: #fff4e6; }
+
+body[data-festival-preset="pongal"][data-festival-products="true"] .home .featured-collection { max-width: none; padding-inline: max(24px, calc((100vw - 1240px) / 2)); background: radial-gradient(ellipse at 50% -20%, #d9a65360, transparent 55%), #684628; }
+body[data-festival-preset="makar-sankranti"][data-festival-products="true"] .home .featured-collection { max-width: none; padding-inline: max(24px, calc((100vw - 1240px) / 2)); background: linear-gradient(165deg, transparent 49.8%, #ffffff20 50%, transparent 50.4%), #164b70; }
+body[data-festival-preset="lohri"][data-festival-products="true"] .home .featured-collection { max-width: none; padding-inline: max(24px, calc((100vw - 1240px) / 2)); background: radial-gradient(ellipse at 50% 0, #ec7c3e6b, transparent 55%), #281d32; }
+body[data-festival-preset="pongal"][data-festival-products="true"] .home .featured-collection .section-title { color: #fff5dc; }
+body[data-festival-preset="makar-sankranti"][data-festival-products="true"] .home .featured-collection .section-title { color: #f1f9fb; }
+body[data-festival-preset="lohri"][data-festival-products="true"] .home .featured-collection .section-title { color: #fff4e6; }
+
+body[data-festival-preset="pongal"] .home .most-buy-section,
+body[data-festival-preset="makar-sankranti"] .home .most-buy-section,
+body[data-festival-preset="lohri"] .home .most-buy-section { max-width: none; padding: 64px max(16px, calc((100vw - 1240px) / 2)); }
+body[data-festival-preset="pongal"] .home .most-buy-section { background: #f3e4c7 !important; }
+body[data-festival-preset="makar-sankranti"] .home .most-buy-section { background: #e2f1f6 !important; }
+body[data-festival-preset="lohri"] .home .most-buy-section { background: #f4e3cf !important; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .most-buy-card { border: 1px solid var(--harvest-accent); background: var(--harvest-paper) !important; box-shadow: 0 18px 46px color-mix(in srgb, var(--harvest-deep) 15%, transparent); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .most-buy-heading { color: var(--harvest-ink) !important; font-family: var(--font-playfair), Georgia, serif; font-size: clamp(28px, 3vw, 44px); font-weight: 500; }
+body[data-festival-preset="pongal"] .home .most-buy-btn { background: #684628 !important; color: #fff5dc !important; }
+body[data-festival-preset="makar-sankranti"] .home .most-buy-btn { background: #164b70 !important; color: #f1f9fb !important; }
+body[data-festival-preset="lohri"] .home .most-buy-btn { background: #39263b !important; color: #fff4e6 !important; }
+body[data-festival-preset="pongal"][data-festival-collection="true"] .home .festival-collection { border-block: 1px solid #d8b16e; background: #f3e4c7; color: #50351f; }
+body[data-festival-preset="makar-sankranti"][data-festival-collection="true"] .home .festival-collection { border-block: 1px solid #8cb9c9; background: #e2f1f6; color: #173b58; }
+body[data-festival-preset="lohri"][data-festival-collection="true"] .home .festival-collection { border-block: 1px solid #d29a5c; background: #f4e3cf; color: #39263b; }
+body[data-festival-preset="pongal"][data-festival-collection="true"] .home .festival-collection a { background: #684628; color: #fff5dc; }
+body[data-festival-preset="makar-sankranti"][data-festival-collection="true"] .home .festival-collection a { background: #164b70; color: #f1f9fb; }
+body[data-festival-preset="lohri"][data-festival-collection="true"] .home .festival-collection a { background: #39263b; color: #fff4e6; }
+
+body[data-festival-preset="pongal"] .home .ticker-bar { --ticker-bg: #684628 !important; --ticker-fg: #fff5dc !important; --ticker-accent: #f0cc79 !important; border-block: 1px solid #d8b16e; }
+body[data-festival-preset="makar-sankranti"] .home .ticker-bar { --ticker-bg: #164b70 !important; --ticker-fg: #f1f9fb !important; --ticker-accent: #f1bd66 !important; border-block: 1px solid #8cb9c9; }
+body[data-festival-preset="lohri"] .home .ticker-bar { --ticker-bg: #281d32 !important; --ticker-fg: #fff4e6 !important; --ticker-accent: #efa34f !important; border-block: 1px solid #d29a5c; }
+
+body[data-festival-preset="pongal"] .home .testimonials-section { background: radial-gradient(ellipse at 50% 0, #d8a65370, transparent 58%), #684628; }
+body[data-festival-preset="makar-sankranti"] .home .testimonials-section { background: linear-gradient(165deg, transparent 49.8%, #ffffff20 50%, transparent 50.4%), #164b70; }
+body[data-festival-preset="lohri"] .home .testimonials-section { background: radial-gradient(ellipse at 50% 120%, #ed824b77, transparent 60%), #281d32; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .testimonials-section__heading,
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .testimonials-section__view-all { color: var(--harvest-paper); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home :is(.testimonials-section__card, .testimonials-bento__tile, .testimonials-summary__panel, .testimonials-marquee__card) { border: 1px solid var(--harvest-accent); background-color: var(--harvest-paper); box-shadow: 0 12px 36px color-mix(in srgb, var(--harvest-deep) 28%, transparent); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .faq-section-container { padding-block: 76px; background: var(--harvest-paper); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .faq-section-title { color: var(--harvest-ink) !important; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .faq-section-badge { background: var(--harvest-deep); color: var(--harvest-paper); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .faq-badge-icon { color: var(--harvest-accent); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .faq-item-card { border-color: var(--harvest-accent); background: #fffdf8; }
+
+/* Catalogue, detail, cart and checkout continue the same seasonal identity. */
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .catalogue__sidebar { padding: 22px; border: 1px solid var(--harvest-accent); border-radius: 12px; background: #fffdf8; align-self: flex-start; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .catalogue__filter-group h3 { color: var(--harvest-ink); border-bottom-color: color-mix(in srgb, var(--harvest-accent) 60%, transparent); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .catalogue__toolbar select { border-color: var(--harvest-accent); background-color: #fffdf8; }
+body[data-festival-preset="pongal"][data-festival-products="true"] .catalogue .product-card,
+body[data-festival-preset="makar-sankranti"][data-festival-products="true"] .catalogue .product-card,
+body[data-festival-preset="lohri"][data-festival-products="true"] .catalogue .product-card { border: 1px solid var(--harvest-accent); background: #fffdf8; box-shadow: 0 10px 26px color-mix(in srgb, var(--harvest-deep) 13%, transparent); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .product-page__main-image { border-color: var(--harvest-accent); box-shadow: 0 12px 30px color-mix(in srgb, var(--harvest-deep) 14%, transparent); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .product-page__thumb.active { border-color: var(--harvest-deep); box-shadow: 0 0 0 1px var(--harvest-deep); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) :is(.product-page__price, .product-page__section-title) { color: var(--harvest-deep); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .product-page__benefits { border: 1px solid var(--harvest-accent); border-radius: 12px; background: #fffdf8; }
+body[data-festival-preset="pongal"] .product-page__add-cart,
+body[data-festival-preset="pongal"] .cart__checkout-btn,
+body[data-festival-preset="pongal"] .cart__empty-btn { background: #684628; color: #fff5dc; }
+body[data-festival-preset="makar-sankranti"] .product-page__add-cart,
+body[data-festival-preset="makar-sankranti"] .cart__checkout-btn,
+body[data-festival-preset="makar-sankranti"] .cart__empty-btn { background: #164b70; color: #f1f9fb; }
+body[data-festival-preset="lohri"] .product-page__add-cart,
+body[data-festival-preset="lohri"] .cart__checkout-btn,
+body[data-festival-preset="lohri"] .cart__empty-btn { background: #39263b; color: #fff4e6; }
+body[data-festival-preset="pongal"] .product-page__buy-now { background: #e3b75c; color: #50351f; }
+body[data-festival-preset="makar-sankranti"] .product-page__buy-now { background: #f1bd66; color: #173b58; }
+body[data-festival-preset="lohri"] .product-page__buy-now { background: #e59c45; color: #281d32; }
+body[data-festival-preset="pongal"][data-festival-cart="true"] .cart { background: radial-gradient(ellipse at 50% 0, #e7bd6245, transparent 42%), #fff5dc; }
+body[data-festival-preset="makar-sankranti"][data-festival-cart="true"] .cart { background: linear-gradient(165deg, transparent 49.8%, #4b8bad18 50%, transparent 50.4%), #f1f9fb; }
+body[data-festival-preset="lohri"][data-festival-cart="true"] .cart { background: radial-gradient(ellipse at 50% 0, #e77a3b40, transparent 42%), #fff4e6; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"])[data-festival-cart="true"] .cart__title { color: var(--harvest-ink); font-family: var(--font-playfair), Georgia, serif; font-size: clamp(32px, 4vw, 48px); letter-spacing: 0; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"])[data-festival-cart="true"] :is(.cart__item, .cart__summary) { border: 1px solid var(--harvest-accent); background: #fffdf8; }
+body[data-festival-preset="pongal"][data-festival-cart="true"] .checkout { --ck-brand: #684628; --ck-on-brand: #fff5dc; --checkout-border: #d8b16e; background-color: #fff5dc; }
+body[data-festival-preset="makar-sankranti"][data-festival-cart="true"] .checkout { --ck-brand: #164b70; --ck-on-brand: #f1f9fb; --checkout-border: #8cb9c9; background-color: #f1f9fb; }
+body[data-festival-preset="lohri"][data-festival-cart="true"] .checkout { --ck-brand: #39263b; --ck-on-brand: #fff4e6; --checkout-border: #d29a5c; background-color: #fff4e6; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"])[data-festival-cart="true"] .checkout__title { color: var(--harvest-ink); font-family: var(--font-playfair), Georgia, serif; text-transform: none; }
+
+/* Media stays unobscured; only its surrounding frame takes on the theme. */
+body[data-festival-preset="pongal"] .home .store-reels,
+body[data-festival-preset="pongal"] .home .brand-video:not(.brand-video--no-borders) { background: radial-gradient(ellipse at 50% 0, #e9b34b60, transparent 65%), #684628; }
+body[data-festival-preset="makar-sankranti"] .home .store-reels,
+body[data-festival-preset="makar-sankranti"] .home .brand-video:not(.brand-video--no-borders) { background: linear-gradient(165deg, transparent 49.8%, #ffffff20 50%, transparent 50.4%), #164b70; }
+body[data-festival-preset="lohri"] .home .store-reels,
+body[data-festival-preset="lohri"] .home .brand-video:not(.brand-video--no-borders) { background: radial-gradient(ellipse at 50% 110%, #ed824b80, transparent 62%), #281d32; }
+body[data-festival-preset="lohri"] .home .store-reels { background-image: radial-gradient(ellipse at 50% 110%, #ed824b80, transparent 62%), repeating-linear-gradient(45deg, transparent 0 22px, #f3c87818 23px 24px, transparent 25px 46px), linear-gradient(#281d32,#382238); }
+body[data-festival-preset="pongal"] .home .store-reels__card,
+body[data-festival-preset="makar-sankranti"] .home .store-reels__card,
+body[data-festival-preset="lohri"] .home .store-reels__card { border: 2px solid var(--harvest-accent); box-shadow: 0 18px 44px color-mix(in srgb, var(--harvest-deep) 28%, transparent); }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .banners-section { padding-block: 48px; }
+body[data-festival-preset="pongal"] .home .banners-section { background: #684628; }
+body[data-festival-preset="makar-sankranti"] .home .banners-section { background: #164b70; }
+body[data-festival-preset="lohri"] .home .banners-section { background: #281d32; }
+body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home .banners-section__heading { color: var(--harvest-paper); }
+body[data-festival-preset="pongal"] .home .banners-section__card,
+body[data-festival-preset="makar-sankranti"] .home .banners-section__card,
+body[data-festival-preset="lohri"] .home .banners-section__card { border: 1px solid var(--harvest-accent); border-radius: 8px; box-shadow: 0 14px 34px color-mix(in srgb, var(--harvest-deep) 25%, transparent); }
+
+body[data-festival-preset="pongal"][data-festival-footer="true"] .footer-design { --fd-bg: #50351f !important; --fd-text: #fff5dc !important; --fd-heading: #f0cc79 !important; --fd-hover: #f0cc79 !important; }
+body[data-festival-preset="makar-sankranti"][data-festival-footer="true"] .footer-design { --fd-bg: #123d5e !important; --fd-text: #f1f9fb !important; --fd-heading: #f1bd66 !important; --fd-hover: #f1bd66 !important; }
+body[data-festival-preset="lohri"][data-festival-footer="true"] .footer-design { --fd-bg: #24182e !important; --fd-text: #fff4e6 !important; --fd-heading: #efa34f !important; --fd-hover: #efa34f !important; }
+body[data-festival-preset="pongal"][data-festival-footer="true"] .footer-design__surface { border-top: 3px solid #d8b16e; background-image: repeating-radial-gradient(circle at 50% -90%, transparent 0 60px, #f0cc7924 61px 62px, transparent 63px 96px) !important; }
+body[data-festival-preset="makar-sankranti"][data-festival-footer="true"] .footer-design__surface { border-top: 3px solid #8cb9c9; background-image: linear-gradient(165deg, transparent 49.8%, #ffffff20 50%, transparent 50.4%) !important; }
+body[data-festival-preset="lohri"][data-festival-footer="true"] .footer-design__surface { border-top: 3px solid #d29a5c; background-image: radial-gradient(ellipse at 50% -10%, #ed824b73, transparent 52%), repeating-linear-gradient(45deg, transparent 0 20px, #f3c8781c 21px 22px, transparent 23px 42px) !important; }
+body[data-festival-preset="pongal"][data-festival-footer="true"] .footer:not(.footer-design) { background: radial-gradient(ellipse at 50% 0, #d8a65370, transparent 50%), #50351f !important; }
+body[data-festival-preset="makar-sankranti"][data-festival-footer="true"] .footer:not(.footer-design) { background: linear-gradient(165deg, transparent 49.8%, #ffffff20 50%, transparent 50.4%), #123d5e !important; }
+body[data-festival-preset="lohri"][data-festival-footer="true"] .footer:not(.footer-design) { background: radial-gradient(ellipse at 50% 0, #ed824b73, transparent 50%), #24182e !important; }
+
+@media (max-width: 800px) {
+  body[data-festival-preset="pongal"][data-festival-categories="true"] .home .shop-category__card { border-radius: 32% 32% 10px 10px; }
+  body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"])[data-festival-products="true"] .home .products-section { padding-block: 52px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body:is([data-festival-preset="pongal"], [data-festival-preset="makar-sankranti"], [data-festival-preset="lohri"]) .home :is(.product-card, .store-reels__card, .shop-category__card) { transition: none; }
+}
