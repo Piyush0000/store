@@ -15,6 +15,9 @@
 .flagship-scene[data-button="glow"] .flagship-scene__cta{box-shadow:0 0 28px color-mix(in srgb,var(--festival-accent) 42%,transparent)}
 .flagship-scene__caption{position:absolute;right:clamp(30px,6vw,90px);bottom:34px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;opacity:.75}
 .flagship-scene--sankranti{color:#17374d;background:#cbe8f1}
+.flagship-scene--sankranti .flagship-scene__sky{background:radial-gradient(ellipse at 70% 12%,#fff9d9 0,transparent 22%),linear-gradient(180deg,#74b9db 0%,#c6e6ed 56%,#f4dbad 100%)}
+.flagship-scene--sankranti .flagship-scene__kite{filter:drop-shadow(8px 16px 12px #214e6654)}
+.flagship-scene--sankranti .flagship-scene__wind{border-color:#fff9eae0}
 .flagship-scene--sankranti .flagship-scene__content{padding-right:42%}
 .flagship-scene--sankranti .flagship-scene__eyebrow{color:#9a3e34}
 .flagship-scene--sankranti .flagship-scene__title{color:var(--festival-primary)}
@@ -29,11 +32,11 @@
 .flagship-scene__kite--near{right:13%;top:18%}.flagship-scene__kite--far{right:35%;top:12%;width:clamp(80px,11vw,165px);opacity:.8;transform:rotate(-15deg);filter:drop-shadow(4px 7px 7px #37607844)}
 .flagship-scene__wind{position:absolute;right:2%;width:28%;height:70px;border-top:2px solid #fff9eabe;border-radius:50%;transform:rotate(-11deg)}.flagship-scene__wind--one{top:34%}.flagship-scene__wind--two{top:48%;right:21%;width:18%;opacity:.8}
 .flagship-scene--diwali{color:#fff4dd;background:#260718}
-.flagship-scene--diwali .flagship-scene__content{padding-left:52%}
+.flagship-scene--diwali .flagship-scene__content{padding:68px clamp(28px,8vw,120px) 90px 52%}
 .flagship-scene--diwali .flagship-scene__eyebrow{color:#f5bf71}
-.flagship-scene--diwali .flagship-scene__title{max-width:620px;color:var(--festival-text)}
+.flagship-scene--diwali .flagship-scene__title{max-width:620px;color:var(--festival-text);font-size:clamp(54px,6vw,96px)}
 .flagship-scene--diwali .flagship-scene__copy{color:#e8ceb9}
-.flagship-scene--diwali .flagship-scene__cta{background:var(--festival-accent);border-color:var(--festival-accent);color:var(--festival-primary)}
+.flagship-scene--diwali .flagship-scene__cta{margin-top:26px;background:var(--festival-accent);border-color:var(--festival-accent);color:var(--festival-primary)}
 .flagship-scene__night{background:radial-gradient(ellipse at 27% 52%,#783a36 0,transparent 46%),radial-gradient(ellipse at 76% 0,#62213f 0,transparent 44%),linear-gradient(125deg,#1a0718,#3c0d24 61%,#230719)}
 .flagship-scene__glow{position:absolute;left:6%;top:16%;width:47vw;max-width:680px;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#d990465c,transparent 68%)}
 .flagship-scene__arch{position:absolute;inset:30px;border:1px solid #f2c38357;border-radius:48% 48% 2% 2% / 12% 12% 2% 2%;box-shadow:inset 0 0 0 8px #2f0b2030,0 0 0 1px #f2c38322}
@@ -42,4 +45,6 @@
 .flagship-scene__rangoli{position:absolute;left:-4%;bottom:-27%;width:min(45vw,600px);color:#f3bd797a;transform:rotate(24deg)}
 @media(max-width:800px){.flagship-scene{min-height:670px;align-items:end}.flagship-scene__content{padding:265px 30px 65px!important}.flagship-scene--sankranti .flagship-scene__content{background:linear-gradient(0deg,#e9f0eacc,transparent 80%)}.flagship-scene--diwali .flagship-scene__content{background:linear-gradient(0deg,#260718e8,transparent 90%)}.flagship-scene__title{max-width:570px;font-size:clamp(46px,11vw,72px)}.flagship-scene__copy{margin-top:16px}.flagship-scene__cta{margin-top:22px}.flagship-scene__kite--near{right:6%;top:7%;width:145px}.flagship-scene__kite--far{right:48%;top:10%;width:90px}.flagship-scene__sun{right:10%;top:7%}.flagship-scene__flame{left:20%;top:0;width:min(65vw,310px)}.flagship-scene__rangoli{left:-24%;bottom:-14%;width:80vw}.flagship-scene__caption{display:none}}
 @media(max-width:430px){.flagship-scene{min-height:660px}.flagship-scene__content{padding:240px 25px 55px!important}.flagship-scene__title{font-size:44px}.flagship-scene__copy{font-size:15px}.flagship-scene__kite--near{width:125px}.flagship-scene__flame{left:25%;width:245px}}
+@media(max-width:800px){.flagship-scene--diwali .flagship-scene__content{padding:225px 30px 70px!important}.flagship-scene--diwali .flagship-scene__title{font-size:clamp(44px,9vw,68px)}}
+@media(max-width:430px){.flagship-scene--diwali .flagship-scene__content{padding:215px 25px 60px!important}.flagship-scene--diwali .flagship-scene__title{font-size:44px}}
 @media(prefers-reduced-motion:reduce){.flagship-scene__cta{transition:none}.flagship-scene__cta:hover{transform:none}}

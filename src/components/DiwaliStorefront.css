@@ -1,0 +1,380 @@
+/* A storefront-wide Diwali chapter. The preset flag is set only while the
+   festival is active, including the live preview, and removed on cleanup. */
+body[data-festival-preset="diwali"] .home {
+  --diwali-cream: #fff8eb;
+  --diwali-gold: var(--festival-accent, #f7c76b);
+  background: var(--diwali-cream);
+}
+body[data-festival-preset="diwali"][data-festival-header="true"] .header,
+body[data-festival-preset="diwali"][data-festival-header="true"] .header__nav,
+body[data-festival-preset="diwali"][data-festival-announcement="true"] .festival-offer-bar {
+  background: #260718 !important;
+}
+body[data-festival-preset="diwali"][data-festival-header="true"] .header {
+  border-color: var(--festival-accent);
+  box-shadow: 0 4px 24px #1b061643;
+}
+
+body[data-festival-preset="diwali"] .home .faq-section-container,
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category,
+body[data-festival-preset="diwali"][data-festival-products="true"] .home :is(.products-section, .featured-collection) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* A repeating lamp and rangoli line ties the shopping chapters together. */
+body[data-festival-preset="diwali"] .home .faq-section-container::before,
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category::before,
+body[data-festival-preset="diwali"][data-festival-products="true"] .home :is(.products-section, .featured-collection)::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--diwali-gold) 25%, transparent) 1px, transparent 2px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(90deg, #000 0, transparent 23%, transparent 77%, #000 100%);
+}
+body[data-festival-preset="diwali"] .home .faq-section-container > *,
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category > *,
+body[data-festival-preset="diwali"][data-festival-products="true"] .home :is(.products-section, .featured-collection) > * {
+  position: relative;
+  z-index: 1;
+}
+
+body[data-festival-preset="diwali"] .home :is(.banners-section__heading, .testimonials-section__heading, .faq-section-title),
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category .section-title,
+body[data-festival-preset="diwali"][data-festival-products="true"] .home :is(.products-section__title, .featured-collection .section-title) {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -.025em;
+  text-transform: none;
+  font-size: clamp(27px, 3.5vw, 46px);
+  line-height: 1.16;
+}
+
+body[data-festival-preset="diwali"] .home :is(.banners-section__heading, .testimonials-section__heading, .faq-section-title)::before,
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category .section-title::before,
+body[data-festival-preset="diwali"][data-festival-products="true"] .home :is(.products-section__title, .featured-collection .section-title)::before {
+  content: "✦  ✧  ✦";
+  display: block;
+  margin-bottom: 12px;
+  color: var(--diwali-gold);
+  font-family: Georgia, serif;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: .55em;
+}
+
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category .section-title::after,
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .featured-collection .section-title::after {
+  width: 80px;
+  height: 1px;
+  background: var(--diwali-gold);
+}
+
+/* Reassurance immediately after the hero reads as part of the celebration. */
+body[data-festival-preset="diwali"] .home .trust-badges-section {
+  --trust-badges-background: #3d142b !important;
+  padding-block: 28px;
+  border-block: 1px solid color-mix(in srgb, var(--diwali-gold) 68%, transparent);
+  background-image: radial-gradient(circle at 50% -110%, #a25d5360, transparent 68%);
+}
+body[data-festival-preset="diwali"] .home .trust-badge-card {
+  --trust-badge-background: #fff7e8 !important;
+  --trust-badge-title-color: #42192e !important;
+  --trust-badge-description-color: #725768 !important;
+  --trust-badge-icon-color: #8d4b22 !important;
+  --trust-badge-border-color: color-mix(in srgb, var(--diwali-gold) 70%, #6b334a) !important;
+  box-shadow: 0 8px 28px #16061238;
+}
+
+/* The reel content stays untouched; its surround becomes a festive gallery. */
+body[data-festival-preset="diwali"] .home .store-reels {
+  background: radial-gradient(circle at 12% 12%, #f7d89b70, transparent 30%),
+    radial-gradient(circle at 89% 80%, #cf8d9a40, transparent 30%), #fff8eb;
+  border-bottom: 1px solid #d6a75066;
+}
+body[data-festival-preset="diwali"] .home .store-reels__card {
+  border: 3px solid var(--diwali-gold);
+  box-shadow: 0 20px 55px #40132938, 0 0 0 7px #f7c76b25;
+}
+
+/* Categories get the rangoli floor and a more ceremonial card frame. */
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category {
+  max-width: none;
+  padding-block: clamp(58px, 6vw, 96px);
+  background: radial-gradient(circle at 50% 0, #f7c76b3d, transparent 45%), #fff8eb;
+}
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category__slider-wrapper {
+  max-width: 1280px;
+  margin-inline: auto;
+}
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category__card {
+  border: 2px solid var(--diwali-gold);
+  box-shadow: 0 12px 30px #40132924, inset 0 0 0 5px #fff8eb;
+}
+body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category__card::after {
+  content: "✦";
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #3b112ac9;
+  color: var(--diwali-gold);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+/* Merchant media remains readable, with a cinematic frame around it. */
+body[data-festival-preset="diwali"] .home .brand-video:not(.brand-video--no-borders) {
+  padding-block: 40px;
+  background: radial-gradient(circle at 50% 0, #a25d533d, transparent 70%), #2a0b20;
+}
+body[data-festival-preset="diwali"] .home .brand-video:not(.brand-video--no-borders) .brand-video__wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 9px 33px;
+  border: 1px solid color-mix(in srgb, var(--diwali-gold) 65%, transparent);
+  border-radius: 5px;
+  pointer-events: none;
+}
+body[data-festival-preset="diwali"] .home .banners-section {
+  padding-block: 52px;
+  background: #2a0b20;
+}
+body[data-festival-preset="diwali"] .home .banners-section__heading { color: #fff8eb; }
+body[data-festival-preset="diwali"] .home .banners-section__grid { gap: 12px; padding-inline: 12px; }
+body[data-festival-preset="diwali"] .home .banners-section__card {
+  border: 1px solid color-mix(in srgb, var(--diwali-gold) 75%, transparent);
+  border-radius: 10px;
+  box-shadow: 0 16px 36px #14030f50;
+}
+
+/* Product photographs stay neutral while the collection stages change. */
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .products-section {
+  --products-bg: #fff7e9 !important;
+  --products-title: #42172e !important;
+  --products-text: #745363 !important;
+  --products-accent: var(--diwali-gold) !important;
+  padding-block: clamp(60px, 6vw, 96px);
+  border-block: 1px solid #e4c18d8c;
+  background-image: radial-gradient(circle at 50% -40%, #f7c76b47, transparent 62%);
+}
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .products-section__divider {
+  width: 90px;
+  height: 1px;
+}
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .product-card {
+  background: #fffdf8;
+  border: 1px solid #c9945d99;
+  box-shadow: 0 12px 30px #4013291c;
+}
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .product-card__add-btn {
+  background: #4d1732;
+  color: #fff8eb;
+}
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .products-section__tabs button.active {
+  color: #fff8eb;
+}
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .featured-collection {
+  max-width: none;
+  padding-inline: max(24px, calc((100vw - 1240px) / 2));
+  background: radial-gradient(circle at 50% -10%, #8c4c473f, transparent 42%), #321027;
+}
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .featured-collection .section-title {
+  color: #fff8eb;
+}
+body[data-festival-preset="diwali"][data-festival-products="true"] .home .featured-collection > p {
+  color: #fff8eb !important;
+}
+
+body[data-festival-preset="diwali"] .home .most-buy-section {
+  max-width: none;
+  padding: 64px max(16px, calc((100vw - 1240px) / 2));
+  background: #fff2dc !important;
+}
+body[data-festival-preset="diwali"] .home .most-buy-card {
+  border: 1px solid #d9ad70;
+  background: #fffaf1 !important;
+  box-shadow: 0 20px 50px #42172e21;
+}
+body[data-festival-preset="diwali"] .home .most-buy-heading {
+  color: #42172e !important;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(28px, 3vw, 46px);
+  font-weight: 500;
+}
+body[data-festival-preset="diwali"] .home .most-buy-btn {
+  background: #4d1732 !important;
+  color: #fff8eb !important;
+}
+
+body[data-festival-preset="diwali"] .home .ticker-bar {
+  --ticker-bg: #4d1732 !important;
+  --ticker-fg: #fff8eb !important;
+  --ticker-accent: var(--diwali-gold) !important;
+  border-block: 1px solid var(--diwali-gold);
+}
+body[data-festival-preset="diwali"] .home .testimonials-section {
+  padding-block: 78px;
+  background: radial-gradient(circle at 50% 0, #a25d5340, transparent 55%), #351329;
+}
+body[data-festival-preset="diwali"] .home .testimonials-section__heading,
+body[data-festival-preset="diwali"] .home .testimonials-section__view-all { color: #fff8eb; }
+body[data-festival-preset="diwali"] .home :is(.testimonials-section__card, .testimonials-bento__tile, .testimonials-summary__panel, .testimonials-marquee__card) {
+  border: 1px solid #d6a750a8;
+  background-color: #fff9ef;
+  box-shadow: 0 14px 40px #14030f45;
+}
+
+body[data-festival-preset="diwali"] .home .faq-section-container {
+  padding-block: 80px;
+  background: #fff8eb;
+}
+body[data-festival-preset="diwali"] .home .faq-section-title { color: #42172e !important; }
+body[data-festival-preset="diwali"] .home .faq-section-badge {
+  background: #4d1732;
+  color: #fff8eb;
+}
+body[data-festival-preset="diwali"] .home .faq-badge-icon { color: var(--diwali-gold); }
+body[data-festival-preset="diwali"] .home .faq-item-card {
+  border-color: #d6a75099;
+  background: #fffdf8;
+  box-shadow: 0 8px 24px #42172e12;
+}
+body[data-festival-preset="diwali"] .home .faq-item-card--open { border-color: #a86b46; }
+
+/* The merchant footer design gets a night-scene surface instead of a thin trim. */
+body[data-festival-preset="diwali"][data-festival-footer="true"] .footer-design {
+  --fd-bg: #260718 !important;
+  --fd-text: #fff8eb !important;
+  --fd-heading: var(--festival-accent) !important;
+  --fd-hover: var(--festival-accent) !important;
+}
+body[data-festival-preset="diwali"][data-festival-footer="true"] .footer-design__surface {
+  background-image: radial-gradient(circle at 50% -20%, #a25d5366, transparent 45%),
+    radial-gradient(circle, #f7c76b50 1px, transparent 2px) !important;
+  background-size: auto, 62px 62px !important;
+  border-top: 3px solid var(--festival-accent);
+}
+body[data-festival-preset="diwali"][data-festival-footer="true"] .footer:not(.footer-design) {
+  background: radial-gradient(circle at 50% -20%, #a25d5366, transparent 45%), #260718 !important;
+}
+
+/* Keep the same campaign identity through catalogue, product and purchase. */
+body[data-festival-preset="diwali"] { background: #fff8eb; }
+body[data-festival-preset="diwali"] :is(.catalogue, .product-page) {
+  background: radial-gradient(circle at 50% 0, #f7c76b3d, transparent 36%), #fff8eb;
+}
+body[data-festival-preset="diwali"] :is(.catalogue__header h1, .product-page__title) {
+  color: #42172e;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(30px, 3.8vw, 52px);
+  font-weight: 500;
+  letter-spacing: -.035em;
+  line-height: 1.14;
+  text-transform: none;
+}
+body[data-festival-preset="diwali"] .catalogue__header::before {
+  content: "✦  ✧  ✦";
+  display: block;
+  margin: 10px auto 16px;
+  color: #a46a2e;
+  letter-spacing: .5em;
+}
+body[data-festival-preset="diwali"] .catalogue__sidebar {
+  padding: 24px;
+  border: 1px solid #d6a75099;
+  border-radius: 14px;
+  background: #fffdf8;
+  align-self: flex-start;
+}
+body[data-festival-preset="diwali"] .catalogue__filter-group h3 {
+  border-bottom-color: #d6a75099;
+  color: #42172e;
+}
+body[data-festival-preset="diwali"] .catalogue__filter-option input { accent-color: #7a2c4d; }
+body[data-festival-preset="diwali"] .catalogue__toolbar select {
+  border-color: #d6a75099;
+  background-color: #fffdf8;
+}
+body[data-festival-preset="diwali"][data-festival-products="true"] .catalogue .product-card {
+  border: 1px solid #c9945d99;
+  background: #fffdf8;
+  box-shadow: 0 12px 30px #4013291c;
+}
+body[data-festival-preset="diwali"] .product-page__main-image {
+  border-color: #d6a75099;
+  box-shadow: 0 14px 34px #4013291c;
+}
+body[data-festival-preset="diwali"] .product-page__thumb.active {
+  border-color: #a46a2e;
+  box-shadow: 0 0 0 1px #a46a2e;
+}
+body[data-festival-preset="diwali"] :is(.product-page__price, .product-page__section-title) { color: #6b1736; }
+body[data-festival-preset="diwali"] .product-page__benefits {
+  border: 1px solid #d6a75099;
+  border-radius: 14px;
+  background: #fffdf8;
+}
+body[data-festival-preset="diwali"] .product-page__add-cart {
+  border-color: #6b1736;
+  background: #6b1736;
+  color: #fff8eb;
+}
+body[data-festival-preset="diwali"] .product-page__buy-now {
+  border-color: #ad793c;
+  background: #f7c76b;
+  color: #351329;
+}
+body[data-festival-preset="diwali"][data-festival-cart="true"] .cart {
+  background: radial-gradient(circle at 50% 0, #f7c76b3d, transparent 42%), #fff8eb;
+}
+body[data-festival-preset="diwali"][data-festival-cart="true"] .cart__title {
+  color: #42172e;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(32px, 4vw, 48px);
+  letter-spacing: -.02em;
+}
+body[data-festival-preset="diwali"][data-festival-cart="true"] :is(.cart__item, .cart__summary) {
+  border: 1px solid #d6a75099;
+  background: #fffdf8;
+  box-shadow: 0 10px 28px #40132914;
+}
+body[data-festival-preset="diwali"][data-festival-cart="true"] :is(.cart__checkout-btn, .cart__empty-btn) {
+  background: #6b1736;
+  color: #fff8eb;
+}
+body[data-festival-preset="diwali"][data-festival-cart="true"] .checkout {
+  --ck-brand: #6b1736;
+  --ck-on-brand: #fff8eb;
+  --checkout-border: #d6a75099;
+  --checkout-bg: #fff8eb;
+  background-color: #fff8eb;
+}
+body[data-festival-preset="diwali"][data-festival-cart="true"] .checkout__title {
+  color: #42172e;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(27px, 3vw, 39px);
+  letter-spacing: -.02em;
+  text-transform: none;
+}
+
+@media (max-width: 800px) {
+  body[data-festival-preset="diwali"] .home .banners-section__grid { gap: 8px; padding-inline: 8px; }
+  body[data-festival-preset="diwali"] .home .brand-video:not(.brand-video--no-borders) .brand-video__wrapper::after { inset: 6px 28px; }
+  body[data-festival-preset="diwali"] .home .faq-section-container::before,
+  body[data-festival-preset="diwali"][data-festival-categories="true"] .home .shop-category::before,
+  body[data-festival-preset="diwali"][data-festival-products="true"] .home :is(.products-section, .featured-collection)::before { opacity: .5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-festival-preset="diwali"] .home :is(.product-card, .store-reels__card, .shop-category__card) { transition: none; }
+}

@@ -1,0 +1,122 @@
+/* A custom festival has no preset-specific stylesheet. Use the merchant's
+   saved palette and visual settings to carry its identity through the store. */
+body[data-festival-source="custom"][data-festival-active="true"] {
+  --custom-festival-wash: color-mix(in srgb, var(--festival-surface) 82%, white);
+  --custom-festival-tint: color-mix(in srgb, var(--festival-accent) 14%, var(--festival-surface));
+  --custom-festival-line: color-mix(in srgb, var(--festival-accent) 52%, transparent);
+  background-color: var(--custom-festival-wash);
+}
+
+/* Store chrome and navigation */
+body[data-festival-source="custom"][data-festival-header="true"] .header {
+  background: linear-gradient(110deg, var(--festival-primary), color-mix(in srgb, var(--festival-primary) 84%, var(--festival-accent))) !important;
+  border-bottom: 2px solid var(--festival-accent);
+}
+body[data-festival-source="custom"][data-festival-header="true"] .header__nav {
+  background: var(--festival-primary) !important;
+  box-shadow: inset 0 -2px var(--festival-accent);
+}
+
+/* Home page sections share a restrained festival frame and alternating wash. */
+body[data-festival-source="custom"] .home :is(.shop-category, .products-section, .featured-collection, .banners-section, .trust-badges-section, .most-buy-section, .testimonials-section, .faq-section-container, .brand-video) {
+  position: relative;
+  isolation: isolate;
+}
+body[data-festival-source="custom"] .home :is(.shop-category, .products-section, .featured-collection, .banners-section, .trust-badges-section, .most-buy-section, .testimonials-section, .faq-section-container)::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 10px clamp(12px, 3vw, 44px);
+  border: 1px solid var(--custom-festival-line);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at 8% 0%, color-mix(in srgb, var(--festival-accent) 11%, transparent), transparent 38%),
+    linear-gradient(135deg, var(--custom-festival-wash), color-mix(in srgb, var(--festival-surface) 94%, var(--festival-accent)));
+  pointer-events: none;
+}
+body[data-festival-source="custom"] .home :is(.shop-category, .products-section, .featured-collection, .banners-section, .trust-badges-section, .most-buy-section, .testimonials-section, .faq-section-container) > * {
+  position: relative;
+}
+body[data-festival-source="custom"] .home :is(.shop-category .section-title, .products-section__title, .featured-collection .section-title, .banners-section__heading, .testimonials-section__heading, .faq-section-title, .most-buy-heading) {
+  color: var(--festival-primary);
+}
+body[data-festival-source="custom"][data-festival-categories="true"] .home .shop-category__card,
+body[data-festival-source="custom"][data-festival-products="true"] .home .product-card,
+body[data-festival-source="custom"] .home :is(.banners-section__card, .trust-badge-card, .most-buy-card, .testimonials-section__card, .testimonials-bento__tile, .faq-item-card) {
+  border-color: var(--custom-festival-line);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--festival-primary) 10%, transparent);
+}
+body[data-festival-source="custom"][data-festival-products="true"] .home :is(.product-card__badge, .product-card__add-btn, .products-section__tabs button.active),
+body[data-festival-source="custom"] .home :is(.most-buy-btn, .faq-section-badge) {
+  background: var(--festival-primary);
+  color: var(--festival-text);
+}
+body[data-festival-source="custom"] .home .ticker-bar {
+  border-block: 1px solid var(--custom-festival-line);
+  background: var(--custom-festival-tint);
+  color: var(--festival-primary);
+}
+body[data-festival-source="custom"] .home .brand-video:not(.brand-video--no-borders) .brand-video__wrapper {
+  outline: 1px solid var(--custom-festival-line);
+  outline-offset: -10px;
+}
+
+/* Catalogue and product detail */
+body[data-festival-source="custom"] :is(.catalogue__header, .product-page__main-image) {
+  border-color: var(--custom-festival-line);
+  background-color: var(--custom-festival-wash);
+}
+body[data-festival-source="custom"] :is(.catalogue__header h1, .product-page__title, .product-page__price, .product-page__section-title) {
+  color: var(--festival-primary);
+}
+body[data-festival-source="custom"] .catalogue__sidebar {
+  border: 1px solid var(--custom-festival-line);
+  border-radius: 14px;
+  background: var(--custom-festival-wash);
+}
+body[data-festival-source="custom"] .catalogue__toolbar select { border-color: var(--custom-festival-line); }
+body[data-festival-source="custom"][data-festival-products="true"] .catalogue .product-card {
+  border-color: var(--custom-festival-line);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--festival-primary) 9%, transparent);
+}
+body[data-festival-source="custom"] .product-page__main-image { box-shadow: 0 12px 30px color-mix(in srgb, var(--festival-primary) 12%, transparent); }
+body[data-festival-source="custom"] .product-page__thumb.active { border-color: var(--festival-accent); }
+body[data-festival-source="custom"] :is(.product-page__add-cart, .product-page__buy-now) {
+  border-color: var(--festival-primary);
+  background: var(--festival-primary);
+  color: var(--festival-text);
+}
+
+/* Cart, checkout, and footer */
+body[data-festival-source="custom"][data-festival-cart="true"] :is(.cart, .checkout) {
+  --gold: var(--festival-primary);
+  --gold-light: var(--festival-accent);
+  --ck-brand: var(--festival-primary);
+  --ck-on-brand: var(--festival-text);
+  --checkout-border: var(--custom-festival-line);
+}
+body[data-festival-source="custom"][data-festival-cart="true"] .cart {
+  background-image: radial-gradient(ellipse at 90% 0%, color-mix(in srgb, var(--festival-accent) 16%, transparent), transparent 40%);
+}
+body[data-festival-source="custom"][data-festival-footer="true"] footer {
+  border-top: 3px solid var(--festival-accent);
+  background: linear-gradient(110deg, var(--festival-primary), color-mix(in srgb, var(--festival-primary) 86%, var(--festival-accent))) !important;
+  color: var(--festival-text);
+}
+body[data-festival-source="custom"][data-festival-footer="true"] .footer-design {
+  --fd-bg: var(--festival-primary) !important;
+  --fd-text: var(--festival-text) !important;
+  --fd-heading: var(--festival-accent) !important;
+  --fd-hover: var(--festival-accent) !important;
+}
+
+@media (max-width: 700px) {
+  body[data-festival-source="custom"] .home :is(.shop-category, .products-section, .featured-collection, .banners-section, .trust-badges-section, .most-buy-section, .testimonials-section, .faq-section-container)::before {
+    inset-inline: 8px;
+    border-radius: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-festival-source="custom"] .home :is(.product-card, .shop-category__card) { transition: none !important; }
+  body[data-festival-source="custom"] .home :is(.product-card, .shop-category__card):hover { transform: none !important; }
+}

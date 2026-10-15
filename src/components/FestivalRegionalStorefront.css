@@ -1,0 +1,301 @@
+/* Navratri: a Gujarat Garba night of circular forms, mirror glints and rhythm. */
+body[data-festival-preset="navratri"] {
+  --regional-ink: #351137;
+  --regional-paper: #fff5e8;
+  --regional-accent: #f2bd57;
+  background: var(--regional-paper);
+}
+body[data-festival-preset="navratri"][data-festival-header="true"] :is(.header, .header__nav),
+body[data-festival-preset="navratri"][data-festival-announcement="true"] .festival-offer-bar {
+  background: #351137 !important;
+}
+body[data-festival-preset="navratri"][data-festival-header="true"] .header {
+  border-color: #f2bd57;
+  box-shadow: 0 4px 24px #35113735;
+}
+body[data-festival-preset="navratri"] .home,
+body[data-festival-preset="navratri"] :is(.catalogue, .product-page) {
+  background: radial-gradient(circle at 50% 0, #e8797325, transparent 38%), #fff5e8;
+}
+body[data-festival-preset="navratri"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title),
+body[data-festival-preset="navratri"] .catalogue__header h1,
+body[data-festival-preset="navratri"] .product-page__title {
+  color: #421642;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(28px, 3.5vw, 46px);
+  font-weight: 500;
+  letter-spacing: -.025em;
+  text-transform: none;
+}
+body[data-festival-preset="navratri"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title)::before,
+body[data-festival-preset="navratri"] .catalogue__header::before {
+  content: "✦  ◇  ✦  ◇  ✦";
+  display: block;
+  margin: 0 auto 13px;
+  color: #b35b42;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  letter-spacing: .48em;
+}
+body[data-festival-preset="navratri"] .home :is(.section-title, .products-section__title)::after {
+  background: linear-gradient(90deg, #d75c6a, #f2bd57, #7d4b88);
+}
+body[data-festival-preset="navratri"] .home .trust-badges-section {
+  --trust-badges-background: #351137 !important;
+  padding-block: 25px;
+  border-block: 1px solid #f2bd57;
+  background-image: repeating-radial-gradient(circle at 50% 50%, transparent 0 24px, #f2bd5717 25px 26px, transparent 27px 42px);
+}
+body[data-festival-preset="navratri"] .home .trust-badge-card {
+  --trust-badge-background: #fff5e8 !important;
+  --trust-badge-title-color: #421642 !important;
+  --trust-badge-description-color: #76526d !important;
+  --trust-badge-icon-color: #b45151 !important;
+  --trust-badge-border-color: #e4ae59 !important;
+  border-radius: 24px 5px 24px 5px;
+}
+body[data-festival-preset="navratri"] .home .store-reels {
+  background: repeating-radial-gradient(circle at 50% 55%, transparent 0 64px, #b9515220 65px 66px, transparent 67px 108px), #fff5e8;
+}
+body[data-festival-preset="navratri"] .home .store-reels__card {
+  border: 3px solid #f2bd57;
+  box-shadow: 0 16px 44px #3511373d, 0 0 0 6px #b9515222;
+}
+body[data-festival-preset="navratri"][data-festival-categories="true"] .home .shop-category {
+  max-width: none;
+  padding-block: 76px;
+  background: repeating-radial-gradient(circle at 50% 105%, transparent 0 78px, #b9515215 79px 81px, transparent 82px 122px), #faeadb;
+}
+body[data-festival-preset="navratri"][data-festival-categories="true"] .home .shop-category__slider-wrapper { max-width: 1280px; margin-inline: auto; }
+body[data-festival-preset="navratri"][data-festival-categories="true"] .home .shop-category__card {
+  border: 2px solid #d79749;
+  border-radius: 38% 38% 12px 12px;
+  box-shadow: 0 12px 28px #35113725, inset 0 0 0 5px #fff5e8;
+}
+body[data-festival-preset="navratri"][data-festival-categories="true"] .home .shop-category__card::after {
+  content: "✧";
+  position: absolute;
+  inset: 12px 14px auto auto;
+  z-index: 2;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid #f2bd57;
+  border-radius: 50%;
+  background: #351137d9;
+  color: #ffe0a0;
+  pointer-events: none;
+}
+body[data-festival-preset="navratri"][data-festival-products="true"] .home .products-section {
+  --products-bg: #fff5e8 !important;
+  --products-title: #421642 !important;
+  --products-text: #75546e !important;
+  --products-accent: #ce7951 !important;
+  padding-block: 76px;
+  border-block: 1px solid #e5bd7b;
+  background-image: repeating-radial-gradient(circle at 50% -30%, transparent 0 90px, #b9515210 91px 93px, transparent 94px 140px);
+}
+body[data-festival-preset="navratri"][data-festival-products="true"] .home .product-card {
+  border: 1px solid #d6a253;
+  border-radius: 16px 4px 16px 4px;
+  background: #fffdf8;
+  box-shadow: 0 12px 30px #3511371b;
+}
+body[data-festival-preset="navratri"][data-festival-products="true"] .home .product-card__add-btn { background: #55204e; color: #fff5e8; }
+body[data-festival-preset="navratri"][data-festival-products="true"] .home .featured-collection {
+  max-width: none;
+  padding-inline: max(24px, calc((100vw - 1240px) / 2));
+  background: repeating-radial-gradient(circle at 50% 0, transparent 0 95px, #f2bd5717 96px 98px, transparent 99px 148px), #351137;
+}
+body[data-festival-preset="navratri"][data-festival-products="true"] .home .featured-collection .section-title { color: #fff5e8; }
+body[data-festival-preset="navratri"] .home .most-buy-section { max-width: none; padding: 64px max(16px, calc((100vw - 1240px) / 2)); background: #f6e3cf !important; }
+body[data-festival-preset="navratri"] .home .most-buy-card { border: 1px solid #d6a253; background: #fff9ef !important; box-shadow: 0 18px 46px #35113725; }
+body[data-festival-preset="navratri"] .home .most-buy-heading { color: #421642 !important; font-family: var(--font-playfair), Georgia, serif; font-size: clamp(28px, 3vw, 44px); font-weight: 500; }
+body[data-festival-preset="navratri"] .home .most-buy-btn { background: #55204e !important; color: #fff5e8 !important; }
+body[data-festival-preset="navratri"] .home .ticker-bar { --ticker-bg: #55204e !important; --ticker-fg: #fff5e8 !important; --ticker-accent: #f2bd57 !important; border-block: 1px solid #f2bd57; }
+body[data-festival-preset="navratri"] .home .testimonials-section { background: radial-gradient(circle at 50% 0, #b9515240, transparent 60%), #351137; }
+body[data-festival-preset="navratri"] .home .testimonials-section__heading,
+body[data-festival-preset="navratri"] .home .testimonials-section__view-all { color: #fff5e8; }
+body[data-festival-preset="navratri"] .home :is(.testimonials-section__card, .testimonials-bento__tile, .testimonials-summary__panel, .testimonials-marquee__card) { border: 1px solid #e5bd7b; background-color: #fff8eb; box-shadow: 0 12px 36px #180a1a55; }
+body[data-festival-preset="navratri"] .home .faq-section-container { padding-block: 76px; background: #fff5e8; }
+body[data-festival-preset="navratri"] .home .faq-section-title { color: #421642 !important; }
+body[data-festival-preset="navratri"] .home .faq-section-badge { background: #55204e; color: #fff5e8; }
+body[data-festival-preset="navratri"] .home .faq-badge-icon { color: #f2bd57; }
+body[data-festival-preset="navratri"] .home .faq-item-card { border-color: #d6a253; background: #fffdf8; }
+body[data-festival-preset="navratri"] :is(.catalogue__sidebar, .product-page__main-image, .product-page__benefits) { border-color: #d6a253; background-color: #fffdf8; }
+body[data-festival-preset="navratri"] :is(.catalogue__filter-group h3, .product-page__price, .product-page__section-title) { color: #55204e; }
+body[data-festival-preset="navratri"] .catalogue .product-card { border: 1px solid #d6a253; border-radius: 16px 4px 16px 4px; background: #fffdf8; }
+body[data-festival-preset="navratri"] .product-page__add-cart { background: #55204e; color: #fff5e8; }
+body[data-festival-preset="navratri"] .product-page__buy-now { background: #f2bd57; color: #351137; }
+body[data-festival-preset="navratri"][data-festival-cart="true"] .cart { background: radial-gradient(circle at 50% 0, #d4775b32, transparent 42%), #fff5e8; }
+body[data-festival-preset="navratri"][data-festival-cart="true"] .cart__title { color: #421642; font-family: var(--font-playfair), Georgia, serif; font-size: clamp(32px, 4vw, 48px); letter-spacing: 0; }
+body[data-festival-preset="navratri"][data-festival-cart="true"] :is(.cart__item, .cart__summary) { border: 1px solid #d6a253; background: #fffdf8; }
+body[data-festival-preset="navratri"][data-festival-cart="true"] :is(.cart__checkout-btn, .cart__empty-btn) { background: #55204e; color: #fff5e8; }
+body[data-festival-preset="navratri"][data-festival-cart="true"] .checkout { --ck-brand: #55204e; --ck-on-brand: #fff5e8; --checkout-border: #d6a253; background-color: #fff5e8; }
+body[data-festival-preset="navratri"][data-festival-cart="true"] .checkout__title { color: #421642; font-family: var(--font-playfair), Georgia, serif; text-transform: none; }
+body[data-festival-preset="navratri"][data-festival-footer="true"] .footer-design { --fd-bg: #2e102f !important; --fd-text: #fff5e8 !important; --fd-heading: #f2bd57 !important; --fd-hover: #f2bd57 !important; }
+body[data-festival-preset="navratri"][data-festival-footer="true"] .footer-design__surface { border-top: 3px solid #f2bd57; background-image: repeating-radial-gradient(circle at 50% -90%, transparent 0 82px, #f2bd5718 83px 84px, transparent 85px 126px) !important; }
+body[data-festival-preset="navratri"][data-festival-footer="true"] .footer:not(.footer-design) { background: radial-gradient(circle at 50% 0, #b9515240, transparent 50%), #2e102f !important; }
+
+/* Durga Puja: a welcoming pandal, crafted surfaces and gallery-like displays. */
+body[data-festival-preset="durga-puja"] {
+  --regional-ink: #481626;
+  --regional-paper: #fff8ed;
+  --regional-accent: #c98b49;
+  background: var(--regional-paper);
+}
+body[data-festival-preset="durga-puja"][data-festival-header="true"] :is(.header, .header__nav),
+body[data-festival-preset="durga-puja"][data-festival-announcement="true"] .festival-offer-bar { background: #481626 !important; }
+body[data-festival-preset="durga-puja"][data-festival-header="true"] .header { border-color: #d9ae6a; box-shadow: 0 4px 24px #48162635; }
+body[data-festival-preset="durga-puja"] .home,
+body[data-festival-preset="durga-puja"] :is(.catalogue, .product-page) { background: radial-gradient(ellipse at 50% 0, #e7b77836, transparent 40%), #fff8ed; }
+body[data-festival-preset="durga-puja"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title),
+body[data-festival-preset="durga-puja"] .catalogue__header h1,
+body[data-festival-preset="durga-puja"] .product-page__title {
+  color: #481626;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(28px, 3.5vw, 46px);
+  font-weight: 500;
+  letter-spacing: -.02em;
+  text-transform: none;
+}
+body[data-festival-preset="durga-puja"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title)::before,
+body[data-festival-preset="durga-puja"] .catalogue__header::before { content: "❋  ✦  ❋"; display: block; margin: 0 auto 13px; color: #b35443; font-family: Georgia, serif; font-size: 16px; letter-spacing: .42em; }
+body[data-festival-preset="durga-puja"] .home :is(.section-title, .products-section__title)::after { background: linear-gradient(90deg, #a6433b, #d6ad65, #a6433b); }
+body[data-festival-preset="durga-puja"] .home .trust-badges-section { --trust-badges-background: #481626 !important; padding-block: 25px; border-block: 1px solid #d9ae6a; background-image: repeating-linear-gradient(90deg, transparent 0 38px, #f2d8aa14 39px 40px, transparent 41px 78px); }
+body[data-festival-preset="durga-puja"] .home .trust-badge-card { --trust-badge-background: #fff8ed !important; --trust-badge-title-color: #481626 !important; --trust-badge-description-color: #755b53 !important; --trust-badge-icon-color: #a6433b !important; --trust-badge-border-color: #d9ae6a !important; border-radius: 3px; }
+body[data-festival-preset="durga-puja"] .home .store-reels { background: repeating-linear-gradient(90deg, #481626 0 20px, #55212d 21px 22px, #481626 23px 44px); }
+body[data-festival-preset="durga-puja"] .home .store-reels__card { border: 3px solid #d9ae6a; border-radius: 5px; box-shadow: 0 18px 45px #1f08114d, 0 0 0 6px #fff8ed20; }
+body[data-festival-preset="durga-puja"][data-festival-categories="true"] .home .shop-category { max-width: none; padding-block: 76px; background: repeating-linear-gradient(135deg, #f4e4cf 0 34px, #fff8ed 35px 69px); }
+body[data-festival-preset="durga-puja"][data-festival-categories="true"] .home .shop-category__slider-wrapper { max-width: 1280px; margin-inline: auto; padding: 18px; border: 1px solid #c98b49; background: #fff8ed; box-shadow: 0 12px 40px #48162618; }
+body[data-festival-preset="durga-puja"][data-festival-categories="true"] .home .shop-category__card { border: 2px solid #c98b49; border-radius: 3px; box-shadow: inset 0 0 0 5px #fff8ed, 0 8px 24px #48162620; }
+body[data-festival-preset="durga-puja"][data-festival-categories="true"] .home .shop-category__card::after { content: "✥"; position: absolute; top: 12px; right: 14px; z-index: 2; display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #e2bf7f; background: #481626df; color: #f6d99e; pointer-events: none; }
+body[data-festival-preset="durga-puja"][data-festival-products="true"] .home .products-section { --products-bg: #fff8ed !important; --products-title: #481626 !important; --products-text: #71564e !important; --products-accent: #a6433b !important; padding-block: 76px; border-block: 1px solid #d9ae6a; background-image: radial-gradient(ellipse at 50% -40%, #d8a36530, transparent 60%); }
+body[data-festival-preset="durga-puja"][data-festival-products="true"] .home .product-card { border: 1px solid #c98b49; border-radius: 4px; background: #fffdf8; box-shadow: 0 12px 30px #4816261c; }
+body[data-festival-preset="durga-puja"][data-festival-products="true"] .home .product-card__add-btn { background: #481626; color: #fff8ed; }
+body[data-festival-preset="durga-puja"][data-festival-products="true"] .home .featured-collection { max-width: none; padding-inline: max(24px, calc((100vw - 1240px) / 2)); background: radial-gradient(ellipse at 50% -20%, #b3544350, transparent 54%), #481626; }
+body[data-festival-preset="durga-puja"][data-festival-products="true"] .home .featured-collection .section-title { color: #fff8ed; }
+body[data-festival-preset="durga-puja"] .home .most-buy-section { max-width: none; padding: 64px max(16px, calc((100vw - 1240px) / 2)); background: #f4e4cf !important; }
+body[data-festival-preset="durga-puja"] .home .most-buy-card { border: 1px solid #c98b49; border-radius: 4px; background: #fff8ed !important; box-shadow: 0 18px 46px #48162620; }
+body[data-festival-preset="durga-puja"] .home .most-buy-heading { color: #481626 !important; font-family: var(--font-playfair), Georgia, serif; font-size: clamp(28px, 3vw, 44px); font-weight: 500; }
+body[data-festival-preset="durga-puja"] .home .most-buy-btn { background: #481626 !important; color: #fff8ed !important; }
+body[data-festival-preset="durga-puja"] .home .ticker-bar { --ticker-bg: #481626 !important; --ticker-fg: #fff8ed !important; --ticker-accent: #e0ba72 !important; border-block: 1px solid #d9ae6a; }
+body[data-festival-preset="durga-puja"] .home .testimonials-section { background: radial-gradient(ellipse at 50% 0, #a6433b65, transparent 57%), #481626; }
+body[data-festival-preset="durga-puja"] .home .testimonials-section__heading, body[data-festival-preset="durga-puja"] .home .testimonials-section__view-all { color: #fff8ed; }
+body[data-festival-preset="durga-puja"] .home :is(.testimonials-section__card, .testimonials-bento__tile, .testimonials-summary__panel, .testimonials-marquee__card) { border: 1px solid #d9ae6a; border-radius: 4px; background-color: #fff8ed; box-shadow: 0 12px 36px #210a1650; }
+body[data-festival-preset="durga-puja"] .home .faq-section-container { padding-block: 76px; background: #fff8ed; }
+body[data-festival-preset="durga-puja"] .home .faq-section-title { color: #481626 !important; }
+body[data-festival-preset="durga-puja"] .home .faq-section-badge { border-radius: 3px; background: #481626; color: #fff8ed; }
+body[data-festival-preset="durga-puja"] .home .faq-badge-icon { color: #e0ba72; }
+body[data-festival-preset="durga-puja"] .home .faq-item-card { border-color: #c98b49; border-radius: 4px; background: #fffdf8; }
+body[data-festival-preset="durga-puja"] :is(.catalogue__sidebar, .product-page__main-image, .product-page__benefits) { border-color: #c98b49; background-color: #fffdf8; }
+body[data-festival-preset="durga-puja"] :is(.catalogue__filter-group h3, .product-page__price, .product-page__section-title) { color: #8a2b37; }
+body[data-festival-preset="durga-puja"] .catalogue .product-card { border: 1px solid #c98b49; border-radius: 4px; background: #fffdf8; }
+body[data-festival-preset="durga-puja"] .product-page__add-cart { background: #8a2b37; color: #fff8ed; }
+body[data-festival-preset="durga-puja"] .product-page__buy-now { background: #e0ba72; color: #481626; }
+body[data-festival-preset="durga-puja"][data-festival-cart="true"] .cart { background: radial-gradient(ellipse at 50% 0, #d8a3653b, transparent 42%), #fff8ed; }
+body[data-festival-preset="durga-puja"][data-festival-cart="true"] .cart__title { color: #481626; font-family: var(--font-playfair), Georgia, serif; font-size: clamp(32px, 4vw, 48px); letter-spacing: 0; }
+body[data-festival-preset="durga-puja"][data-festival-cart="true"] :is(.cart__item, .cart__summary) { border: 1px solid #c98b49; border-radius: 4px; background: #fffdf8; }
+body[data-festival-preset="durga-puja"][data-festival-cart="true"] :is(.cart__checkout-btn, .cart__empty-btn) { background: #8a2b37; color: #fff8ed; }
+body[data-festival-preset="durga-puja"][data-festival-cart="true"] .checkout { --ck-brand: #8a2b37; --ck-on-brand: #fff8ed; --checkout-border: #c98b49; background-color: #fff8ed; }
+body[data-festival-preset="durga-puja"][data-festival-cart="true"] .checkout__title { color: #481626; font-family: var(--font-playfair), Georgia, serif; text-transform: none; }
+body[data-festival-preset="durga-puja"][data-festival-footer="true"] .footer-design { --fd-bg: #32101d !important; --fd-text: #fff8ed !important; --fd-heading: #e0ba72 !important; --fd-hover: #e0ba72 !important; }
+body[data-festival-preset="durga-puja"][data-festival-footer="true"] .footer-design__surface { border-top: 4px double #d9ae6a; background-image: repeating-linear-gradient(90deg, transparent 0 40px, #e0ba7212 41px 42px, transparent 43px 82px) !important; }
+body[data-festival-preset="durga-puja"][data-festival-footer="true"] .footer:not(.footer-design) { background: radial-gradient(ellipse at 50% 0, #a6433b50, transparent 50%), #32101d !important; }
+
+/* Dussehra: a night fair and illuminated performance stage, kept region-neutral. */
+body[data-festival-preset="dussehra"] {
+  --regional-ink: #241c36;
+  --regional-paper: #fff7e8;
+  --regional-accent: #f1b958;
+  background: var(--regional-paper);
+}
+body[data-festival-preset="dussehra"][data-festival-header="true"] :is(.header, .header__nav),
+body[data-festival-preset="dussehra"][data-festival-announcement="true"] .festival-offer-bar { background: #20162e !important; }
+body[data-festival-preset="dussehra"][data-festival-header="true"] .header { border-color: #efb957; box-shadow: 0 4px 24px #160f2850; }
+body[data-festival-preset="dussehra"] .home,
+body[data-festival-preset="dussehra"] :is(.catalogue, .product-page) { background: radial-gradient(ellipse at 50% 0, #e3974540, transparent 38%), #fff7e8; }
+body[data-festival-preset="dussehra"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title),
+body[data-festival-preset="dussehra"] .catalogue__header h1,
+body[data-festival-preset="dussehra"] .product-page__title {
+  color: #2d2039;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(28px, 3.5vw, 46px);
+  font-weight: 500;
+  letter-spacing: -.02em;
+  text-transform: none;
+}
+body[data-festival-preset="dussehra"] .home :is(.section-title, .products-section__title, .banners-section__heading, .testimonials-section__heading, .faq-section-title)::before,
+body[data-festival-preset="dussehra"] .catalogue__header::before { content: "✦  ✧  ✦"; display: block; margin: 0 auto 13px; color: #b66a37; font-family: Georgia, serif; font-size: 16px; letter-spacing: .5em; }
+body[data-festival-preset="dussehra"] .home :is(.section-title, .products-section__title)::after { background: linear-gradient(90deg, #a74639, #f1b958, #a74639); }
+body[data-festival-preset="dussehra"] .home .trust-badges-section { --trust-badges-background: #20162e !important; padding-block: 25px; border-block: 1px solid #efb957; background-image: radial-gradient(circle at 50% 0, #f1b95833, transparent 65%); }
+body[data-festival-preset="dussehra"] .home .trust-badge-card { --trust-badge-background: #fff7e8 !important; --trust-badge-title-color: #2d2039 !important; --trust-badge-description-color: #675a68 !important; --trust-badge-icon-color: #a74639 !important; --trust-badge-border-color: #d39b56 !important; }
+body[data-festival-preset="dussehra"] .home .store-reels { background: radial-gradient(ellipse at 50% 110%, #c15b3a45, transparent 55%), linear-gradient(#20162e, #38223a); }
+body[data-festival-preset="dussehra"] .home .store-reels__card { border: 2px solid #efb957; box-shadow: 0 18px 45px #150d2859, 0 0 0 6px #efb95720; }
+body[data-festival-preset="dussehra"][data-festival-categories="true"] .home .shop-category { max-width: none; padding-block: 76px; background: radial-gradient(ellipse at 50% 0, #f1b9583b, transparent 65%), #f8ead8; }
+body[data-festival-preset="dussehra"][data-festival-categories="true"] .home .shop-category__slider-wrapper { max-width: 1280px; margin-inline: auto; }
+body[data-festival-preset="dussehra"][data-festival-categories="true"] .home .shop-category__card { border: 2px solid #cf9850; box-shadow: 0 12px 30px #20162e26, inset 0 0 0 5px #fff7e8; }
+body[data-festival-preset="dussehra"][data-festival-categories="true"] .home .shop-category__card::after { content: "✦"; position: absolute; inset: 12px 14px auto auto; z-index: 2; display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #efb957; border-radius: 50%; background: #20162ed9; color: #ffdc93; pointer-events: none; }
+body[data-festival-preset="dussehra"][data-festival-products="true"] .home .products-section { --products-bg: #fff7e8 !important; --products-title: #2d2039 !important; --products-text: #675a68 !important; --products-accent: #c77b3d !important; padding-block: 76px; border-block: 1px solid #dcad6d; background-image: radial-gradient(ellipse at 50% -35%, #eaa14b38, transparent 58%); }
+body[data-festival-preset="dussehra"][data-festival-products="true"] .home .product-card { border: 1px solid #cf9850; background: #fffdf8; box-shadow: 0 12px 30px #20162e1c; }
+body[data-festival-preset="dussehra"][data-festival-products="true"] .home .product-card__add-btn { background: #34213d; color: #fff7e8; }
+body[data-festival-preset="dussehra"][data-festival-products="true"] .home .featured-collection { max-width: none; padding-inline: max(24px, calc((100vw - 1240px) / 2)); background: radial-gradient(ellipse at 50% 0, #d36c3e52, transparent 56%), #20162e; }
+body[data-festival-preset="dussehra"][data-festival-products="true"] .home .featured-collection .section-title { color: #fff7e8; }
+body[data-festival-preset="dussehra"] .home .most-buy-section { max-width: none; padding: 64px max(16px, calc((100vw - 1240px) / 2)); background: #f5e2c9 !important; }
+body[data-festival-preset="dussehra"] .home .most-buy-card { border: 1px solid #cf9850; background: #fff9ef !important; box-shadow: 0 18px 46px #20162e24; }
+body[data-festival-preset="dussehra"] .home .most-buy-heading { color: #2d2039 !important; font-family: var(--font-playfair), Georgia, serif; font-size: clamp(28px, 3vw, 44px); font-weight: 500; }
+body[data-festival-preset="dussehra"] .home .most-buy-btn { background: #34213d !important; color: #fff7e8 !important; }
+body[data-festival-preset="dussehra"] .home .ticker-bar { --ticker-bg: #34213d !important; --ticker-fg: #fff7e8 !important; --ticker-accent: #f1b958 !important; border-block: 1px solid #efb957; }
+body[data-festival-preset="dussehra"] .home .testimonials-section { background: radial-gradient(ellipse at 50% 0, #b44d3960, transparent 58%), #20162e; }
+body[data-festival-preset="dussehra"] .home .testimonials-section__heading, body[data-festival-preset="dussehra"] .home .testimonials-section__view-all { color: #fff7e8; }
+body[data-festival-preset="dussehra"] .home :is(.testimonials-section__card, .testimonials-bento__tile, .testimonials-summary__panel, .testimonials-marquee__card) { border: 1px solid #d7a65e; background-color: #fff9ef; box-shadow: 0 12px 38px #0c081a60; }
+body[data-festival-preset="dussehra"] .home .faq-section-container { padding-block: 76px; background: #fff7e8; }
+body[data-festival-preset="dussehra"] .home .faq-section-title { color: #2d2039 !important; }
+body[data-festival-preset="dussehra"] .home .faq-section-badge { background: #34213d; color: #fff7e8; }
+body[data-festival-preset="dussehra"] .home .faq-badge-icon { color: #f1b958; }
+body[data-festival-preset="dussehra"] .home .faq-item-card { border-color: #cf9850; background: #fffdf8; }
+body[data-festival-preset="dussehra"] :is(.catalogue__sidebar, .product-page__main-image, .product-page__benefits) { border-color: #cf9850; background-color: #fffdf8; }
+body[data-festival-preset="dussehra"] :is(.catalogue__filter-group h3, .product-page__price, .product-page__section-title) { color: #34213d; }
+body[data-festival-preset="dussehra"] .catalogue .product-card { border: 1px solid #cf9850; background: #fffdf8; }
+body[data-festival-preset="dussehra"] .product-page__add-cart { background: #34213d; color: #fff7e8; }
+body[data-festival-preset="dussehra"] .product-page__buy-now { background: #f1b958; color: #20162e; }
+body[data-festival-preset="dussehra"][data-festival-cart="true"] .cart { background: radial-gradient(ellipse at 50% 0, #eaa14b38, transparent 42%), #fff7e8; }
+body[data-festival-preset="dussehra"][data-festival-cart="true"] .cart__title { color: #2d2039; font-family: var(--font-playfair), Georgia, serif; font-size: clamp(32px, 4vw, 48px); letter-spacing: 0; }
+body[data-festival-preset="dussehra"][data-festival-cart="true"] :is(.cart__item, .cart__summary) { border: 1px solid #cf9850; background: #fffdf8; }
+body[data-festival-preset="dussehra"][data-festival-cart="true"] :is(.cart__checkout-btn, .cart__empty-btn) { background: #34213d; color: #fff7e8; }
+body[data-festival-preset="dussehra"][data-festival-cart="true"] .checkout { --ck-brand: #34213d; --ck-on-brand: #fff7e8; --checkout-border: #cf9850; background-color: #fff7e8; }
+body[data-festival-preset="dussehra"][data-festival-cart="true"] .checkout__title { color: #2d2039; font-family: var(--font-playfair), Georgia, serif; text-transform: none; }
+body[data-festival-preset="dussehra"][data-festival-footer="true"] .footer-design { --fd-bg: #20162e !important; --fd-text: #fff7e8 !important; --fd-heading: #f1b958 !important; --fd-hover: #f1b958 !important; }
+body[data-festival-preset="dussehra"][data-festival-footer="true"] .footer-design__surface { border-top: 3px solid #efb957; background-image: radial-gradient(ellipse at 50% -20%, #bd593b6b, transparent 50%), radial-gradient(circle, #f1b95855 1px, transparent 2px) !important; background-size: auto, 60px 60px !important; }
+body[data-festival-preset="dussehra"][data-festival-footer="true"] .footer:not(.footer-design) { background: radial-gradient(ellipse at 50% 0, #bd593b65, transparent 48%), #20162e !important; }
+
+/* Keep media clear and allow the detailed section treatments to scale down. */
+body[data-festival-preset="navratri"] .home .brand-video:not(.brand-video--no-borders) { background: radial-gradient(circle at 50% 0, #d8755940, transparent 60%), #351137; }
+body[data-festival-preset="durga-puja"] .home .brand-video:not(.brand-video--no-borders) { background: repeating-linear-gradient(90deg, #481626 0 24px, #5b2430 25px 26px, #481626 27px 50px); }
+body[data-festival-preset="dussehra"] .home .brand-video:not(.brand-video--no-borders) { background: radial-gradient(ellipse at 50% 0, #b4513a50, transparent 60%), #20162e; }
+body[data-festival-preset="navratri"] .home .banners-section,
+body[data-festival-preset="durga-puja"] .home .banners-section,
+body[data-festival-preset="dussehra"] .home .banners-section { padding-block: 48px; }
+body[data-festival-preset="navratri"] .home .banners-section { background: #351137; }
+body[data-festival-preset="durga-puja"] .home .banners-section { background: #481626; }
+body[data-festival-preset="dussehra"] .home .banners-section { background: #20162e; }
+body[data-festival-preset="navratri"] .home .banners-section__heading,
+body[data-festival-preset="durga-puja"] .home .banners-section__heading,
+body[data-festival-preset="dussehra"] .home .banners-section__heading { color: #fff8ed; }
+body[data-festival-preset="navratri"] .home .banners-section__card,
+body[data-festival-preset="dussehra"] .home .banners-section__card { border: 1px solid #e1b15e; border-radius: 10px; box-shadow: 0 15px 36px #16091455; }
+body[data-festival-preset="durga-puja"] .home .banners-section__card { border: 1px solid #d9ae6a; border-radius: 3px; box-shadow: 0 15px 36px #16091455; }
+
+@media (max-width: 800px) {
+  body[data-festival-preset="navratri"][data-festival-categories="true"] .home .shop-category__card { border-radius: 30% 30% 10px 10px; }
+  body[data-festival-preset="durga-puja"][data-festival-categories="true"] .home .shop-category__slider-wrapper { padding: 10px; }
+  body[data-festival-preset="navratri"][data-festival-products="true"] .home .products-section,
+  body[data-festival-preset="durga-puja"][data-festival-products="true"] .home .products-section,
+  body[data-festival-preset="dussehra"][data-festival-products="true"] .home .products-section { padding-block: 52px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-festival-preset="navratri"] .home :is(.product-card, .store-reels__card, .shop-category__card),
+  body[data-festival-preset="durga-puja"] .home :is(.product-card, .store-reels__card, .shop-category__card),
+  body[data-festival-preset="dussehra"] .home :is(.product-card, .store-reels__card, .shop-category__card) { transition: none; }
+}

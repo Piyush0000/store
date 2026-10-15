@@ -9,6 +9,13 @@ import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { FESTIVAL_AREAS, festivalAreaEnabled, festivalColor, festivalImage, festivalIsActive, festivalVisual, type FestivalEffect, type FestivalTheme, type FestivalVisual } from '@/lib/festival-theme';
 import './FestivalExperience.css';
+import './FestivalCustomStorefront.css';
+import './DiwaliStorefront.css';
+import './FestivalRegionalStorefront.css';
+import './FestivalHarvestStorefront.css';
+import './FestivalGlobalPersonalStorefront.css';
+import './FestivalNationalDaysStorefront.css';
+import './FestivalSpringRegionalStorefront.css';
 
 const FestivalFlagshipScene = dynamic(() => import('./FestivalFlagshipScene'), { ssr: false });
 const FestivalSeasonalScene = dynamic(() => import('./FestivalSeasonalScene'), { ssr: false });
@@ -68,6 +75,10 @@ export default function FestivalExperience({ initialTheme }: { initialTheme?: Fe
   useEffect(() => {
     const body = document.body;
     body.dataset.festivalActive = active ? 'true' : 'false';
+    body.dataset.festivalSource = active && theme ? theme.source || 'predefined' : '';
+    body.dataset.festivalPreset = active && theme
+      ? (theme.source === 'custom' ? theme.basePresetId || '' : theme.presetId || '')
+      : '';
     for (const area of FESTIVAL_AREAS) body.dataset[`festival${area[0].toUpperCase()}${area.slice(1)}`] = active && theme && festivalAreaEnabled(theme, area) ? 'true' : 'false';
     if (active && theme) {
       const visual = festivalVisual(theme);
@@ -84,7 +95,7 @@ export default function FestivalExperience({ initialTheme }: { initialTheme?: Fe
       body.style.setProperty('--festival-art', `url("${festivalImage(theme.imageUrl, theme.presetId).replace(/["\\]/g, '')}")`);
     }
     return () => {
-      for (const key of ['festivalActive', 'festivalEffect', 'festivalIntensity', 'festivalReduced', 'festivalBadge']) delete body.dataset[key];
+      for (const key of ['festivalActive', 'festivalSource', 'festivalPreset', 'festivalEffect', 'festivalIntensity', 'festivalReduced', 'festivalBadge']) delete body.dataset[key];
       for (const area of FESTIVAL_AREAS) delete body.dataset[`festival${area[0].toUpperCase()}${area.slice(1)}`];
       for (const key of ['--festival-primary', '--festival-accent', '--festival-surface', '--festival-text', '--festival-art', '--festival-badge']) body.style.removeProperty(key);
     };
@@ -99,7 +110,7 @@ export default function FestivalExperience({ initialTheme }: { initialTheme?: Fe
     '--festival-text': festivalColor(theme.palette?.text, '#ffffff'),
   } as CSSProperties;
   return <>
-    {['snow','lights','petals','hearts'].includes(festivalVisual(theme).effect) && <FestivalEffects visual={festivalVisual(theme)} ambient />}
+    {festivalVisual(theme).decorations && festivalVisual(theme).intensity !== 'off' && <FestivalEffects visual={festivalVisual(theme)} ambient />}
     {festivalAreaEnabled(theme, 'announcement') && <div className="festival-offer-bar" style={barStyle}>
       <span className="festival-offer-bar__spark" aria-hidden="true">✦</span>
       <span>{theme.greeting || `Celebrate ${theme.name || 'the festival'} with us`}</span>
