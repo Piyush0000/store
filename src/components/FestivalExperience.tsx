@@ -48,6 +48,9 @@ export default function FestivalExperience({ initialTheme }: { initialTheme?: Fe
       }
     };
     window.addEventListener('message', onPreview);
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'ORBIT_STOREFRONT_PREVIEW_READY' }, '*');
+    }
     return () => window.removeEventListener('message', onPreview);
   }, []);
 

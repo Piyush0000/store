@@ -268,6 +268,9 @@ export default function HomeClient({
       }
     };
     window.addEventListener("message", handleMessage);
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "ORBIT_STOREFRONT_PREVIEW_READY" }, "*");
+    }
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
@@ -758,8 +761,13 @@ export default function HomeClient({
     }
   }
 
+  const festival = customizationState?.festivalTheme;
+  const showFestivalHero = festival && festivalIsActive(festival, festivalNow) && festivalAreaEnabled(festival, 'hero');
+  const hasVisibleHeroSection = syncedSections.some((section: any) => section.type === 'heroSection' && section.enabled !== false);
+
   return (
     <div className="home">
+      {showFestivalHero && !hasVisibleHeroSection && <><FestivalHero theme={festival} /><FestivalCollection theme={festival} /></>}
       {syncedSections
         .filter((sec: any) => sec.enabled !== false)
         .map((sec: any) => {
