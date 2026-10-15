@@ -241,19 +241,32 @@
 .product-page__sale-timer {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   background-color: rgba(27, 77, 62, 0.07);
-  padding: 6px 14px;
+  padding: 10px 18px;
   border-radius: 30px;
   margin-top: -8px;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .sale-live-badge {
   font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: #1b4d3e;
+  letter-spacing: 0.01em;
+}
+
+.product-page__low-stock {
+  display: inline-flex;
+  margin: 0 0 20px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff4e5;
+  color: #b45309;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .sale-countdown {
@@ -261,11 +274,11 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: #1b4d3e;
   border-left: 1px solid rgba(27, 77, 62, 0.2);
-  padding-left: 10px;
+  padding-left: 12px;
 }
 
 .sale-clock-icon {
@@ -738,7 +751,7 @@
 
 .product-page__benefits-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 8px;
   padding: 24px 16px 16px;
 }
@@ -761,15 +774,20 @@
 }
 
 .benefit-icon-wrapper {
-  background: #ffffff;
-  width: 42px;
-  height: 42px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #1a1a1a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: block;
+  flex-shrink: 0;
+  background-color: var(--badge-color, #1b4d3e);
+  -webkit-mask-image: var(--badge-icon);
+  mask-image: var(--badge-icon);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: cover;
+  mask-size: cover;
 }
 
 .benefit-icon-text {
@@ -787,6 +805,45 @@
   font-weight: 600;
   color: #1a1a1a;
   border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.product-page__store-link-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: var(--color-accent-coral, var(--gold, #1a1a1a));
+  -webkit-mask-image: var(--badge-icon);
+  mask-image: var(--badge-icon);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: cover;
+  mask-size: cover;
+}
+
+.product-page__store-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px 16px;
+  background: #fff;
+}
+
+.product-page__store-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 999px;
+  color: #1a1a1a;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 /* Benefit Icon Hover & Float Animations */

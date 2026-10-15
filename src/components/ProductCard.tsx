@@ -5,7 +5,7 @@ import { Heart, Star, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
 import { isVideoUrl, videoMimeType } from '@/lib/media-type';
-import { isOutOfStock } from '@/lib/stock';
+import { availableStock, isOutOfStock } from '@/lib/stock';
 import type { StorefrontVariant } from '@/lib/product-variants';
 import './ProductCard.css';
 
@@ -118,6 +118,8 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     };
   }, []);
 
+  const stockLeft = availableStock(product);
+  const lowStock = stockLeft > 0 && stockLeft < 100;
   const outOfStock = isOutOfStock(product);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -260,6 +262,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             <span className="product-card__original-price">₹{originalPrice.toLocaleString('en-IN')}</span>
           )}
         </div>
+        {lowStock ? <p className="product-card__low-stock">Low stock</p> : null}
 
         <button
           className="product-card__add-btn"

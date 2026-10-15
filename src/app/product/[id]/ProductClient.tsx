@@ -5,9 +5,6 @@ import {
   Star,
   Heart,
   ShoppingBag,
-  Truck,
-  Shield,
-  RotateCcw,
   Clock,
   Users,
   TrendingUp,
@@ -137,6 +134,7 @@ interface ProductClientProps {
   };
   subdomain?: string;
   codEnabled?: boolean;
+  globalBadges?: { icon?: string; text?: string; color?: string }[] | null;
 }
 
 export default function ProductClient({
@@ -145,7 +143,7 @@ export default function ProductClient({
   testimonials,
   reelsSection,
   subdomain,
-  codEnabled = false,
+  globalBadges,
 }: ProductClientProps) {
   // Safely normalize customFields (handles JSON string from Prisma / API / DB)
   const customFields: Record<string, any> = (() => {
@@ -390,6 +388,33 @@ export default function ProductClient({
     .filter(Boolean);
   const pickedOutOfStock = pickedVariants.some((variant: any) => isVariantUnavailable(variant));
   const stockLeft = pickedOutOfStock ? 0 : availableStock(product, selectedVariant);
+  const lowStock = stockLeft > 0 && stockLeft < 100;
+  const pageBadges = (Array.isArray(globalBadges) ? globalBadges : [])
+    .map((badge) => ({
+      icon: resolveMediaUrl(typeof badge?.icon === "string" ? badge.icon : ""),
+      text: String(badge?.text || "").trim(),
+      color: /^#[0-9a-fA-F]{6}$/.test(String(badge?.color || "")) ? String(badge.color) : "#1b4d3e",
+    }))
+    .filter((badge) => badge.text || badge.icon)
+    .slice(0, 6);
+  const storeLinks = (Array.isArray(customFields.storeLinks) ? customFields.storeLinks : [])
+    .map((item: any) => {
+      const rawUrl = typeof item?.url === "string" ? item.url.trim() : "";
+      let url = "";
+      try {
+        const parsed = new URL(rawUrl);
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") url = parsed.toString();
+      } catch {
+        url = "";
+      }
+      return {
+        icon: resolveMediaUrl(typeof item?.icon === "string" ? item.icon : ""),
+        url,
+        label: typeof item?.label === "string" && item.label.trim() ? item.label.trim() : "Shop",
+      };
+    })
+    .filter((item: { icon: string; url: string }) => item.icon && item.url)
+    .slice(0, 6);
   const outOfStock = Boolean(selectedVariant) && (pickedOutOfStock || isOutOfStock(product, selectedVariant));
   const requiredTypeKeys = customOptionKeys.filter(isRequiredOptionType);
   const missingRequiredKeys = requiredTypeKeys.filter((key) => !pickedOptions[key]);
@@ -661,11 +686,12 @@ export default function ProductClient({
             <div className="product-page__sale-timer">
               <span className="sale-live-badge">Sale Is Live!</span>
               <span className="sale-countdown">
-                <Clock size={13} className="sale-clock-icon" />
+                <Clock size={16} className="sale-clock-icon" />
                 {pad(saleTime.hours)}H:{pad(saleTime.minutes)}M:
                 {pad(saleTime.seconds)}S
               </span>
             </div>
+            {lowStock ? <p className="product-page__low-stock">Low stock</p> : null}
 
             {recentSalesCount && Number(recentSalesCount) > 0 && (
               <div className="product-page__recent-sales-strip">
@@ -828,31 +854,48 @@ export default function ProductClient({
             )}
 
             <div className="product-page__benefits">
-              <div className="product-page__benefits-grid">
-                {codEnabled && (
-                <div className="product-page__benefit">
-                  <div className="benefit-icon-wrapper">
-                    <span className="benefit-icon-text">₹</span>
-                  </div>
-                  <span>Cash on Delivery</span>
+              {pageBadges.length > 0 ? (
+                <div className="product-page__benefits-grid">
+                  {pageBadges.map((badge: { icon: string; text: string; color: string }) => (
+                    <div className="product-page__benefit" key={`${badge.text}-${badge.icon}-${badge.color}`}>
+                      {badge.icon ? (
+                        <div
+                          className="benefit-icon-wrapper"
+                          style={{
+                            ["--badge-color" as string]: badge.color,
+                            ["--badge-icon" as string]: `url("${badge.icon.replace(/"/g, "%22").replace(/\(/g, "%28").replace(/\)/g, "%29")}")`,
+                          }}
+                        />
+                      ) : null}
+                      <span>{badge.text}</span>
+                    </div>
+                  ))}
                 </div>
-                )}
-                <div className="product-page__benefit">
-                  <div className="benefit-icon-wrapper">
-                    <RotateCcw size={16} />
-                  </div>
-                  <span className="underline-text">Secure Checkout</span>
-                </div>
-                <div className="product-page__benefit">
-                  <div className="benefit-icon-wrapper">
-                    <Truck size={16} />
-                  </div>
-                  <span>Free Delivery on orders above ₹999</span>
-                </div>
-              </div>
+              ) : null}
               <div className="product-page__delivery-banner">
                 Get it delivered in 3-6 days
               </div>
+              {storeLinks.length > 0 ? (
+                <div className="product-page__store-links">
+                  {storeLinks.map((link: { icon: string; url: string; label: string }) => (
+                    <a
+                      key={link.url}
+                      className="product-page__store-link"
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span
+                        className="product-page__store-link-icon"
+                        style={{
+                          ["--badge-icon" as string]: `url("${link.icon.replace(/"/g, "%22").replace(/\(/g, "%28").replace(/\)/g, "%29")}")`,
+                        }}
+                      />
+                      <span>{link.label}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

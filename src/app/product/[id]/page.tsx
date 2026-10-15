@@ -51,6 +51,7 @@ export default async function ProductPage({ params }: PageProps) {
   let reelsSection: any = null;
   let subdomain = "";
   let codEnabled = false;
+  let globalBadges: { icon?: string; text?: string; color?: string }[] = [];
   try {
     // Cache for 60 seconds to avoid hammering the API
     subdomain = await getServerSubdomain();
@@ -61,6 +62,15 @@ export default async function ProductPage({ params }: PageProps) {
     testimonialSection =
       (data?.customization?.testimonialsSection as TestimonialSection) || null;
     reelsSection = data?.customization?.reelsSection || null;
+    const rawGlobalBadge = data?.customization?.homePageConfig?.productPageBadge;
+    const rawGlobalBadges = Array.isArray(rawGlobalBadge)
+      ? rawGlobalBadge
+      : rawGlobalBadge
+        ? [rawGlobalBadge]
+        : [];
+    globalBadges = rawGlobalBadges
+      .filter((item: any) => String(item?.text || "").trim() || String(item?.icon || "").trim())
+      .slice(0, 6);
     codEnabled = Boolean(data.settings?.enabledGateways?.cod?.enabled);
   } catch (error) {
     console.error("Failed to fetch product:", error);
@@ -138,6 +148,7 @@ export default async function ProductPage({ params }: PageProps) {
       reelsSection={reelsSection}
       subdomain={subdomain}
       codEnabled={codEnabled}
+      globalBadges={globalBadges}
     />
   );
 }
