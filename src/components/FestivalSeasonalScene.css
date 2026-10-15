@@ -117,6 +117,23 @@
 .seasonal-scene__powder--blue { top: 14%; right: 7%; color: #50a7d8; background: radial-gradient(circle at 50% 45%, #86dcdf, #52a2d6 50%, transparent 74%); transform: rotate(-21deg); }
 .seasonal-scene__powder--yellow { right: -13%; bottom: -30%; color: #efbb39; background: radial-gradient(circle, #ffe397, #f9c46c 46%, transparent 73%); transform: rotate(32deg); }
 .seasonal-scene__powder--green { right: 36%; bottom: -48%; color: #7cbd89; background: radial-gradient(circle, #cae0a3, #77cbb3 48%, transparent 72%); transform: rotate(-14deg); }
+.seasonal-scene--holi .seasonal-scene__frame::after {
+  position:absolute;
+  inset:0;
+  background-image:radial-gradient(circle at 22% 36%,#d94d882b 0 3px,transparent 4px),radial-gradient(circle at 38% 22%,#50a9c92b 0 2px,transparent 3px),radial-gradient(circle at 79% 67%,#dcae3f33 0 4px,transparent 5px),radial-gradient(circle at 68% 83%,#72ae7230 0 3px,transparent 4px);
+  background-size:97px 89px,121px 107px,139px 127px,109px 131px;
+  content:"";
+  opacity:.85;
+}
+.seasonal-scene__pichkari {
+  position:absolute;
+  top:24%;
+  right:4%;
+  width:min(46vw,600px);
+  overflow:visible;
+  filter:drop-shadow(0 22px 24px rgba(71,37,81,.22));
+  transform:rotate(3deg);
+}
 .seasonal-scene__ring { position: absolute; width: 460px; aspect-ratio: 1; border: 1px solid rgba(91, 45, 112, .18); border-radius: 50%; }
 .seasonal-scene__ring--one { top: -210px; right: -140px; }
 .seasonal-scene__ring--two { right: 100px; bottom: -360px; width: 640px; }
@@ -150,6 +167,118 @@
 .seasonal-scene__star--one { top: 20%; right: 30%; font-size: 33px; }
 .seasonal-scene__star--two { top: 53%; right: 11%; font-size: 50px; }
 
+/* Christmas is composed as a complete fireside scene, with the tree as its hero. */
+.seasonal-scene--christmas {
+  background:
+    radial-gradient(ellipse at 74% 45%, #d8a8542b 0, transparent 32%),
+    radial-gradient(ellipse at 83% 100%, #081c1a 0, transparent 47%),
+    linear-gradient(112deg, #102d2a 0%, #173d35 49%, #0c2928 100%);
+}
+.seasonal-scene--christmas::before {
+  position: absolute;
+  z-index: -1;
+  right: -8%;
+  bottom: -30%;
+  width: 74%;
+  height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #b97d474a, #98634316 38%, transparent 72%);
+  content: "";
+  pointer-events: none;
+}
+.seasonal-scene--christmas .seasonal-scene__content { width: min(48%, 620px); margin-left: 0; }
+.seasonal-scene--christmas .seasonal-scene__art { left: 34%; overflow: hidden; }
+.seasonal-scene--christmas .seasonal-scene__tree {
+  position: absolute;
+  top: -7%;
+  right: 4%;
+  width: min(53vw, 690px);
+  height: 112%;
+  overflow: visible;
+  filter: drop-shadow(0 24px 28px #061b18a8);
+}
+.seasonal-scene--christmas .seasonal-scene__frame {
+  inset: 22px;
+  border: 1px solid #e3c17d68;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 7px #071e1b42, inset 0 0 0 8px #f3d69a24;
+}
+.seasonal-scene__window {
+  position: absolute;
+  right: 8%;
+  bottom: 12%;
+  width: 18%;
+  height: 29%;
+  border: 5px solid #d6a75b;
+  background: linear-gradient(135deg, #ffd983, #bc70404d 58%, #473b34);
+  box-shadow: 0 0 54px 18px #f5be5a45, inset 0 0 0 4px #f9e8ba5c;
+  opacity: .65;
+}
+.seasonal-scene__window::before,
+.seasonal-scene__window::after { position: absolute; background: #d6a75b; content: ""; }
+.seasonal-scene__window::before { top: 50%; left: 0; width: 100%; height: 4px; }
+.seasonal-scene__window::after { top: 0; left: 50%; width: 4px; height: 100%; }
+.seasonal-scene__gift {
+  position: absolute;
+  z-index: 1;
+  bottom: 10%;
+  display: block;
+  width: clamp(55px, 7vw, 100px);
+  height: clamp(44px, 5.7vw, 76px);
+  border: 2px solid #edcf86;
+  background: linear-gradient(145deg, #bd4d4e, #71333d);
+  box-shadow: 0 14px 28px #081d1c7a;
+}
+.seasonal-scene__gift i { position: absolute; top: 0; left: 46%; width: 12%; height: 100%; background: #e7c86f; }
+.seasonal-scene__gift i::before,
+.seasonal-scene__gift i::after { position: absolute; top: -14px; width: 18px; height: 13px; border: 2px solid #f4d986; border-radius: 100% 100% 0 100%; content: ""; }
+.seasonal-scene__gift i::before { left: -14px; transform: rotate(20deg); }
+.seasonal-scene__gift i::after { right: -14px; transform: scaleX(-1) rotate(20deg); }
+.seasonal-scene__gift--one { right: 41%; width: clamp(48px, 5vw, 72px); height: clamp(39px, 4.2vw, 58px); background: linear-gradient(140deg, #e5b84f, #a56a32); }
+.seasonal-scene__gift--two { right: 27%; }
+.seasonal-scene__gift--three { right: 15%; width: clamp(48px, 5.5vw, 78px); height: clamp(38px, 4.7vw, 64px); background: linear-gradient(140deg, #387d63, #17473d); }
+.seasonal-scene__wreath {
+  position: absolute;
+  top: 20%;
+  right: 6%;
+  display: block;
+  width: clamp(52px, 6vw, 82px);
+  aspect-ratio: 1;
+  border: 9px dotted #73a27c;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #d9be7966, 0 0 26px #f0cd7c2c;
+  transform: rotate(-15deg);
+}
+.seasonal-scene__wreath::before,
+.seasonal-scene__wreath::after { position: absolute; top: 45%; width: 31px; height: 12px; border: 2px solid #d5b363; border-radius: 90% 8% 90% 8%; content: ""; }
+.seasonal-scene__wreath::before { left: -14px; transform: rotate(26deg); }
+.seasonal-scene__wreath::after { right: -14px; transform: scaleX(-1) rotate(26deg); }
+.seasonal-scene__wreath i { position: absolute; top: 55%; left: 50%; width: 18px; height: 18px; border-radius: 50%; background: #b84848; box-shadow: 0 0 14px #e4775e88; transform: translate(-50%, -50%); }
+.seasonal-scene__wreath b,
+.seasonal-scene__wreath em { position: absolute; top: 74%; width: 20px; height: 27px; border-right: 2px solid #d7b363; border-bottom: 2px solid #d7b363; }
+.seasonal-scene__wreath b { left: 37%; transform: rotate(38deg); }
+.seasonal-scene__wreath em { right: 34%; transform: scaleX(-1) rotate(38deg); }
+.seasonal-scene__garland {
+  position: absolute;
+  top: 8%;
+  right: -3%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  width: 53%;
+  height: 94px;
+  border-top: 2px solid #d7bd7c96;
+  border-radius: 0 0 50% 50%;
+  transform: rotate(6deg);
+}
+.seasonal-scene__garland i { width: 8px; height: 8px; margin-bottom: 7px; border-radius: 50%; background: #ffe39a; box-shadow: 0 0 15px 4px #ffdc8bba; animation: seasonal-light-glow 2.4s ease-in-out infinite alternate; }
+.seasonal-scene__garland i:nth-child(2n) { margin-bottom: -5px; background: #df7861; box-shadow: 0 0 13px 4px #e47e5f99; animation-delay: -.8s; }
+.seasonal-scene--christmas .seasonal-scene__ornament { z-index: 2; top: 0; height: 18%; }
+.seasonal-scene--christmas .seasonal-scene__ornament--one { right: 19%; }
+.seasonal-scene--christmas .seasonal-scene__ornament--two { right: 44%; height: 23%; }
+.seasonal-scene--christmas .seasonal-scene__ornament--three { right: 63%; height: 17%; }
+@keyframes seasonal-light-glow { from { opacity: .45; filter: brightness(.8); } to { opacity: 1; filter: brightness(1.35); } }
+
 @media (max-width: 800px) {
   .seasonal-scene { min-height: 740px; padding: 110px 42px 92px; }
   .seasonal-scene__content { margin-left: 0 !important; align-self: end; }
@@ -159,7 +288,16 @@
   .seasonal-scene--holi .seasonal-scene__powder--blue { top: 0; right: 12%; }
   .seasonal-scene--holi .seasonal-scene__powder--yellow { right: -30%; bottom: 22%; }
   .seasonal-scene--holi .seasonal-scene__powder--green { right: -6%; bottom: 40%; }
-  .seasonal-scene__branch { top: -9%; right: -38%; width: 115%; }
+  .seasonal-scene__pichkari { top: 12%; right: -9%; width: 70%; }
+  .seasonal-scene--christmas .seasonal-scene__content { width: 100%; }
+  .seasonal-scene--christmas .seasonal-scene__tree { top: -8%; right: -12%; width: 76%; height: 72%; }
+  .seasonal-scene__gift--one { right: 54%; bottom: 34%; }
+  .seasonal-scene__gift--two { right: 35%; bottom: 33%; }
+  .seasonal-scene__gift--three { right: 18%; bottom: 32%; }
+  .seasonal-scene__window { right: 1%; bottom: 37%; width: 20%; height: 18%; }
+  .seasonal-scene__wreath { top: 7%; right: 8%; }
+  .seasonal-scene__garland { top: 4%; right: -11%; width: 80%; }
+  .seasonal-scene__pichkari { top: 10%; right: -20%; width: 78%; opacity:.92; }
   .seasonal-scene__merchant-art { top: 12%; right: 9%; width: 42%; max-height: 28%; }
 }
 @media (max-width: 520px) {
@@ -169,7 +307,7 @@
   .seasonal-scene__copy { margin-top: 20px; font-size: 15px; }
   .seasonal-scene__cta { margin-top: 27px; }
   .seasonal-scene__footnote { right: 25px; bottom: 27px; font-size: 8px; }
-  .seasonal-scene__branch { top: -3%; right: -72%; width: 155%; }
+  .seasonal-scene--christmas .seasonal-scene__tree { top: -4%; right: -25%; width: 92%; height: 65%; }
   .seasonal-scene__ornament--one { right: 16%; }
   .seasonal-scene__ornament--two { right: 43%; }
   .seasonal-scene__ornament--three { display: none; }

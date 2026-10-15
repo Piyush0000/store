@@ -1,0 +1,84 @@
+/* Distinct campaign systems for the remaining preset families. The hero art
+   leads each theme; these restrained surfaces carry its atmosphere through
+   the shopping journey without obscuring product photography. */
+body[data-festival-preset="dhanteras"] { --campaign-paper:var(--festival-surface,#f8f1e5); --campaign-ink:#39281f; --campaign-deep:var(--festival-primary,#30221d); --campaign-accent:var(--festival-accent,#c89a48); background:var(--campaign-paper); }
+body[data-festival-preset="holi"] { --campaign-paper:var(--festival-surface,#fff8f0); --campaign-ink:#4a2853; --campaign-deep:var(--festival-accent,#49234f); --campaign-accent:var(--festival-accent,#dc5d89); background:var(--campaign-paper); }
+body[data-festival-preset="raksha-bandhan"] { --campaign-paper:var(--festival-surface,#fff5ee); --campaign-ink:#4b294b; --campaign-deep:var(--festival-primary,#351c43); --campaign-accent:var(--festival-accent,#d59c51); background:var(--campaign-paper); }
+body[data-festival-preset="ganesh-chaturthi"] { --campaign-paper:var(--festival-surface,#fff5e3); --campaign-ink:#57311f; --campaign-deep:var(--festival-primary,#582d26); --campaign-accent:var(--festival-accent,#d89a42); background:var(--campaign-paper); }
+body[data-festival-preset="janmashtami"] { --campaign-paper:var(--festival-surface,#f3f5f7); --campaign-ink:#1d3454; --campaign-deep:var(--festival-primary,#152642); --campaign-accent:var(--festival-accent,#d6b45f); background:var(--campaign-paper); }
+body[data-festival-preset="eid-al-fitr"] { --campaign-paper:var(--festival-surface,#f4f5ed); --campaign-ink:#173b3d; --campaign-deep:var(--festival-primary,#153c3d); --campaign-accent:var(--festival-accent,#c6aa63); background:var(--campaign-paper); }
+body[data-festival-preset="eid-al-adha"] { --campaign-paper:var(--festival-surface,#f4f2e9); --campaign-ink:#263d3a; --campaign-deep:var(--festival-primary,#203a37); --campaign-accent:var(--festival-accent,#c5a967); background:var(--campaign-paper); }
+body[data-festival-preset="christmas"] { --campaign-paper:var(--festival-surface,#f4f4ec); --campaign-ink:#193d32; --campaign-deep:var(--festival-primary,#10392f); --campaign-accent:var(--festival-accent,#c99c51); background:var(--campaign-paper); }
+body[data-festival-preset="ramadan"] { --campaign-paper:var(--festival-surface,#f1f2f6); --campaign-ink:#1e2c4a; --campaign-deep:var(--festival-primary,#172742); --campaign-accent:var(--festival-accent,#cbb36f); background:var(--campaign-paper); }
+body[data-festival-preset="easter"] { --campaign-paper:var(--festival-surface,#faf3f1); --campaign-ink:#51445c; --campaign-deep:var(--festival-primary,#45405b); --campaign-accent:var(--festival-accent,#c9828d); background:var(--campaign-paper); }
+
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"]) .home,
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"]) :is(.catalogue,.product-page) {
+  background-color:var(--campaign-paper);
+  background-image:radial-gradient(ellipse at 50% 0,color-mix(in srgb,var(--campaign-accent) 13%,transparent),transparent 43%);
+}
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-header="true"] :is(.header,.header__nav),
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-announcement="true"] .festival-offer-bar { background:var(--campaign-deep)!important; }
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-header="true"] .header {
+  border-bottom:2px solid var(--campaign-accent);
+  box-shadow:0 5px 25px color-mix(in srgb,var(--campaign-deep) 14%,transparent);
+}
+body[data-festival-preset="holi"][data-festival-header="true"] :is(.header__nav-link,.header__logo-text,.header__icon-btn,.header__mobile-toggle) { color:#fff7ee!important; }
+body[data-festival-preset="holi"][data-festival-announcement="true"] .festival-offer-bar { color:#fff7ee!important; }
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"]) .home :is(.section-title,.products-section__title,.banners-section__heading,.testimonials-section__heading,.faq-section-title),
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"]) :is(.catalogue__header h1,.product-page__title) {
+  color:var(--campaign-ink);
+  font-family:var(--font-playfair),Georgia,serif;
+  font-size:clamp(28px,3.5vw,46px);
+  font-weight:500;
+  letter-spacing:-.025em;
+  text-transform:none;
+}
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"]) .home :is(.section-title,.products-section__title)::after {
+  background:linear-gradient(90deg,transparent,var(--campaign-accent),transparent);
+}
+
+/* Individual festival signatures recur as quiet section textures. */
+body[data-festival-preset="dhanteras"] .home .trust-badges-section { background-image:radial-gradient(circle at 16% 45%,#f1d18b30 0 2px,transparent 3px),radial-gradient(circle at 83% 52%,#f1d18b30 0 2px,transparent 3px); background-size:34px 34px,46px 46px; }
+body[data-festival-preset="holi"] .home .trust-badges-section { background-image:radial-gradient(ellipse at 8% 120%,#e25a8a88,transparent 45%),radial-gradient(ellipse at 94% -25%,#48b9c788,transparent 43%),radial-gradient(ellipse at 55% 140%,#e9be5370,transparent 48%); }
+body[data-festival-preset="raksha-bandhan"] .home .trust-badges-section { background-image:repeating-linear-gradient(25deg,transparent 0 15px,#f3d99b22 16px 18px,transparent 19px 34px),repeating-linear-gradient(155deg,transparent 0 19px,#c3697922 20px 21px,transparent 22px 39px); }
+body[data-festival-preset="ganesh-chaturthi"] .home .trust-badges-section { background-image:radial-gradient(circle at 50% 125%,#efa64c66,transparent 58%),radial-gradient(circle at 18% 30%,#e1c26b30 0 2px,transparent 3px); background-size:auto,31px 31px; }
+body[data-festival-preset="janmashtami"] .home .trust-badges-section { background-image:radial-gradient(circle at 15% 28%,#fff0bd77 0 1px,transparent 2px),radial-gradient(circle at 72% 56%,#fff0bd66 0 1px,transparent 2px); background-size:37px 37px,53px 53px; }
+body:is([data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="ramadan"]) .home .trust-badges-section { background-image:repeating-linear-gradient(45deg,transparent 0 22px,#e8d69b13 23px 24px,transparent 25px 44px),repeating-linear-gradient(135deg,transparent 0 22px,#e8d69b13 23px 24px,transparent 25px 44px); }
+body[data-festival-preset="christmas"] .home .trust-badges-section { background-image:radial-gradient(circle at 16% 45%,#e8c87855 0 2px,transparent 3px),radial-gradient(circle at 83% 52%,#e8c8784d 0 2px,transparent 3px),repeating-linear-gradient(60deg,transparent 0 32px,#7fa78b18 33px 35px,transparent 36px 68px); background-size:41px 41px,55px 55px,auto; }
+body[data-festival-preset="easter"] .home .trust-badges-section { background-image:radial-gradient(ellipse at 14% 120%,#d995a555,transparent 48%),radial-gradient(ellipse at 90% -20%,#9aaf8066,transparent 45%); }
+
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-products="true"] .home .products-section {
+  border-block:1px solid color-mix(in srgb,var(--campaign-accent) 36%,transparent);
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--campaign-accent) 7%,transparent),transparent 180px);
+}
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-products="true"] .product-card {
+  border-color:color-mix(in srgb,var(--campaign-accent) 52%,#ded8cd);
+  box-shadow:0 8px 26px color-mix(in srgb,var(--campaign-deep) 8%,transparent);
+}
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-categories="true"] .home .shop-category {
+  border-block:1px solid color-mix(in srgb,var(--campaign-accent) 34%,transparent);
+  background-color:color-mix(in srgb,var(--campaign-paper) 82%,white);
+}
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-categories="true"] .home .shop-category__card {
+  border-color:color-mix(in srgb,var(--campaign-accent) 78%,white);
+  box-shadow:0 10px 28px color-mix(in srgb,var(--campaign-deep) 11%,transparent);
+}
+
+body[data-festival-preset="holi"][data-festival-categories="true"] .home .shop-category { background-image:radial-gradient(circle at 8% 40%,#e6518c20,transparent 25%),radial-gradient(circle at 91% 70%,#3cb9c329,transparent 26%),linear-gradient(105deg,#fff3e9,#fff9ed 52%,#f8f0fc); }
+body[data-festival-preset="christmas"][data-festival-categories="true"] .home .shop-category { background-image:radial-gradient(ellipse at 50% 0,#d9ba6c2b,transparent 62%),linear-gradient(180deg,#f0f3e9,#e6eee6); }
+body[data-festival-preset="christmas"][data-festival-footer="true"] footer { background-image:linear-gradient(90deg,#10392feb,#10392fc7),var(--festival-art)!important; }
+body:is([data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="ramadan"])[data-festival-categories="true"] .home .shop-category { background-image:repeating-linear-gradient(45deg,transparent 0 24px,#c3ad6f16 25px 26px,transparent 27px 49px),linear-gradient(180deg,#eef2e9,#e7eee9); }
+body[data-festival-preset="easter"][data-festival-categories="true"] .home .shop-category { background-image:radial-gradient(ellipse at 0 100%,#dfabc033,transparent 36%),radial-gradient(ellipse at 100% 0,#9aaf8030,transparent 38%),linear-gradient(180deg,#fbf2ef,#f2ecef); }
+
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-cart="true"] :is(.cart,.checkout) { --gold:var(--campaign-deep); --gold-light:var(--campaign-accent); --ck-brand:var(--campaign-deep); }
+body:is([data-festival-preset="dhanteras"],[data-festival-preset="holi"],[data-festival-preset="raksha-bandhan"],[data-festival-preset="ganesh-chaturthi"],[data-festival-preset="janmashtami"],[data-festival-preset="eid-al-fitr"],[data-festival-preset="eid-al-adha"],[data-festival-preset="christmas"],[data-festival-preset="ramadan"],[data-festival-preset="easter"])[data-festival-footer="true"] footer { border-top:3px solid var(--campaign-accent); }
+
+@media (max-width:700px) {
+  body[data-festival-preset="holi"] .home .trust-badges-section { background-position:center; }
+  body[data-festival-preset="christmas"] .home :is(.products-section,.shop-category) { background-position:center; }
+}
+@media (prefers-reduced-motion:reduce) {
+  body[data-festival-products="true"] .product-card { transition:none!important; }
+  body[data-festival-products="true"] .product-card:hover { transform:none!important; }
+}

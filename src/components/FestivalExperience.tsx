@@ -16,6 +16,7 @@ import './FestivalHarvestStorefront.css';
 import './FestivalGlobalPersonalStorefront.css';
 import './FestivalNationalDaysStorefront.css';
 import './FestivalSpringRegionalStorefront.css';
+import './FestivalCampaignStorefront.css';
 
 const FestivalFlagshipScene = dynamic(() => import('./FestivalFlagshipScene'), { ssr: false });
 const FestivalSeasonalScene = dynamic(() => import('./FestivalSeasonalScene'), { ssr: false });
