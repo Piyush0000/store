@@ -808,19 +808,12 @@
 }
 
 .product-page__store-link-icon {
-  width: 28px;
   height: 28px;
-  border-radius: 50%;
+  width: auto;
+  max-width: 72px;
+  object-fit: contain;
   flex-shrink: 0;
-  background-color: var(--color-accent-coral, var(--gold, #1a1a1a));
-  -webkit-mask-image: var(--badge-icon);
-  mask-image: var(--badge-icon);
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: cover;
-  mask-size: cover;
+  display: block;
 }
 
 .product-page__store-links {

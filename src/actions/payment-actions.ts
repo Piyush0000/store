@@ -27,8 +27,15 @@ async function getPayableOrder(orderId: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new Error('Order not found');
   if (order.paymentStatus === 'PAID') throw new Error('Order is already paid');
-  const amount = Number(order.total);
-  if (!Number.isFinite(amount) || amount <= 0) throw new Error('Order amount is invalid');
+  const partialPrepaid = order.paymentMethod === 'PARTIAL'
+    ? Number((order.shippingAddress as any)?.partialPayment?.prepaidAmount)
+    : NaN;
+  const amount = order.paymentMethod === 'PARTIAL' ? partialPrepaid : Number(order.total);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error(order.paymentMethod === 'PARTIAL'
+      ? 'Partial payment amount is missing'
+      : 'Order amount is invalid');
+  }
   return { order, amount };
 }
 

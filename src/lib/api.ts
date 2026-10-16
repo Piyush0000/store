@@ -275,7 +275,13 @@ export interface StorefrontData {
     timezone: string;
     contactEmail: string;
     contactPhone: string;
-    enabledGateways: Record<string, { enabled: boolean; keyId: string; discountPercent?: number }>;
+    enabledGateways: Record<string, {
+      enabled: boolean;
+      keyId?: string;
+      discountPercent?: number;
+      mode?: "percent" | "amount";
+      value?: number;
+    }>;
     codFee?: number;
   };
   announcements: Announcement[];
