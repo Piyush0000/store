@@ -27,7 +27,16 @@ export interface Customization {
   contactInfo: { email: string; phone: string; address: string };
   headerConfig: { showSearch: boolean; showCart: boolean; showWishlist: boolean; storeName: string; logoUrl: string };
   footerConfig: { showAbout: boolean; showContact: boolean; showSocial: boolean; showNewsletter: boolean };
-  homePageConfig: { heroEnabled: boolean; featuredEnabled: boolean; categoriesEnabled: boolean; images: string[]; videoUrl?: string };
+  homePageConfig: {
+    heroEnabled: boolean;
+    featuredEnabled: boolean;
+    categoriesEnabled: boolean;
+    images: string[];
+    videoUrl?: string;
+    productPageBadge?:
+      | { icon?: string; text?: string; color?: string }
+      | { icon?: string; text?: string; color?: string }[];
+  };
   socialLinks: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string; tiktok?: string };
   navLinks: { label: string; href: string }[];
   ctaButtons: any[];
