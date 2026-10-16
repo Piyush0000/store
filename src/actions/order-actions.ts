@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { getServerSubdomain } from '@/lib/server-utils';
 import { fetchStorefront } from '@/lib/api';
+import { splitPartialPayment, type PartialPaymentConfig } from '@/lib/partial-payment';
 
 const addressSchema = z.object({
   type: z.string(),
@@ -95,7 +96,7 @@ const orderInputSchema = z.object({
   subtotal: z.number().optional(),
   tax: z.number().optional(),
   shipping: z.number().optional(),
-  paymentMethod: z.enum(['COD', 'PAYU', 'RAZORPAY', 'CASHFREE']),
+  paymentMethod: z.enum(['COD', 'PAYU', 'RAZORPAY', 'CASHFREE', 'PARTIAL']),
   firstName: z.string(),
   lastName: z.string(),
   email: z.string(),
@@ -162,6 +163,54 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
       return { success: false, message: 'Store not found or store ID could not be resolved' };
     }
 
+    let totalAmount = orderData.totalAmount;
+    let partialRecord: {
+      prepaidAmount: number;
+      codDue: number;
+      mode: PartialPaymentConfig["mode"];
+      value: number;
+    } | null = null;
+
+    if (orderData.paymentMethod === 'PARTIAL') {
+      const subdomain = await getServerSubdomain();
+      const storefront = await fetchStorefront(subdomain);
+      const gateways = storefront.settings?.enabledGateways || (storefront as any).store?.enabledGateways || {};
+      const partialRaw = (gateways as any).partial;
+      const partialValue = Number(partialRaw?.value);
+      const partialConfig: PartialPaymentConfig | null =
+        partialRaw?.enabled && Number.isFinite(partialValue) && partialValue > 0
+          ? {
+              enabled: true,
+              mode: partialRaw.mode === 'amount' ? 'amount' : 'percent',
+              value: partialValue,
+            }
+          : null;
+      const lineTotal = orderData.items.reduce(
+        (sum, item) => sum + Number(item.price) * item.quantity,
+        0,
+      );
+      const coupon = Math.min(lineTotal, Math.max(0, Number(orderData.discountAmount) || 0));
+      const shipping = Math.max(0, Number(orderData.shipping) || 0);
+      const split = splitPartialPayment(
+        partialConfig,
+        lineTotal + shipping - coupon,
+        storefront.settings?.codFee ?? 0,
+      );
+      if (!split || !partialConfig) {
+        return {
+          success: false,
+          message: 'Partial payment is not available for this order. Choose online payment or cash on delivery.',
+        };
+      }
+      totalAmount = split.total;
+      partialRecord = {
+        prepaidAmount: split.prepaidAmount,
+        codDue: split.codDue,
+        mode: partialConfig.mode,
+        value: partialConfig.value,
+      };
+    }
+
     const order = await prisma.order.create({
       data: {
         userId: orderData.userId,
@@ -177,6 +226,7 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
           state: shippingAddress.state,
           zipCode: shippingAddress.pincode,
           phone: orderData.phone || '',
+          ...(partialRecord ? { partialPayment: partialRecord } : {}),
         },
         billingAddress: {
           firstName: orderData.firstName,
@@ -190,7 +240,7 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
         subtotal: orderData.subtotal ?? orderData.totalAmount,
         tax: orderData.tax ?? 0,
         shipping: orderData.shipping ?? 0,
-        total: orderData.totalAmount,
+        total: totalAmount,
         paymentMethod: orderData.paymentMethod,
         paymentStatus: 'PENDING',
         fulfillmentStatus: 'UNFULFILLED',
@@ -526,12 +576,18 @@ export async function confirmAndSyncOnlineOrder(
     console.log(`[Sync] Confirming and syncing Order ${orderId} to backend...`);
 
     // 1. Update local order status
+    const isPartial = order.paymentMethod === 'PARTIAL';
+    const partialPayment = isPartial
+      ? (order.shippingAddress as any)?.partialPayment
+      : undefined;
+    const recordedMethod = isPartial ? 'PARTIAL' : paymentMethod;
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
         paymentStatus: 'PAID',
         status: 'CONFIRMED',
-        paymentMethod,
+        paymentMethod: recordedMethod,
         ...(paymentMethod === 'PAYU' && transactionId && { payuTxnId: transactionId }),
         ...(paymentMethod === 'PAYU' && providerStatus && { payuStatus: providerStatus }),
         ...(paymentMethod === 'PAYU' && providerResponse && { payuResponse: providerResponse as any }),
@@ -560,6 +616,7 @@ export async function confirmAndSyncOnlineOrder(
         zipCode: (order.shippingAddress as any).zipCode || '',
         country: 'IN',
         phone: (order.shippingAddress as any).phone || '',
+        ...(partialPayment ? { partialPayment } : {}),
       },
       billingAddress: {
         firstName: (order.billingAddress as any).firstName || '',
@@ -580,7 +637,9 @@ export async function confirmAndSyncOnlineOrder(
       tax: order.tax,
       source: 'STOREFRONT',
       paymentStatus: 'PAID',
-      paymentMethod,
+      paymentMethod: recordedMethod,
+      logisticsPaymentMode: isPartial ? 'COD' : undefined,
+      partialPayment: partialPayment || undefined,
       status: 'CONFIRMED',
       items: order.items.map((item: any) => ({
         productId: item.productId,

@@ -885,11 +885,10 @@ export default function ProductClient({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <span
+                      <img
+                        src={link.icon}
+                        alt=""
                         className="product-page__store-link-icon"
-                        style={{
-                          ["--badge-icon" as string]: `url("${link.icon.replace(/"/g, "%22").replace(/\(/g, "%28").replace(/\)/g, "%29")}")`,
-                        }}
                       />
                       <span>{link.label}</span>
                     </a>

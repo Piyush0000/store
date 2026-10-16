@@ -92,8 +92,10 @@ export default function SuccessClient() {
       ) : order ? (
         <OrderSuccessAnimation
           orderId={order.id || orderId}
-          paymentMethod={order.paymentMethod}
+          paymentMethod={order.paymentMethod === "PARTIAL" ? "Partial payment" : order.paymentMethod}
           amount={Number(order.total)}
+          prepaidAmount={Number(order.shippingAddress?.partialPayment?.prepaidAmount) || undefined}
+          codDue={Number(order.shippingAddress?.partialPayment?.codDue) || undefined}
           orderHref={`/orders/${encodeURIComponent(order.id || orderId!)}`}
         />
       ) : null}

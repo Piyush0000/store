@@ -39,6 +39,7 @@ import {
 } from "@/actions/payment-actions";
 import { validateCouponAction, listPublicCouponsAction } from "@/actions/coupon-actions";
 import { getInitialCheckoutState, type EnabledPaymentMethods } from "@/actions/checkout-actions";
+import { splitPartialPayment, type PartialPaymentConfig } from "@/lib/partial-payment";
 import OtpStep from "@/components/OtpStep";
 import DetailsForm from "@/components/DetailsForm";
 import AddressSection from "@/components/AddressSection";
@@ -71,8 +72,8 @@ const IndiaFlag = () => (
 
 type Step = "identify" | "verify" | "details" | "payment" | "success";
 type OnlineGateway = "PAYU" | "RAZORPAY" | "CASHFREE";
-type PaymentAction = "COD" | OnlineGateway;
-type PaymentUi = "online" | "cod" | null;
+type PaymentAction = "COD" | "PARTIAL" | OnlineGateway;
+type PaymentUi = "online" | "cod" | "partial" | null;
 
 const gatewayLabels: Record<OnlineGateway, string> = {
   PAYU: "PayU",
@@ -119,6 +120,7 @@ export default function CheckoutPage() {
   }, []);
 
   const [codFee, setCodFee] = useState(0);
+  const [partialConfig, setPartialConfig] = useState<PartialPaymentConfig | null>(null);
   const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(0);
   const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<EnabledPaymentMethods | null>(null);
   const [onlineGateway, setOnlineGateway] = useState<OnlineGateway | null>(null);
@@ -207,6 +209,8 @@ export default function CheckoutPage() {
     paymentMethod: string | null;
     discountAmount?: number;
     couponCode?: string | null;
+    prepaidAmount?: number;
+    codDue?: number;
   } | null>(null);
 
   // Coupon state variables
@@ -248,7 +252,7 @@ export default function CheckoutPage() {
       ),
     [cartItems],
   );
-  const onlineDiscountAmount = paymentMethod && paymentMethod !== 'COD'
+  const onlineDiscountAmount = paymentMethod && paymentMethod !== 'COD' && paymentMethod !== 'PARTIAL'
     ? Math.round(displaySubtotal * (onlineDiscountPercent / 100))
     : 0;
   
@@ -416,6 +420,7 @@ export default function CheckoutPage() {
           setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
         }
         setOnlineGateway(initialState.onlineGateway);
+        setPartialConfig(initialState.partialPayment);
         if (initialState.sessionValid && initialState.phone) {
           setPhone(initialState.phone);
           if (initialState.user) {
@@ -440,6 +445,7 @@ export default function CheckoutPage() {
         console.error("Failed to load checkout state:", err);
         setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
         setOnlineGateway(null);
+        setPartialConfig(null);
         setStep("identify");
       }
     };
@@ -913,6 +919,22 @@ export default function CheckoutPage() {
     return { orderItems, totalBundleDiscount, totalRegularSubtotal };
   }, [cartItems]);
 
+  const partialSplit = useMemo(() => {
+    if (!partialConfig) return null;
+    const { orderItems } = buildOrderItems();
+    const lineTotal = orderItems.reduce(
+      (sum, item) => sum + Number(item.price) * item.quantity,
+      0,
+    );
+    const coupon = Math.min(lineTotal, Math.max(0, discountAmount));
+    return splitPartialPayment(
+      partialConfig,
+      lineTotal + effectiveShippingFee - coupon,
+      codFee,
+    );
+  }, [partialConfig, buildOrderItems, discountAmount, effectiveShippingFee, codFee]);
+  const partialAvailable = Boolean(partialSplit && onlineEnabled && codEnabled);
+
   const handleCreateCodOrder = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
@@ -1089,15 +1111,18 @@ export default function CheckoutPage() {
     gateway: OnlineGateway,
     capturedSubtotal: number,
     capturedDiscount: number,
+    partial?: { prepaidAmount: number; codDue: number } | null,
   ) => {
     const capturedItems = [...cartItems];
     setOrderId(localOrderId);
     setOrderSummary({
       items: capturedItems,
       subtotal: capturedSubtotal,
-      paymentMethod: gateway,
+      paymentMethod: partial ? "PARTIAL" : gateway,
       discountAmount: capturedDiscount,
       couponCode: appliedCoupon?.code || null,
+      prepaidAmount: partial?.prepaidAmount,
+      codDue: partial?.codDue,
     });
     clearCart();
 
@@ -1115,7 +1140,7 @@ export default function CheckoutPage() {
         value: Math.max(0, capturedSubtotal + effectiveShippingFee - capturedDiscount),
         currency: "INR",
         transaction_id: localOrderId,
-        payment_method: gateway,
+        payment_method: partial ? "PARTIAL" : gateway,
       });
     } catch (analyticsError) {
       console.warn("[Analytics] Failed to track Purchase:", analyticsError);
@@ -1123,7 +1148,10 @@ export default function CheckoutPage() {
     setStep("success");
   }, [appliedCoupon, cartItems, cartSessionId, clearCart, effectiveShippingFee, track]);
 
-  const handleInitiateOnlinePayment = useCallback(async (gateway: OnlineGateway): Promise<boolean> => {
+  const handleInitiateOnlinePayment = useCallback(async (
+    gateway: OnlineGateway,
+    options?: { partial?: boolean },
+  ): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
@@ -1173,21 +1201,32 @@ export default function CheckoutPage() {
       const { orderItems, totalBundleDiscount, totalRegularSubtotal } =
         buildOrderItems();
 
-      const gatewayDiscount = Math.round(totalRegularSubtotal * (onlineDiscountPercent / 100));
-      const overallDiscount = discountAmount + totalBundleDiscount + gatewayDiscount;
-      const payableTotal = Math.max(
+      const isPartial = Boolean(options?.partial);
+      if (isPartial && !partialSplit) {
+        throw new Error("Partial payment is not available for this order.");
+      }
+      const lineTotal = orderItems.reduce(
+        (sum, item) => sum + Number(item.price) * item.quantity,
         0,
-        totalRegularSubtotal + effectiveShippingFee - overallDiscount,
       );
+      const gatewayDiscount = isPartial
+        ? 0
+        : Math.round(totalRegularSubtotal * (onlineDiscountPercent / 100));
+      const overallDiscount = isPartial
+        ? discountAmount
+        : discountAmount + totalBundleDiscount + gatewayDiscount;
+      const payableTotal = isPartial && partialSplit
+        ? partialSplit.total
+        : Math.max(0, totalRegularSubtotal + effectiveShippingFee - overallDiscount);
 
       const result = await createOrder({
         userId: uid,
         items: orderItems,
         totalAmount: payableTotal,
-        subtotal: totalRegularSubtotal,
+        subtotal: isPartial ? lineTotal : totalRegularSubtotal,
         tax: 0,
         shipping: effectiveShippingFee,
-        paymentMethod: gateway,
+        paymentMethod: isPartial ? "PARTIAL" : gateway,
         firstName: customerFirstName,
         lastName: customerLastName,
         email: customerEmail,
@@ -1258,7 +1297,13 @@ export default function CheckoutPage() {
               razorpay_signature: response.razorpay_signature,
             });
             if (verified.success) {
-              completeOnlineCheckout(localOrderId, gateway, totalRegularSubtotal, overallDiscount);
+              completeOnlineCheckout(
+                localOrderId,
+                gateway,
+                totalRegularSubtotal,
+                overallDiscount,
+                isPartial ? partialSplit : null,
+              );
             } else {
               setError(verified.message || "Razorpay payment verification failed");
             }
@@ -1297,7 +1342,13 @@ export default function CheckoutPage() {
       if (!verified.success) {
         throw new Error(verified.message || "Cashfree payment verification failed");
       }
-      completeOnlineCheckout(localOrderId, gateway, totalRegularSubtotal, overallDiscount);
+      completeOnlineCheckout(
+        localOrderId,
+        gateway,
+        totalRegularSubtotal,
+        overallDiscount,
+        isPartial ? partialSplit : null,
+      );
       return true;
     } catch (err: any) {
       setError(err.message || "Failed to initiate payment");
@@ -1321,6 +1372,7 @@ export default function CheckoutPage() {
     phone,
     completeOnlineCheckout,
     onlineEnabled,
+    partialSplit,
   ]);
 
   const handleFinalOrderClick = async (action: PaymentAction) => {
@@ -1328,16 +1380,23 @@ export default function CheckoutPage() {
       setError("Cash on Delivery is not enabled for this store.");
       return;
     }
-    if (action !== 'COD' && !onlineGateway) {
+    if (action === 'PARTIAL' && (!partialAvailable || !onlineGateway)) {
+      setError("Partial payment is not available for this order.");
+      return;
+    }
+    if (action !== 'COD' && action !== 'PARTIAL' && !onlineGateway) {
       setError("Online payment is not enabled for this store.");
       return;
     }
     setPendingAction(action);
     if (action === 'COD') setPaymentMethod('COD');
+    if (action === 'PARTIAL') setPaymentMethod('PARTIAL');
     if (isSessionVerified) {
       if (action === 'COD') {
         handleCreateCodOrder();
-      } else {
+      } else if (action === 'PARTIAL' && onlineGateway) {
+        handleInitiateOnlinePayment(onlineGateway, { partial: true });
+      } else if (action !== 'PARTIAL') {
         handleInitiateOnlinePayment(action);
       }
       return;
@@ -1369,6 +1428,10 @@ export default function CheckoutPage() {
       handleFinalOrderClick("COD");
       return;
     }
+    if (paymentUi === "partial") {
+      handleFinalOrderClick("PARTIAL");
+      return;
+    }
     if (onlineGateway && paymentUi === "online") {
       handleFinalOrderClick(onlineGateway);
       return;
@@ -1381,6 +1444,10 @@ export default function CheckoutPage() {
     setError(null);
     if (ui === "cod") {
       setPaymentMethod("COD");
+      return;
+    }
+    if (ui === "partial") {
+      setPaymentMethod("PARTIAL");
       return;
     }
     if (onlineGateway) setPaymentMethod(onlineGateway);
@@ -1407,7 +1474,9 @@ export default function CheckoutPage() {
       let placed = false;
       if (pendingAction === 'COD') {
         placed = await handleCreateCodOrder();
-      } else if (pendingAction) {
+      } else if (pendingAction === 'PARTIAL' && onlineGateway) {
+        placed = await handleInitiateOnlinePayment(onlineGateway, { partial: true });
+      } else if (pendingAction && pendingAction !== "PARTIAL") {
         placed = await handleInitiateOnlinePayment(pendingAction);
       }
       if (placed) {
@@ -1591,13 +1660,15 @@ export default function CheckoutPage() {
   const loginCurrent = step === "identify" || step === "verify";
   const addressCurrent = step === "details";
   const paymentCurrent = step === "payment" || step === "success";
-  const payableTotal = Math.max(
-    0,
-    displaySubtotal +
-      effectiveShippingFee +
-      (paymentUi === "cod" ? codFee : 0) -
-      displayDiscountTotal,
-  );
+  const payableTotal = paymentUi === "partial" && partialSplit
+    ? partialSplit.total
+    : Math.max(
+        0,
+        displaySubtotal +
+          effectiveShippingFee +
+          (paymentUi === "cod" ? codFee : 0) -
+          displayDiscountTotal,
+      );
   const onlineSaveAmount = Math.round(displaySubtotal * (onlineDiscountPercent / 100));
   const offerCount = availableOffers.length + (onlineSaveAmount > 0 ? 1 : 0);
 
@@ -1641,7 +1712,14 @@ export default function CheckoutPage() {
           {step === "success" && orderSummary && (
             <SuccessStep
               orderId={orderId}
-              paymentMethod={orderSummary.paymentMethod}
+              paymentMethod={orderSummary.paymentMethod === "PARTIAL" ? "Partial payment" : orderSummary.paymentMethod}
+              amount={
+                orderSummary.prepaidAmount && orderSummary.codDue
+                  ? orderSummary.prepaidAmount + orderSummary.codDue
+                  : undefined
+              }
+              prepaidAmount={orderSummary.prepaidAmount}
+              codDue={orderSummary.codDue}
             />
           )}
 
@@ -1843,6 +1921,22 @@ export default function CheckoutPage() {
                 </button>
               )}
 
+              {partialAvailable && partialSplit && (
+                <button
+                  type="button"
+                  className={`checkout__pay-row ${paymentUi === "partial" ? "is-active" : ""}`}
+                  onClick={() => selectPaymentUi("partial")}
+                >
+                  <span className="checkout__pay-radio" aria-hidden />
+                  <span className="checkout__pay-row-body">
+                    <span className="checkout__pay-row-title">Partial Payment</span>
+                    <span className="checkout__pay-sub">
+                      Pay ₹{partialSplit.prepaidAmount.toLocaleString("en-IN")} now · ₹{partialSplit.codDue.toLocaleString("en-IN")} on delivery
+                    </span>
+                  </span>
+                </button>
+              )}
+
               {codEnabled && (
                 <button
                   type="button"
@@ -1895,6 +1989,12 @@ export default function CheckoutPage() {
                   {paymentUi === "cod" && codFee > 0 && (
                     <div><span>COD Fee</span><span>₹{codFee}</span></div>
                   )}
+                  {paymentUi === "partial" && partialSplit && (
+                    <>
+                      <div><span>Pay online now</span><span>₹{partialSplit.prepaidAmount.toLocaleString("en-IN")}</span></div>
+                      <div><span>Pay on delivery</span><span>₹{partialSplit.codDue.toLocaleString("en-IN")}</span></div>
+                    </>
+                  )}
                   <div className={effectiveShippingFee === 0 ? "is-green" : ""}>
                     <span>Shipping</span>
                     <span>{effectiveShippingFee === 0 ? "FREE" : `₹${effectiveShippingFee}`}</span>
@@ -1928,7 +2028,7 @@ export default function CheckoutPage() {
                   onClick={handleProceedToPay}
                   disabled={isLoading || !paymentUi}
                 >
-                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : "Confirm Order"}
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : paymentUi === "partial" && partialSplit ? `Pay ₹${partialSplit.prepaidAmount.toLocaleString("en-IN")} now` : "Confirm Order"}
                 </button>
                 <div className="checkout__pay-meta">
                   <span><Lock size={12} /> Secure &amp; Encrypted</span>
@@ -2114,7 +2214,9 @@ export default function CheckoutPage() {
                         setError(null);
                         (async () => {
                           setIsLoading(true);
-                          const placed = pendingAction && pendingAction !== 'COD'
+                          const placed = pendingAction === 'PARTIAL' && onlineGateway
+                            ? await handleInitiateOnlinePayment(onlineGateway, { partial: true })
+                            : pendingAction && pendingAction !== 'COD' && pendingAction !== 'PARTIAL'
                             ? await handleInitiateOnlinePayment(pendingAction)
                             : await handleCreateCodOrder();
                           if (placed) setIsOtpModalOpen(false);
@@ -2152,7 +2254,7 @@ export default function CheckoutPage() {
           <div className="checkout__summary-header" onClick={() => setIsSummaryOpen(!isSummaryOpen)}>
             <h2 className="checkout__summary-title">Bag</h2>
             <div className="checkout__summary-toggle">
-              <span className="checkout__summary-toggle-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) + effectiveShippingFee - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
+              <span className="checkout__summary-toggle-price">₹{((orderSummary?.subtotal ?? subtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD' || orderSummary?.paymentMethod === 'PARTIAL' || paymentMethod === 'PARTIAL') ? codFee : 0) + effectiveShippingFee - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
               <ChevronDown size={20} className="checkout__summary-toggle-icon" />
             </div>
           </div>
@@ -2243,7 +2345,13 @@ export default function CheckoutPage() {
                     <span>-₹{(orderSummary?.discountAmount ?? displayDiscountTotal).toLocaleString('en-IN')}</span>
                   </div>
                 )}
-                {(orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{codFee}</span></div>}
+                {(orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD' || orderSummary?.paymentMethod === 'PARTIAL' || paymentUi === 'partial') && codFee > 0 && <div className="checkout__summary-row"><span>COD Fee</span><span>₹{codFee}</span></div>}
+                {(orderSummary?.paymentMethod === 'PARTIAL' || paymentUi === 'partial') && (orderSummary?.prepaidAmount || partialSplit) && (
+                  <>
+                    <div className="checkout__summary-row"><span>Pay online now</span><span>₹{(orderSummary?.prepaidAmount ?? partialSplit?.prepaidAmount ?? 0).toLocaleString('en-IN')}</span></div>
+                    <div className="checkout__summary-row"><span>Pay on delivery</span><span>₹{(orderSummary?.codDue ?? partialSplit?.codDue ?? 0).toLocaleString('en-IN')}</span></div>
+                  </>
+                )}
                 {effectiveShippingFee > 0 ? (
                   <div className="checkout__summary-row">
                     <span>{shippingConfig.shippingLabel || 'Shipment Fee'}</span>
@@ -2265,7 +2373,7 @@ export default function CheckoutPage() {
               <div className="checkout__summary-divider" />
               <div className="checkout__summary-row checkout__summary-row--total">
                 <span>Total</span>
-                <span className="checkout__summary-total-price">₹{Math.max(0, (orderSummary?.subtotal ?? displaySubtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD') ? codFee : 0) + effectiveShippingFee - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
+                <span className="checkout__summary-total-price">₹{Math.max(0, (orderSummary?.subtotal ?? displaySubtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD' || orderSummary?.paymentMethod === 'PARTIAL' || paymentMethod === 'PARTIAL') ? codFee : 0) + effectiveShippingFee - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
               </div>
 
               <div className="checkout__summary-badges">

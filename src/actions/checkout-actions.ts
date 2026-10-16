@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { getServerSubdomain } from '@/lib/server-utils';
 import { fetchStorefront } from '@/lib/api';
+import type { PartialPaymentConfig } from '@/lib/partial-payment';
 
 const SESSION_COOKIE_NAME = "checkout_session_id";
 
@@ -43,6 +44,7 @@ export interface InitialCheckoutState {
   onlineDiscountPercent: number;
   enabledPaymentMethods: EnabledPaymentMethods;
   onlineGateway: "PAYU" | "RAZORPAY" | "CASHFREE" | null;
+  partialPayment: PartialPaymentConfig | null;
   shippingConfig: {
     shippingFee: number;
     freeShippingThreshold: number;
@@ -86,6 +88,17 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
               ? { name: "CASHFREE" as const, config: gateways.cashfree }
               : null;
 
+        const partialRaw = gateways.partial;
+        const partialValue = Number(partialRaw?.value);
+        const partialPayment: PartialPaymentConfig | null =
+          partialRaw?.enabled && Number.isFinite(partialValue) && partialValue > 0
+            ? {
+                enabled: true,
+                mode: partialRaw.mode === "amount" ? "amount" : "percent",
+                value: partialValue,
+              }
+            : null;
+
         const codFee = settings.codFee ?? 0;
         const onlineDiscountPercent = selectedGateway?.config?.discountPercent ?? 0;
         const shippingFee = Number(shippingSettings.shippingFee ?? (settings as any).shippingFee ?? 0);
@@ -98,6 +111,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
           onlineDiscountPercent,
           enabledPaymentMethods,
           onlineGateway: selectedGateway?.name ?? null,
+          partialPayment,
           shippingConfig: {
             shippingFee,
             freeShippingThreshold,
@@ -111,6 +125,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
           onlineDiscountPercent: 0,
           enabledPaymentMethods: NO_PAYMENT_METHODS,
           onlineGateway: null,
+          partialPayment: null,
           shippingConfig: {
             shippingFee: 0,
             freeShippingThreshold: 0,
@@ -166,6 +181,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       onlineDiscountPercent: storefrontData.onlineDiscountPercent,
       enabledPaymentMethods: storefrontData.enabledPaymentMethods,
       onlineGateway: storefrontData.onlineGateway,
+      partialPayment: storefrontData.partialPayment,
       shippingConfig: storefrontData.shippingConfig,
       initialStep,
     };
@@ -183,6 +199,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       onlineDiscountPercent: 0,
       enabledPaymentMethods: NO_PAYMENT_METHODS,
       onlineGateway: null,
+      partialPayment: null,
       shippingConfig: {
         shippingFee: 0,
         freeShippingThreshold: 0,

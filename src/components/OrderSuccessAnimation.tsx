@@ -15,6 +15,8 @@ interface OrderSuccessAnimationProps {
   orderId: string | null;
   paymentMethod?: string | null;
   amount?: number | null;
+  prepaidAmount?: number | null;
+  codDue?: number | null;
   orderHref?: string;
   compact?: boolean;
 }
@@ -23,6 +25,8 @@ export default function OrderSuccessAnimation({
   orderId,
   paymentMethod,
   amount,
+  prepaidAmount,
+  codDue,
   orderHref,
   compact = false,
 }: OrderSuccessAnimationProps) {
@@ -67,6 +71,12 @@ export default function OrderSuccessAnimation({
             <div className="order-success__row"><span>Order total</span><strong>₹{amount.toLocaleString('en-IN')}</strong></div>
           )}
           {paymentMethod && <div className="order-success__row"><span>Payment</span><strong>{paymentMethod}</strong></div>}
+          {typeof prepaidAmount === "number" && prepaidAmount > 0 && (
+            <div className="order-success__row"><span>Paid online</span><strong>₹{prepaidAmount.toLocaleString("en-IN")}</strong></div>
+          )}
+          {typeof codDue === "number" && codDue > 0 && (
+            <div className="order-success__row"><span>Pay on delivery</span><strong>₹{codDue.toLocaleString("en-IN")}</strong></div>
+          )}
         </div>
 
         <div className="order-success__actions">
