@@ -19,6 +19,7 @@ import { trackViewContent } from "@/lib/pixel";
 import { isVideoUrl, videoMimeType } from "@/lib/media-type";
 import { availableStock, isOutOfStock, isVariantUnavailable } from "@/lib/stock";
 import { resolveMediaUrl } from "@/lib/media";
+import ColoredBadgeIcon from "@/components/ColoredBadgeIcon";
 import type { TestimonialSection } from "@/lib/api";
 import VariantCardScroller from "./VariantCardScroller";
 import ProductReviews from "./ProductReviews";
@@ -389,7 +390,21 @@ export default function ProductClient({
   const pickedOutOfStock = pickedVariants.some((variant: any) => isVariantUnavailable(variant));
   const stockLeft = pickedOutOfStock ? 0 : availableStock(product, selectedVariant);
   const lowStock = stockLeft > 0 && stockLeft < 100;
-  const pageBadges = (Array.isArray(globalBadges) ? globalBadges : [])
+  const [previewBadges, setPreviewBadges] = useState<
+    { icon?: string; text?: string; color?: string }[] | null
+  >(null);
+  useEffect(() => {
+    const onPreview = (event: MessageEvent) => {
+      if (event.data?.type !== "ORBIT_CUSTOMIZATION_UPDATE") return;
+      const home = event.data.data?.homePageConfig;
+      if (!home || !Object.prototype.hasOwnProperty.call(home, "productPageBadge")) return;
+      const raw = home.productPageBadge;
+      setPreviewBadges(Array.isArray(raw) ? raw : raw ? [raw] : []);
+    };
+    window.addEventListener("message", onPreview);
+    return () => window.removeEventListener("message", onPreview);
+  }, []);
+  const pageBadges = (previewBadges ?? (Array.isArray(globalBadges) ? globalBadges : []))
     .map((badge) => ({
       icon: resolveMediaUrl(typeof badge?.icon === "string" ? badge.icon : ""),
       text: String(badge?.text || "").trim(),
@@ -859,12 +874,10 @@ export default function ProductClient({
                   {pageBadges.map((badge: { icon: string; text: string; color: string }) => (
                     <div className="product-page__benefit" key={`${badge.text}-${badge.icon}-${badge.color}`}>
                       {badge.icon ? (
-                        <div
-                          className="benefit-icon-wrapper"
-                          style={{
-                            ["--badge-color" as string]: badge.color,
-                            ["--badge-icon" as string]: `url("${badge.icon.replace(/"/g, "%22").replace(/\(/g, "%28").replace(/\)/g, "%29")}")`,
-                          }}
+                        <ColoredBadgeIcon
+                          src={badge.icon}
+                          color={badge.color}
+                          className="product-page__benefit-icon"
                         />
                       ) : null}
                       <span>{badge.text}</span>
