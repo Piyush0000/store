@@ -5,6 +5,20 @@ import { fetchAnnouncements } from '@/lib/api';
 import Link from 'next/link';
 import './AnnouncementBar.css';
 
+const ANNOUNCEMENT_ANIMATIONS = new Set([
+  'rotate',
+  'marquee',
+  'slide-up',
+  'typewriter',
+  'floating-emoji',
+  'bounce-emoji',
+  'wiggle-icon',
+  'sparkle-sweep',
+  'pulse',
+  'staggered',
+  'none',
+]);
+
 function pad(n: number) {
   return String(n).padStart(2, '0');
 }
@@ -51,6 +65,12 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
   const [announcements, setAnnouncements] = useState<any[]>(getInitialAnnouncements);
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 3, seconds: 0 });
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [animation, setAnimation] = useState(() => {
+    const value = initialCustomization?.announcementBar?.animation;
+    return typeof value === 'string' && ANNOUNCEMENT_ANIMATIONS.has(value)
+      ? value
+      : 'rotate';
+  });
   const [backgroundColor, setBackgroundColor] = useState(() => {
     return initialCustomization?.announcementBar?.backgroundColor || '#000000';
   });
@@ -84,6 +104,12 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
         const cust = e.data.data;
+        const nextAnimation = cust?.announcementBar?.animation;
+        setAnimation(
+          typeof nextAnimation === 'string' && ANNOUNCEMENT_ANIMATIONS.has(nextAnimation)
+            ? nextAnimation
+            : 'rotate',
+        );
         if (cust?.announcementBar?.announcements) {
           setAnnouncements(cust.announcementBar.announcements);
         } else if (cust?.announcementBar?.text) {
@@ -127,7 +153,8 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
     { text: 'Save Min 50% on all orders and get free shipping', link: '' },
   ];
 
-  const displayList = announcements.length > 0 ? announcements : staticMessages;
+  const allMessages = announcements.length > 0 ? announcements : staticMessages;
+  const displayList = animation === 'none' ? allMessages.slice(0, 1) : allMessages;
 
   // Reset current index if content list length changes
   useEffect(() => {
@@ -136,12 +163,12 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
 
   // Autoplay cycle
   useEffect(() => {
-    if (displayList.length <= 1) return;
+    if (displayList.length <= 1 || animation === 'marquee' || animation === 'none') return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % displayList.length);
     }, 4500);
     return () => clearInterval(interval);
-  }, [displayList.length]);
+  }, [displayList.length, animation]);
 
   const textColor = customTextColor && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(customTextColor)
     ? customTextColor
@@ -151,23 +178,51 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
     color: textColor,
   };
 
+  const isMarquee = animation === 'marquee';
+  const isSingleSlideAnimation = animation === 'rotate' || animation === 'slide-up';
+  const renderedMessages = isMarquee
+    ? [...displayList, ...displayList]
+    : isSingleSlideAnimation
+      ? [displayList[currentIndex]]
+      : displayList;
+  const decoration = animation === 'floating-emoji'
+    ? '🌿'
+    : animation === 'bounce-emoji'
+      ? '✨'
+      : animation === 'wiggle-icon'
+        ? '🚚'
+        : '◆';
+
   return (
-    <div className="announcement-bar" style={barStyle}>
+    <div className={`announcement-bar announcement-bar--${animation}`} style={barStyle}>
+      {animation === 'floating-emoji' && (
+        <>
+          <span className="announcement-decoration announcement-decoration--one" aria-hidden="true">✨</span>
+          <span className="announcement-decoration announcement-decoration--two" aria-hidden="true">🌿</span>
+          <span className="announcement-decoration announcement-decoration--three" aria-hidden="true">💚</span>
+        </>
+      )}
       <div className="announcement-marquee">
-        <div 
+        <div
           className="announcement-track"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+          style={isMarquee || isSingleSlideAnimation
+            ? undefined
+            : { transform: `translateX(-${currentIndex * 100}%)` }}
         >
-          {displayList.map((ann, i) => {
+          {renderedMessages.map((_, i) => {
+            const ann = isSingleSlideAnimation ? displayList[currentIndex] : displayList[i % displayList.length];
+            const isDuplicate = isMarquee && i >= displayList.length;
             const itemContent = (
               <span className="announcement-item">
-                <span className="announcement-diamond">◆</span>
-                {ann.text === 'Limited Time: 00H:03M:00S' ? timeLeftText : ann.text}
+                <span className="announcement-diamond" aria-hidden="true">{decoration}</span>
+                <span className="announcement-copy" key={`${currentIndex}-${animation}`}>
+                  {ann.text === 'Limited Time: 00H:03M:00S' ? timeLeftText : ann.text}
+                </span>
               </span>
             );
 
             const slideContent = ann.link ? (
-              <Link href={ann.link} className="announcement-link hover:underline transition-all">
+              <Link href={ann.link} tabIndex={isDuplicate ? -1 : undefined} className="announcement-link hover:underline transition-all">
                 {itemContent}
               </Link>
             ) : (
@@ -177,7 +232,11 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
             );
 
             return (
-              <div key={i} className="announcement-slide">
+              <div
+                key={`${i}-${ann.text}-${isSingleSlideAnimation ? currentIndex : ''}`}
+                className="announcement-slide"
+                aria-hidden={isDuplicate || undefined}
+              >
                 {slideContent}
               </div>
             );
