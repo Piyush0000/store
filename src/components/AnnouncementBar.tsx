@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { fetchAnnouncements } from '@/lib/api';
 import Link from 'next/link';
 import './AnnouncementBar.css';
@@ -71,6 +71,14 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
       ? value
       : 'rotate';
   });
+  const [emoji, setEmoji] = useState(() => {
+    const value = initialCustomization?.announcementBar?.emoji;
+    return typeof value === 'string' && value.trim() ? value : '✨';
+  });
+  const [emojiSize, setEmojiSize] = useState(() => {
+    const value = Number(initialCustomization?.announcementBar?.emojiSize);
+    return Number.isFinite(value) && value > 0 ? Math.min(32, Math.max(14, value)) : 20;
+  });
   const [backgroundColor, setBackgroundColor] = useState(() => {
     return initialCustomization?.announcementBar?.backgroundColor || '#000000';
   });
@@ -110,6 +118,12 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
             ? nextAnimation
             : 'rotate',
         );
+        const nextEmoji = cust?.announcementBar?.emoji;
+        setEmoji(typeof nextEmoji === 'string' && nextEmoji.trim() ? nextEmoji : '✨');
+        const nextEmojiSize = Number(cust?.announcementBar?.emojiSize);
+        setEmojiSize(Number.isFinite(nextEmojiSize) && nextEmojiSize > 0
+          ? Math.min(32, Math.max(14, nextEmojiSize))
+          : 20);
         if (cust?.announcementBar?.announcements) {
           setAnnouncements(cust.announcementBar.announcements);
         } else if (cust?.announcementBar?.text) {
@@ -185,21 +199,16 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
     : isSingleSlideAnimation
       ? [displayList[currentIndex]]
       : displayList;
-  const decoration = animation === 'floating-emoji'
-    ? '🌿'
-    : animation === 'bounce-emoji'
-      ? '✨'
-      : animation === 'wiggle-icon'
-        ? '🚚'
-        : '◆';
-
   return (
-    <div className={`announcement-bar announcement-bar--${animation}`} style={barStyle}>
+    <div
+      className={`announcement-bar announcement-bar--${animation}`}
+      style={{ ...barStyle, '--announcement-emoji-size': `${emojiSize}px` } as CSSProperties}
+    >
       {animation === 'floating-emoji' && (
         <>
-          <span className="announcement-decoration announcement-decoration--one" aria-hidden="true">✨</span>
-          <span className="announcement-decoration announcement-decoration--two" aria-hidden="true">🌿</span>
-          <span className="announcement-decoration announcement-decoration--three" aria-hidden="true">💚</span>
+          <span className="announcement-decoration announcement-decoration--one" aria-hidden="true">{emoji}</span>
+          <span className="announcement-decoration announcement-decoration--two" aria-hidden="true">{emoji}</span>
+          <span className="announcement-decoration announcement-decoration--three" aria-hidden="true">{emoji}</span>
         </>
       )}
       <div className="announcement-marquee">
@@ -214,7 +223,7 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
             const isDuplicate = isMarquee && i >= displayList.length;
             const itemContent = (
               <span className="announcement-item">
-                <span className="announcement-diamond" aria-hidden="true">{decoration}</span>
+                <span className="announcement-diamond" aria-hidden="true">{emoji}</span>
                 <span className="announcement-copy" key={`${currentIndex}-${animation}`}>
                   {ann.text === 'Limited Time: 00H:03M:00S' ? timeLeftText : ann.text}
                 </span>
