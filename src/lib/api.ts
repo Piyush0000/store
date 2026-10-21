@@ -283,6 +283,7 @@ export interface StorefrontData {
       value?: number;
     }>;
     codFee?: number;
+    orderOtpEnabled?: boolean;
   };
   announcements: Announcement[];
   legalPages: LegalPage[];
