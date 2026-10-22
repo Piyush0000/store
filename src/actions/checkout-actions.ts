@@ -45,6 +45,7 @@ export interface InitialCheckoutState {
   enabledPaymentMethods: EnabledPaymentMethods;
   onlineGateway: "PAYU" | "RAZORPAY" | "CASHFREE" | null;
   partialPayment: PartialPaymentConfig | null;
+  orderOtpEnabled: boolean;
   shippingConfig: {
     shippingFee: number;
     freeShippingThreshold: number;
@@ -105,6 +106,12 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
         const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? (settings as any).freeShippingThreshold ?? 0);
         const shippingLabel = shippingSettings.shippingLabel || 'Shipment Fee';
         const enabled = shippingSettings.enabled !== false;
+        const orderOtpEnabled = Boolean(
+          settings.orderOtpEnabled ??
+          (settings as any).requireOtp ??
+          (storefront as any).store?.orderOtpEnabled ??
+          true
+        );
 
         return {
           codFee,
@@ -112,6 +119,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
           enabledPaymentMethods,
           onlineGateway: selectedGateway?.name ?? null,
           partialPayment,
+          orderOtpEnabled,
           shippingConfig: {
             shippingFee,
             freeShippingThreshold,
@@ -126,6 +134,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
           enabledPaymentMethods: NO_PAYMENT_METHODS,
           onlineGateway: null,
           partialPayment: null,
+          orderOtpEnabled: true,
           shippingConfig: {
             shippingFee: 0,
             freeShippingThreshold: 0,
@@ -182,6 +191,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       enabledPaymentMethods: storefrontData.enabledPaymentMethods,
       onlineGateway: storefrontData.onlineGateway,
       partialPayment: storefrontData.partialPayment,
+      orderOtpEnabled: storefrontData.orderOtpEnabled,
       shippingConfig: storefrontData.shippingConfig,
       initialStep,
     };
@@ -200,6 +210,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
       enabledPaymentMethods: NO_PAYMENT_METHODS,
       onlineGateway: null,
       partialPayment: null,
+      orderOtpEnabled: true,
       shippingConfig: {
         shippingFee: 0,
         freeShippingThreshold: 0,

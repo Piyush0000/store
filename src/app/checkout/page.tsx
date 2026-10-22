@@ -120,6 +120,7 @@ export default function CheckoutPage() {
   }, []);
 
   const [codFee, setCodFee] = useState(0);
+  const [orderOtpEnabled, setOrderOtpEnabled] = useState(true);
   const [partialConfig, setPartialConfig] = useState<PartialPaymentConfig | null>(null);
   const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(0);
   const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<EnabledPaymentMethods | null>(null);
@@ -418,6 +419,9 @@ export default function CheckoutPage() {
           setEnabledPaymentMethods(initialState.enabledPaymentMethods);
         } else {
           setEnabledPaymentMethods({ cod: false, payu: false, cashfree: false, razorpay: false });
+        }
+        if (initialState.orderOtpEnabled !== undefined) {
+          setOrderOtpEnabled(initialState.orderOtpEnabled);
         }
         setOnlineGateway(initialState.onlineGateway);
         setPartialConfig(initialState.partialPayment);
@@ -992,8 +996,23 @@ export default function CheckoutPage() {
         });
       }
 
+      let uid = userId;
+      if (!uid) {
+        const userResult = await createOrUpdateUser({
+          phone,
+          email: customerEmail,
+          firstName: customerFirstName,
+          lastName: customerLastName,
+        });
+        if (userResult.success && userResult.data) {
+          uid = userResult.data.id;
+          setUserId(uid);
+          setUser(userResult.data);
+        }
+      }
+
       const result = await createCodOrder({
-        userId: userId || `temp_${phone}`,
+        userId: uid || userId || `temp_${phone}`,
         items: orderItems,
         totalAmount:
           totalRegularSubtotal +
@@ -1391,7 +1410,7 @@ export default function CheckoutPage() {
     setPendingAction(action);
     if (action === 'COD') setPaymentMethod('COD');
     if (action === 'PARTIAL') setPaymentMethod('PARTIAL');
-    if (isSessionVerified) {
+    if (isSessionVerified || !orderOtpEnabled) {
       if (action === 'COD') {
         handleCreateCodOrder();
       } else if (action === 'PARTIAL' && onlineGateway) {
