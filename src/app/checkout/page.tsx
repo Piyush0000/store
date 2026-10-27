@@ -370,19 +370,6 @@ export default function CheckoutPage() {
     launchAttemptedRef.current = false;
   }, [payUData, pendingOrderId]);
 
-  useEffect(() => {
-    if (step !== "payment" || !paymentOptionsReady || paymentUi) return;
-    if (onlineEnabled && onlineGateway) {
-      setPaymentUi("online");
-      setPaymentMethod(onlineGateway);
-      return;
-    }
-    if (codEnabled) {
-      setPaymentUi("cod");
-      setPaymentMethod("COD");
-    }
-  }, [step, paymentOptionsReady, paymentUi, onlineEnabled, onlineGateway, codEnabled]);
-
   // Initialize device ID, fetch initial checkout data, and set step in single pass
   const sessionChecked = useRef(false);
 
@@ -937,7 +924,25 @@ export default function CheckoutPage() {
       codFee,
     );
   }, [partialConfig, buildOrderItems, discountAmount, effectiveShippingFee, codFee]);
-  const partialAvailable = Boolean(partialSplit && onlineEnabled && codEnabled);
+  const partialAvailable = Boolean(partialSplit && onlineEnabled);
+
+  useEffect(() => {
+    if (step !== "payment" || !paymentOptionsReady || paymentUi) return;
+    if (onlineEnabled && onlineGateway) {
+      setPaymentUi("online");
+      setPaymentMethod(onlineGateway);
+      return;
+    }
+    if (partialAvailable && onlineGateway) {
+      setPaymentUi("partial");
+      setPaymentMethod("PARTIAL");
+      return;
+    }
+    if (codEnabled) {
+      setPaymentUi("cod");
+      setPaymentMethod("COD");
+    }
+  }, [step, paymentOptionsReady, paymentUi, onlineEnabled, onlineGateway, partialAvailable, codEnabled]);
 
   const handleCreateCodOrder = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
@@ -1904,7 +1909,7 @@ export default function CheckoutPage() {
                 <p className="checkout__pay-empty">Loading payment methods...</p>
               )}
 
-              {paymentOptionsReady && !codEnabled && !onlineEnabled && (
+              {paymentOptionsReady && !codEnabled && !onlineEnabled && !partialAvailable && (
                 <p className="checkout__pay-empty">
                   No payment methods are available right now. Please contact the store.
                 </p>
