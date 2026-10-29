@@ -282,6 +282,12 @@ export default function ProductClient({
       : 0;
 
   const customOptionKeys = collectOptionTypeKeys(product.variants);
+  const requiredTypeKeys = customOptionKeys.filter(isRequiredOptionType);
+  const hasCombinedVariants = requiredTypeKeys.length > 1 && product.variants.some(
+    (variant: any) => requiredTypeKeys.every(
+      (key) => typeof parseVariantOptions(variant)[key] === "string",
+    ),
+  );
 
   const getOptionValues = (key: string) => [
     ...new Set<string>(
@@ -291,8 +297,21 @@ export default function ProductClient({
     ),
   ];
 
-  const getVariantForOption = (key: string, value: string) =>
-    product.variants.find((variant: any) => parseVariantOptions(variant)[key] === value);
+  const getVariantForOption = (key: string, value: string) => {
+    const matches = product.variants.filter(
+      (variant: any) => parseVariantOptions(variant)[key] === value,
+    );
+    return matches.find((variant: any) => !isVariantUnavailable(variant)) || matches[0];
+  };
+
+  const getVariantMatchingOptions = (selection: Record<string, string>) => {
+    const selected = Object.entries(selection);
+    if (!selected.length) return null;
+    const matches = product.variants.filter((variant: any) =>
+      selected.every(([key, value]) => parseVariantOptions(variant)[key] === value),
+    );
+    return matches.find((variant: any) => !isVariantUnavailable(variant)) || matches[0] || null;
+  };
 
   const galleryImages: string[] = useMemo(() => {
     const defaults = extractImageUrls(product.images);
@@ -323,19 +342,21 @@ export default function ProductClient({
     }
     setPickedOptions(next);
 
-    if (next[key]) {
-      const match = getVariantForOption(key, next[key]);
-      if (match) setSelectedVariant(match);
+    const match = getVariantMatchingOptions(next);
+    if (match) {
+      setSelectedVariant(match);
       return;
     }
 
     const leftover = Object.entries(next);
-    if (!leftover.length) {
+    if (!leftover.length || hasCombinedVariants) {
       setSelectedVariant(null);
       return;
     }
-    const [fallbackKey, fallbackValue] = leftover[leftover.length - 1];
-    setSelectedVariant(getVariantForOption(fallbackKey, fallbackValue) || null);
+    const fallbackKey = customOptionKeys.find(
+      (optionKey) => isImageOptionType(optionKey) && next[optionKey],
+    ) || customOptionKeys.find((optionKey) => next[optionKey]) || leftover[0][0];
+    setSelectedVariant(getVariantForOption(fallbackKey, next[fallbackKey]) || null);
   };
 
   const renderVariantCard = (
@@ -380,14 +401,22 @@ export default function ProductClient({
       /^(xs|s|m|l|xl|xxl|xxxl|2xl|3xl|4xl)$/i.test(v.name.trim()),
     ) ?? false;
   const optionLabel = isSizeVariant ? "Size" : "Option";
+  const variantSelection: Record<string, string> = customOptionKeys.length > 0
+    ? Object.fromEntries(customOptionKeys
+        .filter((key) => pickedOptions[key])
+        .map((key) => [key.charAt(0).toUpperCase() + key.slice(1), pickedOptions[key]]))
+    : selectedVariant ? { [optionLabel]: selectedVariant.name } : {};
 
+  const matchingVariant = getVariantMatchingOptions(pickedOptions);
   const pickedVariants = customOptionKeys
     .map((key) => {
       const value = pickedOptions[key];
       return value ? getVariantForOption(key, value) : null;
     })
     .filter(Boolean);
-  const pickedOutOfStock = pickedVariants.some((variant: any) => isVariantUnavailable(variant));
+  const pickedOutOfStock = !hasCombinedVariants && pickedVariants.some(
+    (variant: any) => isVariantUnavailable(variant),
+  );
   const stockLeft = pickedOutOfStock ? 0 : availableStock(product, selectedVariant);
   const lowStock = stockLeft > 0 && stockLeft < 100;
   const [previewBadges, setPreviewBadges] = useState<
@@ -431,15 +460,16 @@ export default function ProductClient({
     .filter((item: { icon: string; url: string }) => item.icon && item.url)
     .slice(0, 6);
   const outOfStock = Boolean(selectedVariant) && (pickedOutOfStock || isOutOfStock(product, selectedVariant));
-  const requiredTypeKeys = customOptionKeys.filter(isRequiredOptionType);
   const missingRequiredKeys = requiredTypeKeys.filter((key) => !pickedOptions[key]);
   const needsRequiredTypes = missingRequiredKeys.length > 0;
+  const invalidCombination = hasCombinedVariants && !needsRequiredTypes && !matchingVariant;
   const needsVariant =
     Boolean(product.variants?.length) &&
-    (needsRequiredTypes || (requiredTypeKeys.length === 0 && !selectedVariant));
+    (needsRequiredTypes || invalidCombination || (requiredTypeKeys.length === 0 && !selectedVariant));
   const purchaseBlocked = outOfStock || needsVariant;
   const variantPrompt = (() => {
     if (!needsVariant) return "";
+    if (invalidCombination) return "Selected color and size combination is unavailable";
     const missingColor = missingRequiredKeys.some(isImageOptionType);
     const missingSize = missingRequiredKeys.some((key) => /size/i.test(key));
     if (missingColor && missingSize) return "Select color and size";
@@ -458,16 +488,6 @@ export default function ProductClient({
 
   const handleAddToCart = () => {
     if (purchaseBlocked) return;
-    const variantSelection = selectedVariant
-      ? customOptionKeys.length > 0
-        ? Object.fromEntries(
-            customOptionKeys.map((k) => [
-              k.charAt(0).toUpperCase() + k.slice(1),
-              parseVariantOptions(selectedVariant)[k],
-            ]),
-          )
-        : { [optionLabel]: selectedVariant.name }
-      : {};
 
     addToCart(
       {
@@ -487,16 +507,6 @@ export default function ProductClient({
 
   const handleBuyNow = () => {
     if (purchaseBlocked) return;
-    const variantSelection = selectedVariant
-      ? customOptionKeys.length > 0
-        ? Object.fromEntries(
-            customOptionKeys.map((k) => [
-              k.charAt(0).toUpperCase() + k.slice(1),
-              parseVariantOptions(selectedVariant)[k],
-            ]),
-          )
-        : { [optionLabel]: selectedVariant.name }
-      : {};
 
     const buyNowItem = {
       id: product.id,
