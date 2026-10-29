@@ -64,10 +64,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [variantPicker, setVariantPicker] = useState<{ product: ProductWithVariants; initialVariantId?: string; initialQuantity?: number } | null>(null);
 
+  const selectionKey = (variants: Record<string, string>) =>
+    JSON.stringify(Object.entries(variants).sort(([left], [right]) => left.localeCompare(right)));
+
   const sameCartLine = (item: CartItem, id: string, variants: Record<string, string>, variantId?: string) =>
-    item.id === id && (variantId || item.variantId
-      ? Boolean(variantId && item.variantId === variantId)
-      : JSON.stringify(item.variants || {}) === JSON.stringify(variants));
+    item.id === id &&
+    item.variantId === variantId &&
+    selectionKey(item.variants || {}) === selectionKey(variants);
 
   const openVariantPicker = (product: ProductWithVariants, initialVariantId?: string, initialQuantity?: number) => {
     setIsCartOpen(false);
