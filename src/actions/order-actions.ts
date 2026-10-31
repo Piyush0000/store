@@ -535,7 +535,129 @@ export async function getOrderById(orderId: string) {
   }
 }
 
-export async function getOrdersByUser(userId: string) {
+export async function linkOrderToUser(orderId: string, userId: string) {
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { userId },
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+export async function getOrdersByPhone(phone: string, userId?: string) {
+  try {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const last10 = cleanPhone.slice(-10);
+    const phoneFormats = Array.from(
+      new Set([phone, cleanPhone, last10, `+91${last10}`, `91${last10}`])
+    );
+
+    // Find user by phone if userId is not given
+    let targetUserId = userId;
+    if (!targetUserId) {
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { phone: last10 },
+            { phone: cleanPhone },
+            { phone: phone },
+          ],
+        },
+      });
+      if (user) {
+        targetUserId = user.id;
+      }
+    }
+
+    const tempUserIds = phoneFormats.flatMap((p) => [
+      `temp_${p}`,
+      `user_${p}`,
+      p,
+    ]);
+
+    // Update any orphaned temp orders to point to targetUserId if found
+    if (targetUserId) {
+      try {
+        await prisma.order.updateMany({
+          where: {
+            userId: { in: tempUserIds },
+          },
+          data: {
+            userId: targetUserId,
+          },
+        });
+      } catch (linkErr) {
+        console.warn('[getOrdersByPhone] Error updating temp orders:', linkErr);
+      }
+    }
+
+    // Try query with targetUserId, temp userIds, and JSON phone paths
+    let orders: any[] = [];
+    try {
+      const whereOr: Prisma.OrderWhereInput[] = [];
+      if (targetUserId) {
+        whereOr.push({ userId: targetUserId });
+      }
+      whereOr.push({ userId: { in: tempUserIds } });
+
+      for (const p of phoneFormats) {
+        whereOr.push({
+          shippingAddress: {
+            path: ['phone'],
+            equals: p,
+          },
+        });
+      }
+
+      orders = await prisma.order.findMany({
+        where: { OR: whereOr },
+        orderBy: { createdAt: 'desc' },
+        include: { items: true },
+      });
+    } catch (queryErr) {
+      console.warn('[getOrdersByPhone] JSON path query failed, falling back to userId query:', queryErr);
+      const userIdsToFind = [...tempUserIds];
+      if (targetUserId) userIdsToFind.push(targetUserId);
+      orders = await prisma.order.findMany({
+        where: { userId: { in: userIdsToFind } },
+        orderBy: { createdAt: 'desc' },
+        include: { items: true },
+      });
+    }
+
+    // If targetUserId exists, link any newly found orders that still have old userId
+    if (targetUserId && orders.length > 0) {
+      const unlinkedIds = orders
+        .filter((o) => o.userId !== targetUserId)
+        .map((o) => o.id);
+
+      if (unlinkedIds.length > 0) {
+        try {
+          await prisma.order.updateMany({
+            where: { id: { in: unlinkedIds } },
+            data: { userId: targetUserId },
+          });
+        } catch (e) {
+          console.warn('[getOrdersByPhone] Error linking unlinked orders:', e);
+        }
+      }
+    }
+
+    return { success: true, data: orders };
+  } catch (error: any) {
+    console.error('[getOrdersByPhone] Error:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+export async function getOrdersByUser(userId: string, phone?: string) {
+  if (phone) {
+    return getOrdersByPhone(phone, userId);
+  }
+
   try {
     const orders = await prisma.order.findMany({
       where: { userId },

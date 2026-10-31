@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Package, Truck, CreditCard, Banknote, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { validateSession } from '@/actions/otp-actions';
-import { getOrderById } from '@/actions/order-actions';
+import { getOrderById, linkOrderToUser } from '@/actions/order-actions';
 import { getUserByPhone } from '@/actions/user-actions';
 import './order-detail.css';
 
@@ -73,12 +73,26 @@ export default function OrderDetailPage() {
         return;
       }
 
-      // Verify order belongs to this user
+      // Verify order belongs to this user or phone number
       const orderData = orderResult.data as any;
-      if (orderData.userId !== userResult.data.id) {
+      const cleanPhone = (session.phone || '').replace(/\D/g, '');
+      const last10 = cleanPhone.slice(-10);
+      const shippingPhone = (orderData.shippingAddress?.phone || '').replace(/\D/g, '');
+      const isOwner =
+        orderData.userId === userResult.data.id ||
+        orderData.userId === `temp_${session.phone}` ||
+        orderData.userId === `temp_${cleanPhone}` ||
+        orderData.userId === `temp_${last10}` ||
+        (last10 && shippingPhone.endsWith(last10));
+
+      if (!isOwner) {
         setError('Order not found');
         setIsLoading(false);
         return;
+      }
+
+      if (orderData.userId !== userResult.data.id) {
+        await linkOrderToUser(orderData.id, userResult.data.id);
       }
 
       setOrder(orderData);

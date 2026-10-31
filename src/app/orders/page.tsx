@@ -55,7 +55,7 @@ export default function OrdersPage() {
         return;
       }
 
-      const ordersResult = await getOrdersByUser(userResult.data.id);
+      const ordersResult = await getOrdersByUser(userResult.data.id, session.phone);
       if (ordersResult.success) {
         setOrders((ordersResult.data as any) || []);
       } else {
