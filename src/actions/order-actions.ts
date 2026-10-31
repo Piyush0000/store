@@ -597,7 +597,7 @@ export async function getOrdersByPhone(phone: string, userId?: string) {
     // Try query with targetUserId, temp userIds, and JSON phone paths
     let orders: any[] = [];
     try {
-      const whereOr: Prisma.OrderWhereInput[] = [];
+      const whereOr: any[] = [];
       if (targetUserId) {
         whereOr.push({ userId: targetUserId });
       }
