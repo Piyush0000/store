@@ -1703,6 +1703,7 @@
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.06);
   position: relative;
   overflow: hidden;
+  z-index: 1;
 }
 
 .checkout__free-shipping-banner::before {
@@ -2284,7 +2285,7 @@
   padding: 4px 12px;
   font-size: 12px;
   color: #888;
-  margin: 0 auto 40px;
+  margin: 0 auto;
 }
 
 @media (min-width: 769px) {
@@ -2297,6 +2298,16 @@
   }
 }
 
+/* Hide site footer on checkout page */
+body:has(.checkout) footer,
+body:has(.checkout) .footer-container,
+body:has(.checkout) .footer-design,
+body.store-checkout footer,
+body.store-checkout .footer-container,
+body.store-checkout .footer-design {
+  display: none !important;
+}
+
 .checkout__evoc-logo {
   height: 24px;
   width: auto;
@@ -2307,7 +2318,6 @@
 
   /* Section cards stagger in */
   .checkout__section {
-    will-change: opacity;
     animation: staggerFadeIn 0.2s ease-out forwards;
     opacity: 0;
   }
@@ -3436,7 +3446,7 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 80;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -4034,12 +4044,22 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
     text-align: center;
   }
 
+  .checkout__form {
+    position: relative;
+    z-index: 200;
+  }
+
+  .checkout__summary {
+    position: relative;
+    z-index: 10;
+  }
+
   .checkout__step-sticky {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 90;
+    z-index: 1000;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -4077,8 +4097,10 @@ body:has(.checkout__otp-modal-overlay) .announcement-bar {
     margin: 0;
   }
 
-  .checkout:has(.checkout__step-sticky) {
-    padding-bottom: calc(132px + env(safe-area-inset-bottom));
+  .checkout:has(.checkout__step-sticky),
+  .checkout:has(.checkout__pay-sticky),
+  .checkout:has(.checkout__mobile-sticky-bottom) {
+    padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
   }
 
   .checkout--clean {

@@ -1703,13 +1703,6 @@ export default function CheckoutPage() {
           Order placed successfully
         </div>
       )}
-      <link
-        rel="preload"
-        href="/otp-illustration.webp"
-        as="image"
-        type="image/webp"
-        fetchPriority="high"
-      />
       <h1 className="checkout__title">Checkout</h1>
 
       {(step === "details" || step === "payment" || step === "success") && (
@@ -1749,9 +1742,6 @@ export default function CheckoutPage() {
 
           {step === 'identify' && (
             <section className="checkout__section checkout__section--sticky">
-              <div className="checkout__illustration-container">
-                <img src="/otp-illustration.webp" alt="Verify Phone" className="checkout__illustration" />
-              </div>
               <h3 className="checkout__verification-title">Enter Your Mobile Number</h3>
               <p className="checkout__verification-desc">
                 Provide your mobile number to begin checkout.<br />
@@ -1824,9 +1814,6 @@ export default function CheckoutPage() {
 
           {step === 'verify' && (
             <section className="checkout__section checkout__section--sticky">
-              <div className="checkout__illustration-container">
-                <img src="/otp-illustration.webp" alt="Verify Phone" className="checkout__illustration" />
-              </div>
               <h3 className="checkout__verification-title">Verify Your Phone Number</h3>
               <p className="checkout__verification-desc">
                 We&apos;ve sent a 4-digit code to +91 {phone.slice(0, 5)} {phone.slice(5)}
