@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { fetchStorefront, fetchPages } from "@/lib/api";
 import "./Footer.css";
@@ -175,6 +176,11 @@ export default function Footer({
   storeName: propStoreName,
   storeSubdomain,
 }: FooterProps) {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/checkout")) {
+    return null;
+  }
+
   const [footerCustomization, setFooterCustomization] = useState(initialCustomization || {});
   useEffect(() => { if (initialCustomization) setFooterCustomization(initialCustomization); }, [initialCustomization]);
   const getInitialLogo = () => {
