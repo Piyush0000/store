@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { getServerSubdomain } from '@/lib/server-utils';
+import { getServerSubdomain, getServerStoreId } from '@/lib/server-utils';
 import { fetchStorefront } from '@/lib/api';
 import { splitPartialPayment, type PartialPaymentConfig } from '@/lib/partial-payment';
 
@@ -523,10 +523,31 @@ export async function updateOrderByTxnId(txnId: string, status: string, payuResp
   }
 }
 
-export async function getOrderById(orderId: string) {
+export async function getOrderById(orderId: string, storeId?: string) {
   try {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    let targetStoreId = storeId;
+    if (!targetStoreId) {
+      targetStoreId = await getServerStoreId();
+    }
+    if (!targetStoreId) {
+      try {
+        const subdomain = await getServerSubdomain();
+        if (subdomain) {
+          const storefront = await fetchStorefront(subdomain);
+          if (storefront.store?.id) targetStoreId = storefront.store.id;
+        }
+      } catch (err) {
+        console.warn('[getOrderById] Error resolving storeId from subdomain:', err);
+      }
+    }
+
+    const whereClause: any = { id: orderId };
+    if (targetStoreId) {
+      whereClause.storeId = targetStoreId;
+    }
+
+    const order = await prisma.order.findFirst({
+      where: whereClause,
       include: { items: true },
     });
     return { success: true, data: order };
@@ -547,13 +568,32 @@ export async function linkOrderToUser(orderId: string, userId: string) {
   }
 }
 
-export async function getOrdersByPhone(phone: string, userId?: string) {
+export async function getOrdersByPhone(phone: string, userId?: string, storeId?: string) {
   try {
     const cleanPhone = phone.replace(/\D/g, '');
     const last10 = cleanPhone.slice(-10);
     const phoneFormats = Array.from(
       new Set([phone, cleanPhone, last10, `+91${last10}`, `91${last10}`])
     );
+
+    // Resolve storeId so we only return orders for the current store
+    let targetStoreId = storeId;
+    if (!targetStoreId) {
+      targetStoreId = await getServerStoreId();
+    }
+    if (!targetStoreId) {
+      try {
+        const subdomain = await getServerSubdomain();
+        if (subdomain) {
+          const storefront = await fetchStorefront(subdomain);
+          if (storefront.store?.id) {
+            targetStoreId = storefront.store.id;
+          }
+        }
+      } catch (err) {
+        console.warn('[getOrdersByPhone] Error resolving storeId from subdomain:', err);
+      }
+    }
 
     // Find user by phone if userId is not given
     let targetUserId = userId;
@@ -581,10 +621,14 @@ export async function getOrdersByPhone(phone: string, userId?: string) {
     // Update any orphaned temp orders to point to targetUserId if found
     if (targetUserId) {
       try {
+        const updateWhere: any = {
+          userId: { in: tempUserIds },
+        };
+        if (targetStoreId) {
+          updateWhere.storeId = targetStoreId;
+        }
         await prisma.order.updateMany({
-          where: {
-            userId: { in: tempUserIds },
-          },
+          where: updateWhere,
           data: {
             userId: targetUserId,
           },
@@ -612,8 +656,13 @@ export async function getOrdersByPhone(phone: string, userId?: string) {
         });
       }
 
+      const mainWhere: any = { OR: whereOr };
+      if (targetStoreId) {
+        mainWhere.storeId = targetStoreId;
+      }
+
       orders = await prisma.order.findMany({
-        where: { OR: whereOr },
+        where: mainWhere,
         orderBy: { createdAt: 'desc' },
         include: { items: true },
       });
@@ -621,8 +670,14 @@ export async function getOrdersByPhone(phone: string, userId?: string) {
       console.warn('[getOrdersByPhone] JSON path query failed, falling back to userId query:', queryErr);
       const userIdsToFind = [...tempUserIds];
       if (targetUserId) userIdsToFind.push(targetUserId);
+
+      const fallbackWhere: any = { userId: { in: userIdsToFind } };
+      if (targetStoreId) {
+        fallbackWhere.storeId = targetStoreId;
+      }
+
       orders = await prisma.order.findMany({
-        where: { userId: { in: userIdsToFind } },
+        where: fallbackWhere,
         orderBy: { createdAt: 'desc' },
         include: { items: true },
       });
@@ -653,14 +708,35 @@ export async function getOrdersByPhone(phone: string, userId?: string) {
   }
 }
 
-export async function getOrdersByUser(userId: string, phone?: string) {
+export async function getOrdersByUser(userId: string, phone?: string, storeId?: string) {
   if (phone) {
-    return getOrdersByPhone(phone, userId);
+    return getOrdersByPhone(phone, userId, storeId);
   }
 
   try {
+    let targetStoreId = storeId;
+    if (!targetStoreId) {
+      targetStoreId = await getServerStoreId();
+    }
+    if (!targetStoreId) {
+      try {
+        const subdomain = await getServerSubdomain();
+        if (subdomain) {
+          const storefront = await fetchStorefront(subdomain);
+          if (storefront.store?.id) targetStoreId = storefront.store.id;
+        }
+      } catch (err) {
+        console.warn('[getOrdersByUser] Error resolving storeId from subdomain:', err);
+      }
+    }
+
+    const whereClause: any = { userId };
+    if (targetStoreId) {
+      whereClause.storeId = targetStoreId;
+    }
+
     const orders = await prisma.order.findMany({
-      where: { userId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       include: { items: true },
     });
