@@ -119,6 +119,16 @@
   color: #666;
 }
 
+.order-detail__status-delivery {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e40af;
+  margin-top: 4px;
+}
+
 /* Grid Layout */
 .order-detail__grid {
   display: grid;

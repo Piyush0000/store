@@ -13,6 +13,7 @@ import {
   LogOut,
   AlertCircle,
   RotateCcw,
+  Truck,
 } from 'lucide-react';
 import {
   validateSession,
@@ -57,6 +58,7 @@ interface Order {
   orderNumber: string;
   status: string;
   paymentStatus: string;
+  fulfillmentStatus?: string;
   total: number;
   createdAt: string | Date;
   items: OrderItem[];
@@ -272,7 +274,25 @@ export default function OrdersPage() {
     }
   };
 
-  const getStatusInfo = (status: string) => {
+  const getExpectedDeliveryDate = (dateStr: string | Date) => {
+    try {
+      const date = new Date(dateStr);
+      date.setDate(date.getDate() + 7);
+      return date.toLocaleDateString('en-IN', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  const getStatusInfo = (status: string, fulfillmentStatus?: string) => {
+    const f = (fulfillmentStatus || '').toUpperCase();
+    if (f === 'DELIVERED') return { className: 'success', label: 'Delivered' };
+    if (f === 'SHIPPED') return { className: 'info', label: 'Shipped' };
+
     const s = (status || '').toUpperCase();
     switch (s) {
       case 'DELIVERED':
@@ -527,7 +547,14 @@ export default function OrdersPage() {
       ) : (
         <div className="orders__list">
           {orders.map((order) => {
-            const statusInfo = getStatusInfo(order.status);
+            const statusInfo = getStatusInfo(order.status, order.fulfillmentStatus);
+            const isDelivered =
+              (order.status || '').toUpperCase() === 'DELIVERED' ||
+              (order.fulfillmentStatus || '').toUpperCase() === 'DELIVERED';
+            const isCancelled = ['CANCELLED', 'REFUNDED', 'FAILED'].includes(
+              (order.status || '').toUpperCase()
+            );
+            const expectedDelivery = getExpectedDeliveryDate(order.createdAt);
             return (
               <div key={order.id} className="orders__item">
                 <div className="orders__item-header">
@@ -535,7 +562,15 @@ export default function OrdersPage() {
                     <span className="orders__order-id">
                       Order #{order.orderNumber || order.id.slice(-8).toUpperCase()}
                     </span>
-                    <span className="orders__item-date">{formatDate(order.createdAt)}</span>
+                    <span className="orders__item-date">Placed on {formatDate(order.createdAt)}</span>
+                    {!isDelivered && !isCancelled && expectedDelivery && (
+                      <div className="orders__delivery-badge">
+                        <Truck size={13} />
+                        <span>
+                          Expected delivery by <strong>{expectedDelivery}</strong>
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <span className={`orders__status orders__status--${statusInfo.className}`}>
                     {statusInfo.label}

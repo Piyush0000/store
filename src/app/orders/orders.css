@@ -399,6 +399,23 @@
   color: #9ca3af;
 }
 
+.orders__delivery-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #0369a1;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.orders__delivery-badge strong {
+  color: #0c4a6e;
+}
+
 .orders__status {
   font-size: 11px;
   font-weight: 700;
