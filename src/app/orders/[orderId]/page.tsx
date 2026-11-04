@@ -23,6 +23,7 @@ interface Order {
   orderNumber: string;
   status: string;
   paymentStatus: string;
+  fulfillmentStatus?: string;
   paymentMethod: string;
   total: number;
   subtotal: number;
@@ -110,7 +111,26 @@ export default function OrderDetailPage() {
     });
   };
 
-  const getStatusInfo = (status: string) => {
+  const getExpectedDeliveryDate = (dateStr: string | Date) => {
+    try {
+      const date = new Date(dateStr);
+      date.setDate(date.getDate() + 7);
+      return date.toLocaleDateString('en-IN', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  const getStatusInfo = (status: string, fulfillmentStatus?: string) => {
+    const f = fulfillmentStatus?.toLowerCase() || '';
+    if (f === 'delivered') return { label: 'Delivered', icon: Package, className: 'delivered' };
+    if (f === 'shipped') return { label: 'Shipped', icon: Truck, className: 'shipped' };
+
     const s = status?.toLowerCase() || '';
     const statusMap: Record<string, { label: string; icon: any; className: string }> = {
       pending: { label: 'Order Placed', icon: Clock, className: 'pending' },
@@ -164,8 +184,14 @@ export default function OrderDetailPage() {
     );
   }
 
-  const statusInfo = getStatusInfo(order.status);
+  const statusInfo = getStatusInfo(order.status, order.fulfillmentStatus);
   const StatusIcon = statusInfo.icon;
+  const isDelivered =
+    order.status?.toLowerCase() === 'delivered' ||
+    order.fulfillmentStatus?.toLowerCase() === 'delivered';
+  const isCancelled =
+    order.status?.toLowerCase() === 'cancelled' ||
+    order.status?.toLowerCase() === 'refunded';
 
   return (
     <div className="order-detail">
@@ -189,6 +215,11 @@ export default function OrderDetailPage() {
         <div className="order-detail__status-info">
           <span className="order-detail__status-label">{statusInfo.label}</span>
           <span className="order-detail__status-date">{formatDate(order.createdAt)}</span>
+          {!isDelivered && !isCancelled && (
+            <span className="order-detail__status-delivery">
+              Expected delivery by {getExpectedDeliveryDate(order.createdAt)}
+            </span>
+          )}
         </div>
       </div>
 
