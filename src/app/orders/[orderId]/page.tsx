@@ -57,13 +57,9 @@ export default function OrderDetailPage() {
 
       setIsAuthenticated(true);
 
-      // Get user to verify ownership
+      // Get user to verify ownership if user account exists
       const userResult = await getUserByPhone(session.phone);
-      if (!userResult.success || !userResult.data) {
-        setError('Unable to load order');
-        setIsLoading(false);
-        return;
-      }
+      const userId = userResult?.data?.id;
 
       // Fetch the order
       const orderResult = await getOrderById(orderId);
@@ -79,7 +75,7 @@ export default function OrderDetailPage() {
       const last10 = cleanPhone.slice(-10);
       const shippingPhone = (orderData.shippingAddress?.phone || '').replace(/\D/g, '');
       const isOwner =
-        orderData.userId === userResult.data.id ||
+        (userId && orderData.userId === userId) ||
         orderData.userId === `temp_${session.phone}` ||
         orderData.userId === `temp_${cleanPhone}` ||
         orderData.userId === `temp_${last10}` ||
@@ -91,8 +87,8 @@ export default function OrderDetailPage() {
         return;
       }
 
-      if (orderData.userId !== userResult.data.id) {
-        await linkOrderToUser(orderData.id, userResult.data.id);
+      if (userId && orderData.userId !== userId) {
+        await linkOrderToUser(orderData.id, userId);
       }
 
       setOrder(orderData);
@@ -145,7 +141,7 @@ export default function OrderDetailPage() {
           <XCircle size={48} strokeWidth={1.5} />
           <h2>Sign in required</h2>
           <p>Please verify your phone number to view order details.</p>
-          <Link href="/checkout" className="order-detail__btn order-detail__btn--primary">
+          <Link href="/orders" className="order-detail__btn order-detail__btn--primary">
             Sign In
           </Link>
         </div>
