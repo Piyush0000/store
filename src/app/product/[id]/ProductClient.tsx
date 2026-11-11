@@ -608,7 +608,12 @@ export default function ProductClient({
                         aria-label={`Thumbnail ${index + 1}`}
                       />
                     ) : (
-                      <img src={img} alt={`Thumbnail ${index + 1}`} />
+                      <img
+                        src={img}
+                        alt={`Thumbnail ${index + 1}`}
+                        loading="lazy"
+                        decoding="async"
+                      />
                     )}
                   </button>
                 ))}
@@ -624,6 +629,7 @@ export default function ProductClient({
                     src="/spinner.svg"
                     alt="Loading..."
                     className="spinner-icon"
+                    decoding="async"
                   />
                 </div>
               )}
@@ -654,6 +660,9 @@ export default function ProductClient({
                     ref={imgRef}
                     src={mediaUrl}
                     alt={product.name}
+                    loading="eager"
+                    decoding="async"
+                    {...({ fetchPriority: "high" } as any)}
                     onLoad={() => setImageLoading(false)}
                     onError={() => setImageLoading(false)}
                     style={{ borderRadius: "4px", backgroundColor: "#fff" }}
