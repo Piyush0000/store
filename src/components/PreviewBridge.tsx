@@ -68,9 +68,9 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
    * CSS keys off it. Kept in an effect so it also follows live preview updates.
    */
   useEffect(() => {
-    const variant = customization?.productCard?.variant || 'classic';
+    const variant = customization?.productCard?.variant || customization?.homePageConfig?.productCard?.variant || 'classic';
     document.body.dataset.productCard = variant;
-  }, [customization?.productCard?.variant]);
+  }, [customization?.productCard?.variant, customization?.homePageConfig?.productCard?.variant]);
 
   const bodyFont = useMemo(() => {
     return customization?.typography?.bodyFont || customization?.typography?.fontFamily;
@@ -118,7 +118,7 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
     const navOwnsBackground = ['floating', 'transparent', 'gradient'].includes(navVariant);
     const navBarSelector = navOwnsBackground ? '.header' : '.header, .header__nav';
 
-    const productCard = customization?.productCard;
+    const productCard = customization?.productCard || customization?.homePageConfig?.productCard;
     const pcBadge = productCard?.badgeColor;
     const pcButton = productCard?.buttonColor;
     const pcButtonText = productCard?.buttonTextColor;
@@ -272,6 +272,7 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
     customization?.brandColors?.background,
     customization?.headerStyle,
     customization?.productCard,
+    customization?.homePageConfig?.productCard,
     bodyFont,
     headingFont
   ]);

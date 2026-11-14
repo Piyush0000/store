@@ -443,7 +443,10 @@ export default function ProductClient({
     .slice(0, 6);
   const storeLinks = (Array.isArray(customFields.storeLinks) ? customFields.storeLinks : [])
     .map((item: any) => {
-      const rawUrl = typeof item?.url === "string" ? item.url.trim() : "";
+      let rawUrl = typeof item?.url === "string" ? item.url.trim() : "";
+      if (rawUrl && !/^https?:\/\//i.test(rawUrl)) {
+        rawUrl = `https://${rawUrl}`;
+      }
       let url = "";
       try {
         const parsed = new URL(rawUrl);
@@ -457,7 +460,7 @@ export default function ProductClient({
         label: typeof item?.label === "string" && item.label.trim() ? item.label.trim() : "Shop",
       };
     })
-    .filter((item: { icon: string; url: string }) => item.icon && item.url)
+    .filter((item: { url: string }) => Boolean(item.url))
     .slice(0, 6);
   const outOfStock = Boolean(selectedVariant) && (pickedOutOfStock || isOutOfStock(product, selectedVariant));
   const missingRequiredKeys = requiredTypeKeys.filter((key) => !pickedOptions[key]);
@@ -900,19 +903,23 @@ export default function ProductClient({
               </div>
               {storeLinks.length > 0 ? (
                 <div className="product-page__store-links">
-                  {storeLinks.map((link: { icon: string; url: string; label: string }) => (
+                  {storeLinks.map((link: { icon: string; url: string; label: string }, idx: number) => (
                     <a
-                      key={link.url}
+                      key={`${link.url}-${idx}`}
                       className="product-page__store-link"
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <img
-                        src={link.icon}
-                        alt=""
-                        className="product-page__store-link-icon"
-                      />
+                      {link.icon ? (
+                        <img
+                          src={link.icon}
+                          alt=""
+                          className="product-page__store-link-icon"
+                        />
+                      ) : (
+                        <ShoppingBag className="product-page__store-link-icon" size={24} />
+                      )}
                       <span>{link.label}</span>
                     </a>
                   ))}
