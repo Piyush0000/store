@@ -120,3 +120,31 @@ export async function completeCartSession(
     return { success: false, error: error?.message || 'Network error' };
   }
 }
+
+/**
+ * Fetches an active or abandoned cart session from the backend
+ * to restore items for customer recovery links.
+ */
+export async function getCartSession(
+  cartId: string
+): Promise<{ success: boolean; cart?: any; error?: string }> {
+  if (!cartId) return { success: false, error: 'cartId is required' };
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/cart/${encodeURIComponent(cartId)}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || 'Failed to fetch cart' };
+    }
+
+    return { success: true, cart: data.cart };
+  } catch (error: any) {
+    console.error('[Cart Action] Error fetching cart session:', error?.message || error);
+    return { success: false, error: error?.message || 'Network error' };
+  }
+}

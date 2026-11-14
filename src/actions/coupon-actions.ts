@@ -3,7 +3,7 @@
 import { getServerSubdomain } from '@/lib/server-utils';
 import { fetchStorefront } from '@/lib/api';
 
-export async function validateCouponAction(code: string, orderTotal: number) {
+export async function validateCouponAction(code: string, orderTotal: number, cartItems: any[] = []) {
   try {
     const subdomain = await getServerSubdomain();
     const storefront = await fetchStorefront(subdomain);
@@ -35,6 +35,11 @@ export async function validateCouponAction(code: string, orderTotal: number) {
         code,
         storeId,
         orderTotal,
+        cartItems: (cartItems || []).map((i: any) => ({
+          productId: i.productId || i.id,
+          unitPrice: Number(i.unitPrice ?? i.price ?? 0),
+          quantity: Number(i.quantity ?? 1),
+        })),
       }),
     });
 
@@ -50,8 +55,12 @@ export async function validateCouponAction(code: string, orderTotal: number) {
     return {
       success: true,
       coupon: data.coupon,
-      discount: data.discount,
-      type: data.type,
+      discount: data.discount ?? data.discountAmount ?? 0,
+      discountAmount: data.discountAmount ?? data.discount ?? 0,
+      freeShipping: Boolean(data.freeShipping || data.coupon?.type === 'FREE_SHIPPING'),
+      freeItems: data.freeItems || [],
+      type: data.type || data.coupon?.type,
+      message: data.message,
     };
   } catch (error: any) {
     console.error('[validateCouponAction] Error:', error);

@@ -1,19 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Trash2, ShoppingBag } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Trash2, ShoppingBag, Loader2 } from 'lucide-react';
 import { useCart } from '@/components/CartProvider';
 import { validateCouponAction } from '@/actions/coupon-actions';
+import { getCartSession } from '@/actions/cart-actions';
 import './cart.css';
 
-export default function CartPage() {
+function CartContent() {
   console.log('[PAGE:Cart] Rendering CartPage');
 
-  const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity } = useCart();
+  const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, restoreCart, isHydrated } = useCart();
   console.log('[PAGE:Cart] Cart items:', cartItems.length);
   console.log('[PAGE:Cart] Cart total:', cartTotal);
   console.log('[PAGE:Cart] Cart count:', cartCount);
+
+  const searchParams = useSearchParams();
+  const recoveryId = searchParams.get('recovery') || searchParams.get('cartId');
+  const [isRecovering, setIsRecovering] = useState(false);
+
+  useEffect(() => {
+    if (!recoveryId || !isHydrated) return;
+    if (cartItems.length === 0) {
+      let isMounted = true;
+      setIsRecovering(true);
+      getCartSession(recoveryId)
+        .then((res) => {
+          if (!isMounted) return;
+          if (res.success && res.cart?.items) {
+            const rawItems = Array.isArray(res.cart.items) ? res.cart.items : [];
+            const mapped = rawItems.map((it: any) => ({
+              id: it.id || it.productId || '',
+              name: it.name || it.productName || it.title || 'Product',
+              price: Number(it.price || 0),
+              compareAtPrice: it.compareAtPrice ? Number(it.compareAtPrice) : undefined,
+              quantity: Number(it.quantity || 1),
+              images: it.images || (it.image ? [it.image] : []),
+              variants: it.variants || {},
+              variantId: it.variantId || undefined,
+            }));
+            if (mapped.length > 0) {
+              restoreCart(mapped);
+            }
+          }
+        })
+        .finally(() => {
+          if (isMounted) setIsRecovering(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [recoveryId, isHydrated, cartItems.length, restoreCart]);
 
   // Coupon states
   const [couponInput, setCouponInput] = useState('');
@@ -27,9 +68,9 @@ export default function CartPage() {
     setIsApplyingCoupon(true);
     setCouponError(null);
     try {
-      const result = await validateCouponAction(couponInput, cartTotal);
+      const result = await validateCouponAction(couponInput, cartTotal, cartItems);
       if (result.success && result.coupon) {
-        setAppliedCoupon(result.coupon);
+        setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
         setDiscountAmount(result.discount || 0);
       } else {
         setCouponError(result.message || 'Invalid coupon code');
@@ -48,10 +89,23 @@ export default function CartPage() {
     setCouponError(null);
   };
 
-  const shippingAmount = cartTotal > 499 ? 0 : 49;
-  const finalTotal = cartTotal + shippingAmount - discountAmount;
+  const isFreeShipping = Boolean(appliedCoupon?.type === 'FREE_SHIPPING' || appliedCoupon?.freeShipping || cartTotal > 499);
+  const shippingAmount = isFreeShipping ? 0 : 49;
+  const finalTotal = Math.max(0, cartTotal + shippingAmount - discountAmount);
 
   const formatPrice = (price: number) => `₹${price.toLocaleString('en-IN')}`;
+
+  if (isRecovering) {
+    return (
+      <div className="cart">
+        <h1 className="cart__title">MY BAG</h1>
+        <div className="cart__empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '4rem 1rem' }}>
+          <Loader2 className="animate-spin" size={40} style={{ animation: 'spin 1s linear infinite' }} />
+          <p className="cart__empty-title">Restoring your cart...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     console.log('[PAGE:Cart] Cart is empty, showing empty state');
@@ -224,5 +278,23 @@ export default function CartPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CartPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="cart">
+          <h1 className="cart__title">MY BAG</h1>
+          <div className="cart__empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '4rem 1rem' }}>
+            <Loader2 className="animate-spin" size={40} style={{ animation: 'spin 1s linear infinite' }} />
+            <p className="cart__empty-title">Loading bag...</p>
+          </div>
+        </div>
+      }
+    >
+      <CartContent />
+    </Suspense>
   );
 }

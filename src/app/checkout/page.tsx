@@ -260,24 +260,29 @@ export default function CheckoutPage() {
   const displayDiscountTotal = discountAmount + bundleDiscountTotal + onlineDiscountAmount;
   
 
+  const isFreeShippingCoupon = Boolean(
+    appliedCoupon?.type === "FREE_SHIPPING" || appliedCoupon?.freeShipping
+  );
+
   const effectiveShippingFee = useMemo(() => {
+    if (isFreeShippingCoupon) return 0;
     if (!shippingConfig.enabled) return 0;
     if (
       shippingConfig.freeShippingThreshold > 0 &&
-      subtotal < shippingConfig.freeShippingThreshold
+      subtotal >= shippingConfig.freeShippingThreshold
     )
       return 0;
     return shippingConfig.shippingFee;
-  }, [shippingConfig, subtotal]);
+  }, [shippingConfig, subtotal, isFreeShippingCoupon]);
 
   const handleApplyCoupon = useCallback(async () => {
     if (!couponInput.trim()) return;
     setIsApplyingCoupon(true);
     setCouponError(null);
     try {
-      const result = await validateCouponAction(couponInput, subtotal);
+      const result = await validateCouponAction(couponInput, subtotal, cartItems);
       if (result.success && result.coupon) {
-        setAppliedCoupon(result.coupon);
+        setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
         setDiscountAmount(result.discount || 0);
         setOffersOpen(false);
       } else {
@@ -288,7 +293,7 @@ export default function CheckoutPage() {
     } finally {
       setIsApplyingCoupon(false);
     }
-  }, [couponInput, subtotal]);
+  }, [couponInput, subtotal, cartItems]);
 
   const handleRemoveCoupon = useCallback(() => {
     setAppliedCoupon(null);
@@ -318,9 +323,9 @@ export default function CheckoutPage() {
     setIsApplyingCoupon(true);
     setCouponError(null);
     try {
-      const result = await validateCouponAction(code, subtotal);
+      const result = await validateCouponAction(code, subtotal, cartItems);
       if (result.success && result.coupon) {
-        setAppliedCoupon(result.coupon);
+        setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
         setDiscountAmount(result.discount || 0);
         setOffersOpen(false);
       } else {
@@ -331,7 +336,7 @@ export default function CheckoutPage() {
     } finally {
       setIsApplyingCoupon(false);
     }
-  }, [subtotal]);
+  }, [subtotal, cartItems]);
 
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
@@ -459,6 +464,8 @@ export default function CheckoutPage() {
   const autoAppliedRef = useRef(false);
   const subtotalRef = useRef(subtotal);
   subtotalRef.current = subtotal;
+  const cartItemsRef = useRef(cartItems);
+  cartItemsRef.current = cartItems;
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (autoAppliedRef.current || subtotalRef.current === 0) return;
@@ -469,10 +476,10 @@ export default function CheckoutPage() {
       setCouponInput(urlCoupon);
       setIsApplyingCoupon(true);
       setCouponError(null);
-      validateCouponAction(urlCoupon, subtotalRef.current)
+      validateCouponAction(urlCoupon, subtotalRef.current, cartItemsRef.current)
         .then((result) => {
           if (result.success && result.coupon) {
-            setAppliedCoupon(result.coupon);
+            setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
             setDiscountAmount(result.discount || 0);
           } else {
             setCouponError(result.message || "Invalid coupon code");
