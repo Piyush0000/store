@@ -89,14 +89,17 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
               ? { name: "CASHFREE" as const, config: gateways.cashfree }
               : null;
 
-        const partialRaw = gateways.partial;
+        const partialRaw = gateways.partial as any;
         const partialValue = Number(partialRaw?.value);
+        const partialDiscountValue = Number(partialRaw?.discountValue);
         const partialPayment: PartialPaymentConfig | null =
           partialRaw?.enabled && Number.isFinite(partialValue) && partialValue > 0
             ? {
                 enabled: true,
                 mode: partialRaw.mode === "amount" ? "amount" : "percent",
                 value: partialValue,
+                discountMode: partialRaw.discountMode === "amount" ? "amount" : "percent",
+                discountValue: Number.isFinite(partialDiscountValue) && partialDiscountValue > 0 ? partialDiscountValue : 0,
               }
             : null;
 

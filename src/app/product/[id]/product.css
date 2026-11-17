@@ -835,6 +835,21 @@
   text-decoration: none;
 }
 
+a.product-page__store-link {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+a.product-page__store-link:hover {
+  opacity: 0.8;
+}
+
+.product-page__store-link--static {
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+}
+
 .product-page__store-link span {
   max-width: 100%;
   overflow: hidden;
