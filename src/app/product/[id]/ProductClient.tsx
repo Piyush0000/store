@@ -457,10 +457,10 @@ export default function ProductClient({
       return {
         icon: resolveMediaUrl(typeof item?.icon === "string" ? item.icon : ""),
         url,
-        label: typeof item?.label === "string" && item.label.trim() ? item.label.trim() : "Shop",
+        label: typeof item?.label === "string" ? item.label.trim() : "",
       };
     })
-    .filter((item: { url: string }) => Boolean(item.url))
+    .filter((item: { url: string; icon: string; label: string }) => Boolean(item.url || item.icon || item.label))
     .slice(0, 6);
   const outOfStock = Boolean(selectedVariant) && (pickedOutOfStock || isOutOfStock(product, selectedVariant));
   const missingRequiredKeys = requiredTypeKeys.filter((key) => !pickedOptions[key]);
@@ -903,26 +903,42 @@ export default function ProductClient({
               </div>
               {storeLinks.length > 0 ? (
                 <div className="product-page__store-links">
-                  {storeLinks.map((link: { icon: string; url: string; label: string }, idx: number) => (
-                    <a
-                      key={`${link.url}-${idx}`}
-                      className="product-page__store-link"
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {link.icon ? (
-                        <img
-                          src={link.icon}
-                          alt=""
-                          className="product-page__store-link-icon"
-                        />
-                      ) : (
-                        <ShoppingBag className="product-page__store-link-icon" size={24} />
-                      )}
-                      <span>{link.label}</span>
-                    </a>
-                  ))}
+                  {storeLinks.map((link: { icon: string; url: string; label: string }, idx: number) => {
+                    const content = (
+                      <>
+                        {link.icon ? (
+                          <img
+                            src={link.icon}
+                            alt=""
+                            className="product-page__store-link-icon"
+                          />
+                        ) : (
+                          <ShoppingBag className="product-page__store-link-icon" size={24} />
+                        )}
+                        {link.label ? <span>{link.label}</span> : null}
+                      </>
+                    );
+
+                    return link.url ? (
+                      <a
+                        key={`${link.url || link.label || link.icon}-${idx}`}
+                        className="product-page__store-link"
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {content}
+                      </a>
+                    ) : (
+                      <div
+                        key={`${link.label || link.icon}-${idx}`}
+                        className="product-page__store-link product-page__store-link--static"
+                        aria-disabled="true"
+                      >
+                        {content}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>

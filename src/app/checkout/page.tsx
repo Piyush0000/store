@@ -253,13 +253,6 @@ export default function CheckoutPage() {
       ),
     [cartItems],
   );
-  const onlineDiscountAmount = paymentMethod && paymentMethod !== 'COD' && paymentMethod !== 'PARTIAL'
-    ? Math.round(displaySubtotal * (onlineDiscountPercent / 100))
-    : 0;
-  
-  const displayDiscountTotal = discountAmount + bundleDiscountTotal + onlineDiscountAmount;
-  
-
   const isFreeShippingCoupon = Boolean(
     appliedCoupon?.type === "FREE_SHIPPING" || appliedCoupon?.freeShipping
   );
@@ -274,6 +267,77 @@ export default function CheckoutPage() {
       return 0;
     return shippingConfig.shippingFee;
   }, [shippingConfig, subtotal, isFreeShippingCoupon]);
+
+  // Shared helper: maps cartItems → order items array + totals
+  const buildOrderItems = useCallback(() => {
+    const orderItems: any[] = [];
+    let totalBundleDiscount = 0;
+    let totalRegularSubtotal = 0;
+
+    cartItems.forEach((item) => {
+      if (item.type === "BUNDLE" && item.items) {
+        const regularTotal =
+          item.regularTotal || item.items.reduce((sum: number, i: any) => sum + (i.price || 0), 0);
+        const discountAmt = item.discountAmount || 0;
+        totalBundleDiscount += discountAmt * item.quantity;
+        totalRegularSubtotal += regularTotal * item.quantity;
+
+        item.items.forEach((p: any) => {
+          orderItems.push({
+            productId: p.id,
+            name: p.name,
+            price: Number(p.price),
+            quantity: item.quantity,
+            image: p.image || "",
+            variantId: undefined,
+            variant: `Bundle: ${item.name}`,
+          });
+        });
+      } else {
+        totalRegularSubtotal += item.price * item.quantity;
+        orderItems.push({
+          productId: item.id,
+          name: item.name,
+          price: Number(item.price),
+          quantity: item.quantity,
+          image: item.images?.[0] || "",
+          variantId: item.variantId,
+          variant: item.variants
+            ? Object.entries(item.variants)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(", ")
+            : undefined,
+        });
+      }
+    });
+
+    return { orderItems, totalBundleDiscount, totalRegularSubtotal };
+  }, [cartItems]);
+
+  const partialSplit = useMemo(() => {
+    if (!partialConfig) return null;
+    const { orderItems } = buildOrderItems();
+    const lineTotal = orderItems.reduce(
+      (sum, item) => sum + Number(item.price) * item.quantity,
+      0,
+    );
+    const coupon = Math.min(lineTotal, Math.max(0, discountAmount));
+    return splitPartialPayment(
+      partialConfig,
+      lineTotal + effectiveShippingFee - coupon,
+      codFee,
+    );
+  }, [partialConfig, buildOrderItems, discountAmount, effectiveShippingFee, codFee]);
+  const partialAvailable = Boolean(partialSplit && onlineEnabled);
+
+  const partialDiscountAmount = (paymentUi === "partial" || paymentMethod === "PARTIAL") && partialSplit
+    ? (partialSplit.discountAmount || 0)
+    : 0;
+  const onlineDiscountAmount = paymentMethod && paymentMethod !== 'COD' && paymentMethod !== 'PARTIAL' && paymentUi !== 'partial'
+    ? Math.round(displaySubtotal * (onlineDiscountPercent / 100))
+    : 0;
+  
+  const displayDiscountTotal = discountAmount + bundleDiscountTotal + onlineDiscountAmount + partialDiscountAmount;
 
   const handleApplyCoupon = useCallback(async () => {
     if (!couponInput.trim()) return;
@@ -871,68 +935,6 @@ export default function CheckoutPage() {
     customerEmail,
   ]);
 
-  // Shared helper: maps cartItems → order items array + totals
-  const buildOrderItems = useCallback(() => {
-    const orderItems: any[] = [];
-    let totalBundleDiscount = 0;
-    let totalRegularSubtotal = 0;
-
-    cartItems.forEach((item) => {
-      if (item.type === "BUNDLE" && item.items) {
-        const regularTotal =
-          item.regularTotal || item.items.reduce((sum: number, i: any) => sum + (i.price || 0), 0);
-        const discountAmt = item.discountAmount || 0;
-        totalBundleDiscount += discountAmt * item.quantity;
-        totalRegularSubtotal += regularTotal * item.quantity;
-
-        item.items.forEach((p: any) => {
-          orderItems.push({
-            productId: p.id,
-            name: p.name,
-            price: Number(p.price),
-            quantity: item.quantity,
-            image: p.image || "",
-            variantId: undefined,
-            variant: `Bundle: ${item.name}`,
-          });
-        });
-      } else {
-        totalRegularSubtotal += item.price * item.quantity;
-        orderItems.push({
-          productId: item.id,
-          name: item.name,
-          price: Number(item.price),
-          quantity: item.quantity,
-          image: item.images?.[0] || "",
-          variantId: item.variantId,
-          variant: item.variants
-            ? Object.entries(item.variants)
-              .map(([k, v]) => `${k}: ${v}`)
-              .join(", ")
-            : undefined,
-        });
-      }
-    });
-
-    return { orderItems, totalBundleDiscount, totalRegularSubtotal };
-  }, [cartItems]);
-
-  const partialSplit = useMemo(() => {
-    if (!partialConfig) return null;
-    const { orderItems } = buildOrderItems();
-    const lineTotal = orderItems.reduce(
-      (sum, item) => sum + Number(item.price) * item.quantity,
-      0,
-    );
-    const coupon = Math.min(lineTotal, Math.max(0, discountAmount));
-    return splitPartialPayment(
-      partialConfig,
-      lineTotal + effectiveShippingFee - coupon,
-      codFee,
-    );
-  }, [partialConfig, buildOrderItems, discountAmount, effectiveShippingFee, codFee]);
-  const partialAvailable = Boolean(partialSplit && onlineEnabled);
-
   useEffect(() => {
     if (step !== "payment" || !paymentOptionsReady || paymentUi) return;
     if (onlineEnabled && onlineGateway) {
@@ -1241,10 +1243,10 @@ export default function CheckoutPage() {
         0,
       );
       const gatewayDiscount = isPartial
-        ? 0
+        ? (partialSplit?.discountAmount || 0)
         : Math.round(totalRegularSubtotal * (onlineDiscountPercent / 100));
       const overallDiscount = isPartial
-        ? discountAmount
+        ? discountAmount + gatewayDiscount
         : discountAmount + totalBundleDiscount + gatewayDiscount;
       const payableTotal = isPartial && partialSplit
         ? partialSplit.total
@@ -1352,7 +1354,9 @@ export default function CheckoutPage() {
 
       const cashfreeResult = await initiateCashfreePayment(localOrderId, {
         id: uid,
-        name: `${customerFirstName} ${customerLastName}`.trim(),
+        name: customerLastName && customerFirstName.toLowerCase().endsWith(customerLastName.toLowerCase())
+          ? customerFirstName.trim()
+          : `${customerFirstName} ${customerLastName}`.trim(),
         email: customerEmail,
         phone,
       });
@@ -1947,7 +1951,14 @@ export default function CheckoutPage() {
                 >
                   <span className="checkout__pay-radio" aria-hidden />
                   <span className="checkout__pay-row-body">
-                    <span className="checkout__pay-row-title">Partial Payment</span>
+                    <span className="checkout__pay-row-top">
+                      <span className="checkout__pay-row-title">Partial Payment</span>
+                      {partialSplit.discountAmount > 0 && (
+                        <span className="checkout__pay-save">
+                          ₹{partialSplit.discountAmount.toLocaleString("en-IN")} off on delivery
+                        </span>
+                      )}
+                    </span>
                     <span className="checkout__pay-sub">
                       Pay ₹{partialSplit.prepaidAmount.toLocaleString("en-IN")} now · ₹{partialSplit.codDue.toLocaleString("en-IN")} on delivery
                     </span>
@@ -2002,7 +2013,10 @@ export default function CheckoutPage() {
                 <div className="checkout__product-summary-rows">
                   <div><span>Subtotal</span><span>₹{displaySubtotal.toLocaleString("en-IN")}</span></div>
                   {displayDiscountTotal > 0 && (
-                    <div className="is-green"><span>Discount</span><span>-₹{displayDiscountTotal.toLocaleString("en-IN")}</span></div>
+                    <div className="is-green">
+                      <span>{paymentUi === "partial" && partialDiscountAmount > 0 ? "Partial Discount" : "Discount"}</span>
+                      <span>-₹{displayDiscountTotal.toLocaleString("en-IN", { minimumFractionDigits: displayDiscountTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}</span>
+                    </div>
                   )}
                   {paymentUi === "cod" && codFee > 0 && (
                     <div><span>COD Fee</span><span>₹{codFee}</span></div>

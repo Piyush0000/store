@@ -169,6 +169,9 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
       codDue: number;
       mode: PartialPaymentConfig["mode"];
       value: number;
+      discountMode?: PartialPaymentConfig["discountMode"];
+      discountValue?: number;
+      discountAmount?: number;
     } | null = null;
 
     if (orderData.paymentMethod === 'PARTIAL') {
@@ -177,12 +180,15 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
       const gateways = storefront.settings?.enabledGateways || (storefront as any).store?.enabledGateways || {};
       const partialRaw = (gateways as any).partial;
       const partialValue = Number(partialRaw?.value);
+      const partialDiscountValue = Number(partialRaw?.discountValue);
       const partialConfig: PartialPaymentConfig | null =
         partialRaw?.enabled && Number.isFinite(partialValue) && partialValue > 0
           ? {
               enabled: true,
               mode: partialRaw.mode === 'amount' ? 'amount' : 'percent',
               value: partialValue,
+              discountMode: partialRaw.discountMode === 'amount' ? 'amount' : 'percent',
+              discountValue: Number.isFinite(partialDiscountValue) && partialDiscountValue > 0 ? partialDiscountValue : 0,
             }
           : null;
       const lineTotal = orderData.items.reduce(
@@ -208,6 +214,9 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
         codDue: split.codDue,
         mode: partialConfig.mode,
         value: partialConfig.value,
+        discountMode: partialConfig.discountMode,
+        discountValue: partialConfig.discountValue,
+        discountAmount: split.discountAmount,
       };
     }
 
@@ -337,7 +346,7 @@ export async function createCodOrder(data: {
   const shippingFee =
     !shippingEnabled
       ? 0
-      : freeShippingThreshold > 0 && itemSubtotal < freeShippingThreshold
+      : freeShippingThreshold > 0 && itemSubtotal >= freeShippingThreshold
         ? 0
         : Number.isFinite(configuredShippingFee) && configuredShippingFee > 0
           ? configuredShippingFee
