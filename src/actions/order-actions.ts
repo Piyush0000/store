@@ -146,13 +146,38 @@ function generateOrderNumber(): string {
   return `ORD-${timestamp}-${random}`;
 }
 
+export async function validateCartStock(items: { productId: string; quantity: number; variantId?: string; variant?: string; name?: string }[]) {
+  try {
+    const subdomain = await getServerSubdomain();
+    const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001/api/storefront/public';
+    const stockCheckUrl = `${apiBase}/${encodeURIComponent(subdomain)}/validate-stock`;
+    const res = await fetch(stockCheckUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    if (!res.ok) {
+      return { success: true, valid: true };
+    }
+    const data = await res.json();
+    return {
+      success: true,
+      valid: data.valid !== false,
+      message: data.message,
+    };
+  } catch (err: any) {
+    console.warn('[validateCartStock] Error:', err.message);
+    return { success: true, valid: true };
+  }
+}
+
 export async function createOrder(data: z.infer<typeof orderInputSchema>) {
   try {
     const { shippingAddress, ...orderData } = data;
 
     let storeId = orderData.storeId;
+    const subdomain = await getServerSubdomain();
     if (!storeId) {
-      const subdomain = await getServerSubdomain();
       const storefront = await fetchStorefront(subdomain);
       if (storefront.store?.id) {
         storeId = storefront.store.id;
@@ -161,6 +186,28 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
 
     if (!storeId) {
       return { success: false, message: 'Store not found or store ID could not be resolved' };
+    }
+
+    // Pre-flight stock check against Orbit backend
+    try {
+      const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001/api/storefront/public';
+      const stockCheckUrl = `${apiBase}/${encodeURIComponent(subdomain)}/validate-stock`;
+      const stockRes = await fetch(stockCheckUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: orderData.items }),
+      });
+      if (stockRes.ok) {
+        const stockData = await stockRes.json();
+        if (stockData && stockData.valid === false) {
+          return {
+            success: false,
+            message: stockData.message || 'One or more items in your cart are currently out of stock.',
+          };
+        }
+      }
+    } catch (stockErr: any) {
+      console.warn('[createOrder] Stock pre-validation error (continuing):', stockErr.message);
     }
 
     let totalAmount = orderData.totalAmount;
@@ -280,6 +327,76 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
         },
       },
     });
+
+    // Pre-sync pending order to Orbit backend so webhooks (Cashfree, Razorpay, PayU)
+    // can fulfill it immediately even if mobile UPI backgrounds or kills the browser tab.
+    try {
+      const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001/api/storefront/public';
+      const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
+      await fetch(ordersApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: order.id,
+          storeId: storeId,
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          customerEmail: order.customerEmail,
+          phone: orderData.phone || '',
+          shippingAddress: {
+            firstName: orderData.firstName,
+            lastName: orderData.lastName || '',
+            line1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+            addressLine1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            zip: shippingAddress.pincode,
+            postalCode: shippingAddress.pincode,
+            zipCode: shippingAddress.pincode,
+            country: 'IN',
+            phone: orderData.phone || '',
+            ...(partialRecord ? { partialPayment: partialRecord } : {}),
+          },
+          billingAddress: {
+            firstName: orderData.firstName,
+            lastName: orderData.lastName || '',
+            line1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+            addressLine1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            zip: shippingAddress.pincode,
+            postalCode: shippingAddress.pincode,
+            zipCode: shippingAddress.pincode,
+            country: 'IN',
+            phone: orderData.phone || '',
+          },
+          subtotal: order.subtotal,
+          total: order.total,
+          shipping: order.shipping,
+          tax: order.tax,
+          source: 'STOREFRONT',
+          paymentStatus: 'PENDING',
+          status: 'PENDING',
+          paymentMethod: orderData.paymentMethod,
+          couponCode: orderData.couponCode,
+          discountAmount: orderData.discountAmount,
+          items: orderData.items.map((item) => ({
+            productId: item.productId,
+            name: item.name,
+            quantity: item.quantity,
+            price: Number(item.price),
+            variantId: item.variantId,
+            variantInfo: item.variantId || item.variant ? {
+              id: item.variantId || null,
+              variant: item.variant || null,
+              image: item.image || null,
+            } : undefined,
+          })),
+        }),
+      });
+    } catch (syncErr: any) {
+      console.warn('[createOrder] Pre-syncing pending order to backend failed (non-blocking):', syncErr.message);
+    }
 
     return { success: true, data: order };
   } catch (error: any) {
@@ -426,7 +543,7 @@ export async function createCodOrder(data: {
     try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+    const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
     const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
     const response = await fetch(ordersApiUrl, {
       method: 'POST',
@@ -802,10 +919,11 @@ export async function confirmAndSyncOnlineOrder(
       include: { items: true },
     });
 
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+    const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
     const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
 
     const externalPayload = {
+      id: order.id,
       storeId: order.storeId,
       userId: order.userId,
       orderNumber: order.orderNumber,

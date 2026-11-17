@@ -14,8 +14,8 @@ import '../checkout.css';
 export default function SuccessClient() {
   const { track } = useAnalytics();
   const searchParams = useSearchParams();
-  const txnId = searchParams.get('txn');
-  const orderId = searchParams.get('orderId');
+  const txnId = searchParams.get('txn') || searchParams.get('txnid') || searchParams.get('transaction_id');
+  const orderId = searchParams.get('orderId') || searchParams.get('order_id') || searchParams.get('orderID');
   const { clearCart } = useCart();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);

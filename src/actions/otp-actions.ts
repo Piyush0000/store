@@ -28,12 +28,12 @@ const verifyOtpSchema = z.object({
 function sanitizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.length === 10) {
-    return `+91${digits}`;
+    return `91${digits}`;
   }
   if (digits.length === 12 && digits.startsWith("91")) {
-    return `+${digits}`;
+    return digits;
   }
-  return phone.startsWith("+") ? phone : `+${digits}`;
+  return `91${digits.slice(-10)}`;
 }
 
 // In-memory store for OTPs (use database in production)
@@ -62,6 +62,31 @@ export async function sendOtp(data: unknown) {
   const cleanPhone = phone.replace(/\D/g, "");
 
   if (!process.env.TWO_FACTOR_API_KEY) {
+    if (process.env.NODE_ENV === 'development') {
+      const devSessionId = `dev:${cleanPhone}:${Date.now()}`;
+      const devExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      await prisma.otpVerification.create({
+        data: {
+          phone: cleanPhone,
+          code: '1234',
+          sessionId: devSessionId,
+          expiresAt: devExpiresAt,
+          verified: false,
+        },
+      });
+      pendingOtps.set(cleanPhone, {
+        sessionId: devSessionId,
+        expiresAt: devExpiresAt.getTime(),
+        code: '1234',
+      });
+      console.log(`[DEV OTP] Auto-generated OTP for ${cleanPhone}: 1234`);
+      return {
+        success: true,
+        message: "OTP sent (Dev mode: use 1234)",
+        sessionId: devSessionId,
+        resendTimer: RESEND_TIMER_SECONDS,
+      };
+    }
     return { success: false, message: "OTP service not configured" };
   }
 
@@ -97,6 +122,31 @@ export async function sendOtp(data: unknown) {
     console.log('[OTP] Send response:', result);
 
     if (result.Status !== "Success") {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[OTP] 2factor.in failed (${result.Details}). Using development fallback OTP: 1234`);
+        const devSessionId = `dev:${cleanPhone}:${Date.now()}`;
+        const devExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        await prisma.otpVerification.create({
+          data: {
+            phone: cleanPhone,
+            code: '1234',
+            sessionId: devSessionId,
+            expiresAt: devExpiresAt,
+            verified: false,
+          },
+        });
+        pendingOtps.set(cleanPhone, {
+          sessionId: devSessionId,
+          expiresAt: devExpiresAt.getTime(),
+          code: '1234',
+        });
+        return {
+          success: true,
+          message: "OTP sent (Dev mode: use 1234)",
+          sessionId: devSessionId,
+          resendTimer: RESEND_TIMER_SECONDS,
+        };
+      }
       return {
         success: false,
         message: result.Details || "Failed to send OTP",
@@ -230,6 +280,25 @@ export async function verifyOtp(data: unknown) {
   const { phone, code } = verifyOtpSchema.parse(data);
   const cleanPhone = phone.replace(/\D/g, "");
 
+  // In development, accept 1234 immediately
+  if (process.env.NODE_ENV === 'development' && code === '1234') {
+    console.log(`[DEV OTP] Verified automatically with test OTP 1234 for ${cleanPhone}`);
+    try {
+      const existing = await prisma.otpVerification.findFirst({
+        where: { phone: cleanPhone, verified: false },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (existing) {
+        await prisma.otpVerification.update({
+          where: { id: existing.id },
+          data: { verified: true },
+        });
+      }
+    } catch {}
+    pendingOtps.delete(cleanPhone);
+    return { success: true, message: "OTP verified successfully (Dev mode)" };
+  }
+
   const dbOtp = await prisma.otpVerification.findFirst({
     where: {
       phone: cleanPhone,
@@ -266,6 +335,31 @@ export async function verifyOtp(data: unknown) {
   }
 
   if (!process.env.TWO_FACTOR_API_KEY) {
+    if (process.env.NODE_ENV === 'development') {
+      const devSessionId = `dev:${cleanPhone}:${Date.now()}`;
+      const devExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      await prisma.otpVerification.create({
+        data: {
+          phone: cleanPhone,
+          code: '1234',
+          sessionId: devSessionId,
+          expiresAt: devExpiresAt,
+          verified: false,
+        },
+      });
+      pendingOtps.set(cleanPhone, {
+        sessionId: devSessionId,
+        expiresAt: devExpiresAt.getTime(),
+        code: '1234',
+      });
+      console.log(`[DEV OTP] Auto-generated OTP for ${cleanPhone}: 1234`);
+      return {
+        success: true,
+        message: "OTP sent (Dev mode: use 1234)",
+        sessionId: devSessionId,
+        resendTimer: RESEND_TIMER_SECONDS,
+      };
+    }
     return { success: false, message: "OTP service not configured" };
   }
 
