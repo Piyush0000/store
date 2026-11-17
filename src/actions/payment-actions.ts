@@ -6,7 +6,7 @@ import { getServerSubdomain } from '@/lib/server-utils';
 import { prisma } from '@/lib/prisma';
 import { confirmAndSyncOnlineOrder } from '@/actions/order-actions';
 
-const publicApiBase = () => (process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public').replace(/\/+$/, '');
+const publicApiBase = () => (process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public').replace(/\/+$/, '');
 
 async function paymentApi(path: string, body: Record<string, unknown>) {
   const subdomain = await getServerSubdomain();
