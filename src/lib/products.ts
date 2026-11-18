@@ -118,7 +118,7 @@ function parseCategoryFilter(filter: string): string[] {
 
 // ─── Fetching ───────────────────────────────────────────────────────────────────
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5002/api/storefront/public';
+const API_BASE = (process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || '').replace(/\/+$/, '');
 
 export async function getProductsByCategory(
   subdomain: string,

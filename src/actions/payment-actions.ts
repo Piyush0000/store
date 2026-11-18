@@ -6,7 +6,13 @@ import { getServerSubdomain } from '@/lib/server-utils';
 import { prisma } from '@/lib/prisma';
 import { confirmAndSyncOnlineOrder } from '@/actions/order-actions';
 
-const publicApiBase = () => (process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public').replace(/\/+$/, '');
+const publicApiBase = () => {
+  const base = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE;
+  if (!base) {
+    throw new Error('NEXT_PUBLIC_API_BASE is not configured in environment variables');
+  }
+  return base.replace(/\/+$/, '');
+};
 
 async function paymentApi(path: string, body: Record<string, unknown>) {
   const subdomain = await getServerSubdomain();
@@ -135,7 +141,7 @@ export async function initiatePayUPayment(data: {
     }
 
     const subdomain = await getServerSubdomain();
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+    const apiBase = publicApiBase();
     const hashUrl = `${apiBase}/${subdomain}/payment/payu-hash`;
 
     const res = await fetch(hashUrl, {
