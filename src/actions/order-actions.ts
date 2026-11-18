@@ -146,10 +146,18 @@ function generateOrderNumber(): string {
   return `ORD-${timestamp}-${random}`;
 }
 
+function getApiBase(): string {
+  const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE;
+  if (!apiBase) {
+    throw new Error('NEXT_PUBLIC_API_BASE is not configured in environment variables');
+  }
+  return apiBase.replace(/\/+$/, '');
+}
+
 export async function validateCartStock(items: { productId: string; quantity: number; variantId?: string; variant?: string; name?: string }[]) {
   try {
     const subdomain = await getServerSubdomain();
-    const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001/api/storefront/public';
+    const apiBase = getApiBase();
     const stockCheckUrl = `${apiBase}/${encodeURIComponent(subdomain)}/validate-stock`;
     const res = await fetch(stockCheckUrl, {
       method: 'POST',
@@ -190,7 +198,7 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
 
     // Pre-flight stock check against Orbit backend
     try {
-      const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001/api/storefront/public';
+      const apiBase = getApiBase();
       const stockCheckUrl = `${apiBase}/${encodeURIComponent(subdomain)}/validate-stock`;
       const stockRes = await fetch(stockCheckUrl, {
         method: 'POST',
@@ -328,74 +336,77 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
       },
     });
 
-    // Pre-sync pending order to Orbit backend so webhooks (Cashfree, Razorpay, PayU)
+    // Pre-sync pending online order to Orbit backend so webhooks (Cashfree, Razorpay, PayU)
     // can fulfill it immediately even if mobile UPI backgrounds or kills the browser tab.
-    try {
-      const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001/api/storefront/public';
-      const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
-      await fetch(ordersApiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: order.id,
-          storeId: storeId,
-          orderNumber: order.orderNumber,
-          customerName: order.customerName,
-          customerEmail: order.customerEmail,
-          phone: orderData.phone || '',
-          shippingAddress: {
-            firstName: orderData.firstName,
-            lastName: orderData.lastName || '',
-            line1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
-            addressLine1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
-            city: shippingAddress.city,
-            state: shippingAddress.state,
-            zip: shippingAddress.pincode,
-            postalCode: shippingAddress.pincode,
-            zipCode: shippingAddress.pincode,
-            country: 'IN',
+    // Skip for COD because createCodOrder already explicitly syncs COD orders.
+    if (orderData.paymentMethod !== 'COD') {
+      try {
+        const apiBase = getApiBase();
+        const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
+        await fetch(ordersApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: order.id,
+            storeId: storeId,
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
             phone: orderData.phone || '',
-            ...(partialRecord ? { partialPayment: partialRecord } : {}),
-          },
-          billingAddress: {
-            firstName: orderData.firstName,
-            lastName: orderData.lastName || '',
-            line1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
-            addressLine1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
-            city: shippingAddress.city,
-            state: shippingAddress.state,
-            zip: shippingAddress.pincode,
-            postalCode: shippingAddress.pincode,
-            zipCode: shippingAddress.pincode,
-            country: 'IN',
-            phone: orderData.phone || '',
-          },
-          subtotal: order.subtotal,
-          total: order.total,
-          shipping: order.shipping,
-          tax: order.tax,
-          source: 'STOREFRONT',
-          paymentStatus: 'PENDING',
-          status: 'PENDING',
-          paymentMethod: orderData.paymentMethod,
-          couponCode: orderData.couponCode,
-          discountAmount: orderData.discountAmount,
-          items: orderData.items.map((item) => ({
-            productId: item.productId,
-            name: item.name,
-            quantity: item.quantity,
-            price: Number(item.price),
-            variantId: item.variantId,
-            variantInfo: item.variantId || item.variant ? {
-              id: item.variantId || null,
-              variant: item.variant || null,
-              image: item.image || null,
-            } : undefined,
-          })),
-        }),
-      });
-    } catch (syncErr: any) {
-      console.warn('[createOrder] Pre-syncing pending order to backend failed (non-blocking):', syncErr.message);
+            shippingAddress: {
+              firstName: orderData.firstName,
+              lastName: orderData.lastName || '',
+              line1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+              addressLine1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+              city: shippingAddress.city,
+              state: shippingAddress.state,
+              zip: shippingAddress.pincode,
+              postalCode: shippingAddress.pincode,
+              zipCode: shippingAddress.pincode,
+              country: 'IN',
+              phone: orderData.phone || '',
+              ...(partialRecord ? { partialPayment: partialRecord } : {}),
+            },
+            billingAddress: {
+              firstName: orderData.firstName,
+              lastName: orderData.lastName || '',
+              line1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+              addressLine1: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+              city: shippingAddress.city,
+              state: shippingAddress.state,
+              zip: shippingAddress.pincode,
+              postalCode: shippingAddress.pincode,
+              zipCode: shippingAddress.pincode,
+              country: 'IN',
+              phone: orderData.phone || '',
+            },
+            subtotal: order.subtotal,
+            total: order.total,
+            shipping: order.shipping,
+            tax: order.tax,
+            source: 'STOREFRONT',
+            paymentStatus: 'PENDING',
+            status: 'PENDING',
+            paymentMethod: orderData.paymentMethod,
+            couponCode: orderData.couponCode,
+            discountAmount: orderData.discountAmount,
+            items: orderData.items.map((item) => ({
+              productId: item.productId,
+              name: item.name,
+              quantity: item.quantity,
+              price: Number(item.price),
+              variantId: item.variantId,
+              variantInfo: item.variantId || item.variant ? {
+                id: item.variantId || null,
+                variant: item.variant || null,
+                image: item.image || null,
+              } : undefined,
+            })),
+          }),
+        });
+      } catch (syncErr: any) {
+        console.warn('[createOrder] Pre-syncing pending order to backend failed (non-blocking):', syncErr.message);
+      }
     }
 
     return { success: true, data: order };
@@ -543,7 +554,7 @@ export async function createCodOrder(data: {
     try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
-    const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+    const apiBase = getApiBase();
     const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
     const response = await fetch(ordersApiUrl, {
       method: 'POST',
@@ -919,7 +930,7 @@ export async function confirmAndSyncOnlineOrder(
       include: { items: true },
     });
 
-    const apiBase = process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
+    const apiBase = getApiBase();
     const ordersApiUrl = apiBase.replace('/storefront/public', '/orders');
 
     const externalPayload = {
