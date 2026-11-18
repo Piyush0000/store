@@ -376,8 +376,8 @@ export async function fetchStorefront(subdomain?: string, storeId?: string): Pro
     if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
     return resolveMediaTree(data);
   } catch (err) {
-    console.error('[storefront-api] Falling back to mock storefront:', err);
-    return MOCK_STOREFRONT;
+    console.error('[storefront-api] Error fetching storefront:', err);
+    throw err;
   }
 }
 
@@ -389,7 +389,8 @@ export async function fetchProduct(id: string, subdomain?: string): Promise<Prod
     if (!data.success) throw new Error(data.message || `Failed to fetch product ${id}`);
     return resolveMediaTree(data.product);
   } catch (err) {
-    return DUMMY_PRODUCTS.find(p => p.id === id) || DUMMY_PRODUCTS[0];
+    console.error(`[storefront-api] Error fetching product ${id}:`, err);
+    throw err;
   }
 }
 
