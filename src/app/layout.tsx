@@ -6,8 +6,6 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
-import Script from "next/script";
-import PageLoader from "@/components/PageLoader";
 import FakeSalesPopup from "@/components/FakeSalesPopup";
 import FloatingLogo from "@/components/FloatingLogo";
 import SmoothScroll from "@/components/SmoothScroll";
@@ -29,11 +27,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const isDev = process.env.NODE_ENV === "development";
-  const payuScriptUrl = isDev
-    ? "https://jssdk-uat.payu.in/bolt/bolt.min.js"
-    : "https://jssdk.payu.in/bolt/bolt.min.js";
-
   let customization = null;
   let storeName = "";
   let storeSubdomain = "";
@@ -81,11 +74,6 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://d1311wbk6unapo.cloudfront.net" />
         <link rel="dns-prefetch" href="https://d1311wbk6unapo.cloudfront.net" />
-        <link
-          rel="preload"
-          as="image"
-          href="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80"
-        />
         {pixelId && (
           <noscript>
             <Image
@@ -101,25 +89,9 @@ export default async function RootLayout({
       <body>
         <SmoothScroll />
         <ScrollObserver />
-        <PageLoader />
         {pixelId && <MetaPixel pixelId={pixelId} />}
         <PreviewBridge initialCustomization={customization} />
         <FestivalExperience initialTheme={customization?.festivalTheme} />
-        <Script
-          src={payuScriptUrl}
-          strategy="afterInteractive"
-          id="payu-bolt"
-        />
-        <Script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="afterInteractive"
-          id="razorpay-checkout"
-        />
-        <Script
-          src="https://sdk.cashfree.com/js/v3/cashfree.js"
-          strategy="afterInteractive"
-          id="cashfree-checkout"
-        />
         <WishlistProvider>
           <AnalyticsProvider
             customization={customization}

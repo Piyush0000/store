@@ -33,12 +33,14 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState('featured');
   const [isLoading, setIsLoading] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(24);
 
   // Synchronize category state when search parameters change via external navigation (e.g. navbar clicks)
   useEffect(() => {
     const category = searchParams.get('category') || 'all';
     setSelectedCategory(category);
     setIsLoading(false);
+    setVisibleCount(24);
   }, [searchParams]);
 
   const categoryList = categories.length > 0
@@ -61,6 +63,7 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
     if (categoryId === selectedCategory && !searchQueryParam) return;
     setIsLoading(true);
     setSelectedCategory(categoryId);
+    setVisibleCount(24);
 
     const params = new URLSearchParams(searchParams.toString());
     params.delete('q');
@@ -165,7 +168,7 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
         <div className="catalogue__main">
           <div className="catalogue__toolbar">
             <span>{sortedProducts.length} products</span>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setVisibleCount(24); }}>
               <option value="featured">Featured</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
@@ -197,10 +200,19 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
             </div>
           ) : (
             <div className="catalogue__grid">
-              {sortedProducts.map((product) => (
+              {sortedProducts.slice(0, visibleCount).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
+          )}
+          {!isLoading && sortedProducts.length > visibleCount && (
+            <button
+              type="button"
+              className="catalogue__load-more"
+              onClick={() => setVisibleCount((count) => count + 24)}
+            >
+              Show more products
+            </button>
           )}
         </div>
       </div>

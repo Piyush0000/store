@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import ProductsSection from "@/components/ProductsSection";
@@ -18,7 +18,6 @@ import {
   type CategoryImagesConfig,
 } from "@/lib/category-card-style";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { videoMimeType } from "@/lib/media-type";
 import { FestivalCollection, FestivalHero } from "@/components/FestivalExperience";
 import { festivalAreaEnabled, festivalIsActive, type FestivalTheme } from "@/lib/festival-theme";
 import "./page.css";
@@ -234,6 +233,34 @@ function buildVideoUrl(customization: Customization | null) {
   );
 }
 
+function DeferredBrandVideo({ src }: { src: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin: "200px" },
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={ref}
+      src={inView ? src : undefined}
+      autoPlay={inView}
+      muted
+      loop
+      playsInline
+      preload="none"
+      className="brand-video__player"
+    />
+  );
+}
+
 export default function HomeClient({
   bestSellers,
   customization,
@@ -321,7 +348,7 @@ export default function HomeClient({
     )
       return null;
     return (
-      <section className="hero-carousel scroll-fade-up">
+      <section className="hero-carousel">
         <div
           className="hero-carousel__track"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -436,6 +463,8 @@ export default function HomeClient({
                   src={cat.image}
                   alt={cat.name}
                   className="shop-category__image"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="shop-category__overlay">
                   <span className="shop-category__name">{cat.name}</span>
@@ -478,6 +507,8 @@ export default function HomeClient({
               src={customizationState.homePageConfig.imageUrl}
               alt="Brand Banner"
               className="brand-video__player"
+              loading="lazy"
+              decoding="async"
               style={{
                 width: "100%",
                 height: "auto",
@@ -501,16 +532,7 @@ export default function HomeClient({
           className={`brand-video scroll-fade-up${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
         >
           <div className="brand-video__wrapper">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="brand-video__player"
-              key={videoUrl}
-            >
-              <source src={videoUrl} type={videoMimeType(videoUrl)} />
-            </video>
+            <DeferredBrandVideo key={videoUrl} src={videoUrl} />
           </div>
         </section>
       );
@@ -576,10 +598,13 @@ export default function HomeClient({
         <section className="featured-collection scroll-fade-up">
           <h2 className="section-title">ALL PRODUCTS</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
-            {bestSellers.map((product, idx) => (
+            {bestSellers.slice(0, 16).map((product, idx) => (
               <ProductCard key={product.id} product={product} priority={idx < 4} />
             ))}
           </div>
+          {bestSellers.length > 16 && (
+            <Link href="/catalogue" className="featured-collection__view-all">View all products</Link>
+          )}
         </section>
       );
     } else {

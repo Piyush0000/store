@@ -368,8 +368,9 @@ const MOCK_STOREFRONT: StorefrontData = {
 
 export async function fetchStorefront(subdomain?: string, storeId?: string): Promise<StorefrontData> {
   try {
-    const apiUrl = withStoreId(getApiUrl(subdomain), storeId);
-    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const apiUrl = new URL(withStoreId(getApiUrl(subdomain), storeId));
+    apiUrl.searchParams.set('reviewMode', 'summary');
+    const res = await fetch(apiUrl.toString(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`Storefront request failed (${res.status}) for ${apiUrl}`);
     const data = await res.json();
 
@@ -381,13 +382,19 @@ export async function fetchStorefront(subdomain?: string, storeId?: string): Pro
   }
 }
 
-export async function fetchProduct(id: string, subdomain?: string): Promise<Product> {
+export async function fetchProduct(id: string, subdomain?: string, storeId?: string): Promise<Product> {
   try {
-    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/products/${id}`);
+    const apiUrl = withStoreId(`${getApiUrl(subdomain)}/products/${encodeURIComponent(id)}`, storeId);
     const res = await fetch(apiUrl, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Product request failed (${res.status})`);
     const data = await res.json();
-    if (!data.success) throw new Error(data.message || `Failed to fetch product ${id}`);
-    return resolveMediaTree(data.product);
+    if (!data.success || !data.product) throw new Error(data.message || `Failed to fetch product ${id}`);
+    const product = resolveMediaTree(data.product) as Product;
+    product.variants = (product.variants || []).map((variant: any) => ({
+      ...variant,
+      images: Array.isArray(variant.images) ? variant.images : Array.isArray(variant.options?.images) ? variant.options.images : [],
+    }));
+    return product;
   } catch (err) {
     console.error(`[storefront-api] Error fetching product ${id}:`, err);
     throw err;

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Heart, Star, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
-import { isVideoUrl, videoMimeType } from '@/lib/media-type';
+import { isVideoUrl } from '@/lib/media-type';
 import { availableStock, isOutOfStock } from '@/lib/stock';
 import type { StorefrontVariant } from '@/lib/product-variants';
 import './ProductCard.css';
@@ -32,6 +32,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loadedSlideIndexes, setLoadedSlideIndexes] = useState<Set<number>>(() => new Set([0]));
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
@@ -96,11 +97,20 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
   const handleMouseEnter = () => {
     if (images.length <= 1) return;
+    setLoadedSlideIndexes(previous => new Set([...previous, 1]));
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % images.length);
     }, 1500);
   };
+
+  useEffect(() => {
+    if (currentImageIndex === 0 || images.length <= 1) return;
+    const nextIndex = (currentImageIndex + 1) % images.length;
+    setLoadedSlideIndexes(previous => previous.has(nextIndex)
+      ? previous
+      : new Set([...previous, nextIndex]));
+  }, [currentImageIndex, images.length]);
 
   const handleMouseLeave = () => {
     if (timerRef.current) {
@@ -170,28 +180,27 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             const isFirst = index === 0;
             const isEager = priority && isFirst;
             const src = imgError && isFirst ? 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' : img;
+            const shouldLoad = loadedSlideIndexes.has(index);
             if (isVideoUrl(src)) {
               return (
                 <video
                   key={index}
-                  src={src}
+                  src={shouldLoad ? src : undefined}
                   className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
                   muted
                   playsInline
                   loop
-                  preload="metadata"
-                  onLoadedData={isFirst ? () => setImgLoaded(true) : undefined}
+                  preload={isFirst ? "metadata" : "none"}
+                  onLoadedMetadata={isFirst ? () => setImgLoaded(true) : undefined}
                   onError={isFirst ? handleImageError : undefined}
-                >
-                  <source src={src} type={videoMimeType(src)} />
-                </video>
+                />
               );
             }
             return (
               <img
                 key={index}
                 ref={isFirst ? imgRef : undefined}
-                src={src}
+                src={shouldLoad ? src : undefined}
                 alt={`${product.name} - Image ${index + 1}`}
                 className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
                 onLoad={isFirst ? handleImageLoad : undefined}

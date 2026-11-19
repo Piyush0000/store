@@ -25,7 +25,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     bestSellers = data.products || [];
 
     if (customization?.productSections?.length) {
-      productSections = await buildSectionData(customization.productSections, resolvedSubdomain);
+      productSections = buildSectionData(customization.productSections, bestSellers);
     }
   } catch (error) {
     console.error('[HomePage] Failed to fetch storefront data:', error);
