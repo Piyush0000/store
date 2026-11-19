@@ -5,8 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Search, Heart, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { useState, useEffect, useRef, Suspense, type CSSProperties } from 'react';
 import { useCart } from './CartProvider';
-import { fetchStorefront } from '@/lib/api';
-import { getSubdomain } from '@/lib/config';
+import { fetchCataloguePage, fetchStorefront } from '@/lib/api';
+import { getStoreId, getSubdomain } from '@/lib/config';
 import './Header.css';
 import NavigationLinks from './NavigationLinks';
 import { readHeaderStyle, usesBannerBackground, boundedNumber } from '@/lib/navigation-style';
@@ -127,6 +127,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const getInitialLogo = () => {
@@ -183,20 +184,14 @@ export default function Header({ initialCustomization, storeName: propStoreName,
   useEffect(() => {
     if (initialCustomization) {
       setNavigationConfig(initialCustomization);
-      if (initialCustomization.products) {
-        setAllProducts(initialCustomization.products);
-      }
       return; // Skip fetch since we have initialCustomization!
     }
 
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    fetchStorefront(storeSubdomain)
+    fetchStorefront(storeSubdomain, undefined, { includeProducts: false, includeLegal: false })
       .then((data) => {
-        if (data.products) {
-          setAllProducts(data.products);
-        }
         const customization = data.customization;
         setNavigationConfig(customization || {});
         setLogoPosition(resolveLogoPosition(customization));
@@ -228,12 +223,22 @@ export default function Header({ initialCustomization, storeName: propStoreName,
   }, [initialCustomization, propStoreName, storeSubdomain]);
 
   useEffect(() => {
-    if (searchOpen && allProducts.length === 0) {
-      fetchStorefront(storeSubdomain).then((data) => {
-        if (data.products) setAllProducts(data.products);
-      }).catch((err) => console.warn('[Header] Failed to fetch products for search:', err));
+    const query = searchQuery.trim();
+    if (!searchOpen || !query) {
+      setAllProducts([]);
+      setSearchLoading(false);
+      return;
     }
-  }, [searchOpen, allProducts.length, storeSubdomain]);
+    let cancelled = false;
+    setSearchLoading(true);
+    const timer = setTimeout(() => {
+      fetchCataloguePage(storeSubdomain || getSubdomain(), getStoreId(), { search: query, limit: 5 })
+        .then(page => { if (!cancelled) setAllProducts(page.products); })
+        .catch(() => { if (!cancelled) setAllProducts([]); })
+        .finally(() => { if (!cancelled) setSearchLoading(false); });
+    }, 250);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [searchOpen, searchQuery, storeSubdomain]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -358,12 +363,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
     }
   };
 
-  const liveResults = searchQuery.trim()
-    ? allProducts.filter(p =>
-        p.name?.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-        p.category?.toLowerCase().includes(searchQuery.toLowerCase().trim())
-      ).slice(0, 5)
-    : [];
+  const liveResults = searchQuery.trim() ? allProducts : [];
 
   const renderSearchDropdown = () => (
     <div className="header__search-dropdown" ref={searchRef}>
@@ -390,7 +390,9 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
       {searchQuery.trim() !== '' && (
         <div className="header__search-results">
-          {liveResults.length > 0 ? (
+          {searchLoading ? (
+            <div className="header__search-no-results">Searching…</div>
+          ) : liveResults.length > 0 ? (
             <>
               <div className="header__search-results-list">
                 {liveResults.map((prod) => {

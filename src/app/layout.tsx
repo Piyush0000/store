@@ -11,7 +11,7 @@ import FloatingLogo from "@/components/FloatingLogo";
 import SmoothScroll from "@/components/SmoothScroll";
 import ScrollObserver from "@/components/ScrollObserver";
 
-import { fetchStorefront } from "@/lib/api";
+import { fetchCataloguePage, fetchStorefront } from "@/lib/api";
 import { extractPixelId } from "@/lib/pixel";
 import MetaPixel from "@/components/MetaPixel";
 import { getServerSubdomain, getServerStoreId } from "@/lib/server-utils";
@@ -34,11 +34,14 @@ export default async function RootLayout({
   try {
     const subdomain = await getServerSubdomain();
     const storeId = await getServerStoreId();
-    const data = await fetchStorefront(subdomain, storeId);
+    const data = await fetchStorefront(subdomain, storeId, { includeProducts: false, includeLegal: false });
     customization = data.customization;
     storeName = data.store?.name || "";
     storeSubdomain = data.store?.subdomain || subdomain;
     products = data.products || [];
+    if (customization?.fakeSalesPopup?.enabled) {
+      products = (await fetchCataloguePage(subdomain, storeId, { limit: 8 })).products;
+    }
   } catch (err: any) {
     if (
       err &&
