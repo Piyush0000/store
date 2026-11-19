@@ -4,6 +4,7 @@ import { Suspense, useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
 import { ProductGridSkeleton } from './Skeleton';
+import { fetchCataloguePage } from '@/lib/api';
 
 interface Product {
   id: string;
@@ -23,22 +24,33 @@ interface Product {
 interface CatalogueClientProps {
   products: Product[];
   categories: string[];
+  total: number;
+  hasMore: boolean;
+  subdomain: string;
+  storeId: string;
+  ratingMode: boolean;
 }
 
-function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
+function CatalogueClientInner({ products, categories, total, hasMore, subdomain, storeId, ratingMode }: CatalogueClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category') || 'all';
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  const [sortBy, setSortBy] = useState('featured');
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'featured');
   const [isLoading, setIsLoading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
+  const [items, setItems] = useState(products);
+  const [more, setMore] = useState(hasMore);
+  const [nextOffset, setNextOffset] = useState(products.length);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   // Synchronize category state when search parameters change via external navigation (e.g. navbar clicks)
   useEffect(() => {
     const category = searchParams.get('category') || 'all';
     setSelectedCategory(category);
+    setSortBy(searchParams.get('sort') || 'featured');
     setIsLoading(false);
     setVisibleCount(24);
   }, [searchParams]);
@@ -79,7 +91,42 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
     router.push(`/catalogue${newQuery}`, { scroll: false });
   }, [router, searchParams, selectedCategory, searchQueryParam]);
 
-  const filteredProducts = products.filter(p => {
+  const handleSortChange = useCallback((nextSort: string) => {
+    if (nextSort === sortBy) return;
+    setSortBy(nextSort);
+    setIsLoading(true);
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextSort === 'featured') params.delete('sort');
+    else params.set('sort', nextSort);
+    router.push(`/catalogue${params.size ? `?${params}` : ''}`, { scroll: false });
+  }, [router, searchParams, sortBy]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !more) return;
+    setLoadingMore(true);
+    setLoadError('');
+    try {
+      const category = categoryList.find(entry => entry.id === selectedCategory)?.label;
+      const page = await fetchCataloguePage(subdomain, storeId, {
+        category: selectedCategory === 'all' ? undefined : category || selectedCategory,
+        search: searchQueryParam,
+        stream: selectedStream,
+        sort: sortBy === 'price-low' || sortBy === 'price-high' ? sortBy : undefined,
+        offset: nextOffset,
+        limit: 24,
+      });
+      setItems(current => [...current, ...page.products.filter(product => !current.some(item => item.id === product.id))]);
+      setNextOffset(page.pagination.offset + page.products.length);
+      setMore(page.pagination.hasMore);
+    } catch {
+      setLoadError('Could not load more products. Please try again.');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, more, categoryList, selectedCategory, subdomain, storeId, searchQueryParam, selectedStream, sortBy, nextOffset]);
+
+  const filteredProducts = (ratingMode ? products : items).filter(p => {
+    if (!ratingMode) return true;
     // 1. Filter by search query
     if (searchQueryParam) {
       const q = searchQueryParam.toLowerCase().trim();
@@ -103,14 +150,15 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
     return true;
   });
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
+  const sortedProducts = ratingMode ? [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
       case 'price-low': return a.price - b.price;
       case 'price-high': return b.price - a.price;
       case 'rating': return (b.averageRating || 0) - (a.averageRating || 0);
       default: return 0;
     }
-  });
+  }) : filteredProducts;
+  const resultCount = ratingMode ? sortedProducts.length : total;
 
   let categoryLabel = categoryList.find(c => c.id === selectedCategory)?.label || 'All Products';
   if (searchQueryParam) {
@@ -142,7 +190,7 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
             </button>
           )}
         </div>
-        <span className="catalogue__count">{sortedProducts.length} items</span>
+        <span className="catalogue__count">{resultCount} items</span>
       </div>
 
       <div className="catalogue__layout">
@@ -167,8 +215,8 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
 
         <div className="catalogue__main">
           <div className="catalogue__toolbar">
-            <span>{sortedProducts.length} products</span>
-            <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setVisibleCount(24); }}>
+            <span>{resultCount} products</span>
+            <select value={sortBy} onChange={(e) => handleSortChange(e.target.value)}>
               <option value="featured">Featured</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
@@ -200,20 +248,22 @@ function CatalogueClientInner({ products, categories }: CatalogueClientProps) {
             </div>
           ) : (
             <div className="catalogue__grid">
-              {sortedProducts.slice(0, visibleCount).map((product) => (
+              {(ratingMode ? sortedProducts.slice(0, visibleCount) : sortedProducts).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}
-          {!isLoading && sortedProducts.length > visibleCount && (
+          {!isLoading && (ratingMode ? sortedProducts.length > visibleCount : more) && (
             <button
               type="button"
               className="catalogue__load-more"
-              onClick={() => setVisibleCount((count) => count + 24)}
+              disabled={loadingMore}
+              onClick={() => ratingMode ? setVisibleCount((count) => count + 24) : void loadMore()}
             >
-              Show more products
+              {loadingMore ? 'Loading products…' : 'Show more products'}
             </button>
           )}
+          {loadError && <p role="alert">{loadError}</p>}
         </div>
       </div>
     </div>

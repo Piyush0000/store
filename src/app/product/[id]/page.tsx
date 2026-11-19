@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { fetchStorefront, fetchProduct, Testimonial, TestimonialSection } from "@/lib/api";
+import { fetchCataloguePage, fetchStorefront, fetchProduct, Testimonial, TestimonialSection } from "@/lib/api";
 import { getServerSubdomain, getServerStoreId } from "@/lib/server-utils";
 import ProductClient from "./ProductClient";
 
@@ -45,23 +45,22 @@ interface PageProps {
 export default async function ProductPage({ params }: PageProps) {
   const { id } = await params;
 
-  let products: any[] = [];
   let product: any = null;
   let testimonialSection: TestimonialSection | null = null;
   let reelsSection: any = null;
   let subdomain = "";
+  let storeId = "";
   let codEnabled = false;
   let globalBadges: { icon?: string; text?: string; color?: string }[] = [];
   try {
     // Cache for 60 seconds to avoid hammering the API
     subdomain = await getServerSubdomain();
 
-    const storeId = await getServerStoreId();
+    storeId = await getServerStoreId();
     const [data, detail] = await Promise.all([
-      fetchStorefront(subdomain, storeId),
+      fetchStorefront(subdomain, storeId, { includeProducts: false, includeLegal: false }),
       fetchProduct(id, subdomain, storeId),
     ]);
-    products = data.products || [];
     product = detail;
     testimonialSection =
       (data?.customization?.testimonialsSection as TestimonialSection) || null;
@@ -97,17 +96,17 @@ export default async function ProductPage({ params }: PageProps) {
 
   const targetCategory = customFields?.relatedCategory || product.category;
 
-  let relatedProducts = products
-    .filter((p: any) => p.category === targetCategory && p.id !== product.id)
-    .slice(0, 4);
+  let relatedProducts: any[] = [];
+  try {
+    const page = await fetchCataloguePage(subdomain, storeId, { category: targetCategory || undefined, limit: 5 });
+    relatedProducts = page.products.filter(p => p.id !== product.id).slice(0, 4);
 
-  // Fallback to same category if the chosen category has no products
-  if (relatedProducts.length === 0 && targetCategory !== product.category) {
-    relatedProducts = products
-      .filter(
-        (p: any) => p.category === product.category && p.id !== product.id,
-      )
-      .slice(0, 4);
+    if (relatedProducts.length === 0 && targetCategory !== product.category) {
+      const fallback = await fetchCataloguePage(subdomain, storeId, { category: product.category || undefined, limit: 5 });
+      relatedProducts = fallback.products.filter(p => p.id !== product.id).slice(0, 4);
+    }
+  } catch (error) {
+    console.error("Failed to fetch related products:", error);
   }
 
   // Routing logic: product reviews take priority over homepage testimonials when set

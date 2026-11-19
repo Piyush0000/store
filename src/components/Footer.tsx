@@ -343,7 +343,7 @@ export default function Footer({
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    fetchStorefront(storeSubdomain)
+    fetchStorefront(storeSubdomain, undefined, { includeProducts: false, includeLegal: false })
       .then((data) => {
         const { customization, store } = data;
         setFooterCustomization(customization || {});

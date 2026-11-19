@@ -1,4 +1,4 @@
-import { getApiUrl, withStoreId } from './config';
+import { getApiBase, getApiUrl, withStoreId } from './config';
 import { resolveMediaTree } from './media';
 import type { CategoryImagesConfig } from './category-card-style';
 
@@ -366,10 +366,16 @@ const MOCK_STOREFRONT: StorefrontData = {
 };
 
 
-export async function fetchStorefront(subdomain?: string, storeId?: string): Promise<StorefrontData> {
+export async function fetchStorefront(
+  subdomain?: string,
+  storeId?: string,
+  options: { includeProducts?: boolean; includeLegal?: boolean } = {},
+): Promise<StorefrontData> {
   try {
     const apiUrl = new URL(withStoreId(getApiUrl(subdomain), storeId));
     apiUrl.searchParams.set('reviewMode', 'summary');
+    if (options.includeProducts === false) apiUrl.searchParams.set('includeProducts', 'false');
+    if (options.includeLegal === false) apiUrl.searchParams.set('includeLegal', 'false');
     const res = await fetch(apiUrl.toString(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`Storefront request failed (${res.status}) for ${apiUrl}`);
     const data = await res.json();
@@ -380,6 +386,38 @@ export async function fetchStorefront(subdomain?: string, storeId?: string): Pro
     console.error('[storefront-api] Error fetching storefront:', err);
     throw err;
   }
+}
+
+export interface CataloguePageResult {
+  products: Product[];
+  pagination: { total: number; limit: number; offset: number; hasMore: boolean };
+}
+
+export async function fetchCataloguePage(
+  subdomain: string,
+  storeId: string,
+  filters: { category?: string; search?: string; stream?: string; sort?: string; offset?: number; limit?: number },
+): Promise<CataloguePageResult> {
+  const apiUrl = new URL(withStoreId(`${getApiBase()}/${encodeURIComponent(subdomain || 'preview')}/products`, storeId));
+  apiUrl.searchParams.set('reviewMode', 'summary');
+  apiUrl.searchParams.set('limit', String(filters.limit ?? 24));
+  apiUrl.searchParams.set('offset', String(filters.offset ?? 0));
+  if (filters.category) apiUrl.searchParams.set('category', filters.category);
+  if (filters.search) apiUrl.searchParams.set('search', filters.search);
+  if (filters.sort) apiUrl.searchParams.set('sort', filters.sort);
+  const streamParams: Record<string, string> = {
+    featured: 'isFeatured',
+    'best-seller': 'isBestSeller',
+    'new-arrival': 'isNewArrival',
+    'value-combo': 'isValueCombo',
+  };
+  const streamParam = streamParams[filters.stream || ''];
+  if (streamParam) apiUrl.searchParams.set(streamParam, 'true');
+  const response = await fetch(apiUrl.toString(), { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Catalogue request failed (${response.status})`);
+  const data = await response.json();
+  if (!data.success || !data.data?.pagination) throw new Error(data.message || 'Failed to fetch catalogue');
+  return resolveMediaTree(data.data) as CataloguePageResult;
 }
 
 export async function fetchProduct(id: string, subdomain?: string, storeId?: string): Promise<Product> {
