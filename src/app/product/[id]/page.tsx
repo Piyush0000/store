@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { fetchStorefront, Testimonial, TestimonialSection } from "@/lib/api";
-import { getServerSubdomain } from "@/lib/server-utils";
+import { fetchStorefront, fetchProduct, Testimonial, TestimonialSection } from "@/lib/api";
+import { getServerSubdomain, getServerStoreId } from "@/lib/server-utils";
 import ProductClient from "./ProductClient";
 
 /**
@@ -56,9 +56,13 @@ export default async function ProductPage({ params }: PageProps) {
     // Cache for 60 seconds to avoid hammering the API
     subdomain = await getServerSubdomain();
 
-    const data = await fetchStorefront(subdomain);
+    const storeId = await getServerStoreId();
+    const [data, detail] = await Promise.all([
+      fetchStorefront(subdomain, storeId),
+      fetchProduct(id, subdomain, storeId),
+    ]);
     products = data.products || [];
-    product = products.find((p: any) => p.id === id || p.slug === id);
+    product = detail;
     testimonialSection =
       (data?.customization?.testimonialsSection as TestimonialSection) || null;
     reelsSection = data?.customization?.reelsSection || null;

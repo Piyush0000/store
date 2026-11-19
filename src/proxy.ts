@@ -24,7 +24,7 @@ function publicStorefrontApiBase(): string {
   ).replace(/\/+$/, '');
 }
 
-const domainCache = new Map<string, { subdomain: string; expiry: number }>();
+const domainCache = new Map<string, { subdomain: string; storeId: string; expiry: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export async function proxy(request: Request) {
@@ -40,7 +40,9 @@ export async function proxy(request: Request) {
   }
 
   let subdomain = requestUrl.searchParams.get('subdomain') || readCookie(request, 'x-store-subdomain');
-  const storeId = requestUrl.searchParams.get('storeId') || readCookie(request, 'x-store-id');
+  const queryStoreId = requestUrl.searchParams.get('storeId');
+  const storeId = queryStoreId || readCookie(request, 'x-store-id');
+  let resolvedFromDomain: { subdomain: string; id: string } | null = null;
 
   if (!subdomain) {
     const isLocalhost = cleanHostname === 'localhost' || cleanHostname === '127.0.0.1' || cleanHostname.endsWith('.localhost');
@@ -55,6 +57,7 @@ export async function proxy(request: Request) {
         const cached = domainCache.get(cleanHostname);
         if (cached && cached.expiry > now) {
           subdomain = cached.subdomain;
+          resolvedFromDomain = { subdomain: cached.subdomain, id: cached.storeId };
         } else {
           try {
             const apiBase = process.env.INTERNAL_API_BASE || 'https://api.evoclabs.com/api/storefront/public';
@@ -64,7 +67,8 @@ export async function proxy(request: Request) {
               return NextResponse.redirect(new URL(`/store-error?reason=${encodeURIComponent(resolveData.message || 'Invalid store domain')}`, request.url));
             }
             subdomain = resolveData.store.subdomain;
-            domainCache.set(cleanHostname, { subdomain, expiry: now + CACHE_TTL_MS });
+            resolvedFromDomain = { subdomain, id: resolveData.store.id };
+            domainCache.set(cleanHostname, { subdomain, storeId: resolveData.store.id, expiry: now + CACHE_TTL_MS });
           } catch (error) {
             console.error('[PROXY] Custom domain resolve failed:', error);
             return NextResponse.redirect(new URL('/store-error?reason=Resolution+failed', request.url));
@@ -77,16 +81,22 @@ export async function proxy(request: Request) {
   }
 
   try {
-    const query = storeId ? `?storeId=${encodeURIComponent(storeId)}` : '';
-    const apiUrl = `${publicStorefrontApiBase()}/${encodeURIComponent(subdomain || 'preview')}/frontend${query}`;
-    const response = await fetch(apiUrl, { cache: 'no-store' });
-    const data = await response.json();
-    if (!response.ok || !data.success) {
-      return NextResponse.redirect(new URL(`/store-error?reason=${encodeURIComponent(data.message || 'Store not found')}`, request.url));
+    let resolvedStore = resolvedFromDomain;
+    if (!resolvedStore || queryStoreId) {
+      const apiBase = publicStorefrontApiBase();
+      const apiUrl = queryStoreId || (!subdomain && storeId)
+        ? `${apiBase}/${encodeURIComponent(subdomain || 'preview')}/frontend?storeId=${encodeURIComponent(storeId)}&includeProducts=false&includeLegal=false`
+        : `${apiBase}/${encodeURIComponent(subdomain || 'preview')}/info`;
+      const response = await fetch(apiUrl, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        return NextResponse.redirect(new URL(`/store-error?reason=${encodeURIComponent(data.message || 'Store not found')}`, request.url));
+      }
+      resolvedStore = data.store || data.data;
     }
 
-    if (data.store?.subdomain) subdomain = data.store.subdomain;
-    const resolvedStoreId = storeId || data.store?.id || '';
+    if (resolvedStore?.subdomain) subdomain = resolvedStore.subdomain;
+    const resolvedStoreId = storeId || resolvedStore?.id || '';
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-subdomain', subdomain);
     if (resolvedStoreId) requestHeaders.set('x-store-id', resolvedStoreId);

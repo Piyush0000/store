@@ -116,36 +116,9 @@ function parseCategoryFilter(filter: string): string[] {
   return [filter.trim()];
 }
 
-// ─── Fetching ───────────────────────────────────────────────────────────────────
-
-const API_BASE = (process.env.INTERNAL_API_BASE || process.env.NEXT_PUBLIC_API_BASE || '').replace(/\/+$/, '');
-
-export async function getProductsByCategory(
-  subdomain: string,
-  category: string
-): Promise<NormalizedProduct[]> {
-  if (!API_BASE || !subdomain) return [];
-  try {
-    const url = `${API_BASE}/${subdomain}/products?category=${encodeURIComponent(category)}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    // Handle multiple response shapes from the API
-    const raw: any[] =
-      (Array.isArray(data.products) ? data.products : null) ??
-      (Array.isArray(data.data) ? data.data : null) ??
-      (Array.isArray(data.data?.products) ? data.data.products : null) ??
-      (Array.isArray(data.data?.data) ? data.data.data : null) ??
-      [];
-    return raw.map(normalizeProduct);
-  } catch {
-    return [];
-  }
-}
-
 // ─── Section Hydration ──────────────────────────────────────────────────────────
 
-export async function buildSectionData(
+export function buildSectionData(
   productSections: Array<{
     id: string;
     title: string;
@@ -171,67 +144,44 @@ export async function buildSectionData(
     editorialCtaLabel?: string;
     editorialCtaUrl?: string;
   }> | undefined,
-  subdomain: string
-): Promise<HydratedSection[]> {
+  storefrontProducts: any[]
+): HydratedSection[] {
   if (!productSections || productSections.length === 0) return [];
 
-  const results = await Promise.all(
-    productSections.map(async (section) => {
-      let products: NormalizedProduct[] = [];
+  const normalized = storefrontProducts.map(normalizeProduct);
+  return productSections.map((section) => {
+    const categories = new Set(parseCategoryFilter(section.categoryFilter || '').map(category => category.toLowerCase()));
+    const products = categories.size
+      ? normalized.filter(product => categories.has(product.category.toLowerCase()))
+      : normalized;
 
-      if (section.categoryFilter?.trim()) {
-        const categories = parseCategoryFilter(section.categoryFilter);
+    const sorted = prioritizeProducts(products);
+    const limit = section.limit ?? 8;
 
-        // Fetch all categories in parallel
-        const fetchedArrays = await Promise.all(
-          categories.map(cat => getProductsByCategory(subdomain, cat))
-        );
-
-        // Merge and deduplicate by id
-        const seen = new Set<string>();
-        for (const arr of fetchedArrays) {
-          for (const p of arr) {
-            if (!seen.has(p.id)) {
-              seen.add(p.id);
-              products.push(p);
-            }
-          }
-        }
-      } else {
-        // Fetch all products if no category filter is specified
-        products = await getProductsByCategory(subdomain, "");
-      }
-
-      const sorted = prioritizeProducts(products);
-      const limit = section.limit ?? 8;
-
-      return {
-        id: section.id,
-        title: section.title,
-        subtitle: section.subtitle,
-        categoryFilter: section.categoryFilter,
-        limit,
-        layout: section.layout || (section.sliderMode ? 'shelf' : 'curated'),
-        sliderMode: Boolean(section.sliderMode),
-        backgroundColor: section.backgroundColor,
-        titleColor: section.titleColor,
-        textColor: section.textColor,
-        accentColor: section.accentColor,
-        headingAlignment: section.headingAlignment,
-        desktopColumns: section.desktopColumns,
-        mobileColumns: section.mobileColumns,
-        showViewAll: section.showViewAll,
-        viewAllLabel: section.viewAllLabel,
-        viewAllUrl: section.viewAllUrl,
-        editorialEyebrow: section.editorialEyebrow,
-        editorialTitle: section.editorialTitle,
-        editorialImage: section.editorialImage ? resolveMediaUrl(section.editorialImage) : undefined,
-        editorialCtaLabel: section.editorialCtaLabel,
-        editorialCtaUrl: section.editorialCtaUrl,
-        products: sorted.slice(0, limit),
-      } satisfies HydratedSection;
-    })
-  );
-
-  return results;
+    return {
+      id: section.id,
+      title: section.title,
+      subtitle: section.subtitle,
+      categoryFilter: section.categoryFilter,
+      limit,
+      layout: section.layout || (section.sliderMode ? 'shelf' : 'curated'),
+      sliderMode: Boolean(section.sliderMode),
+      backgroundColor: section.backgroundColor,
+      titleColor: section.titleColor,
+      textColor: section.textColor,
+      accentColor: section.accentColor,
+      headingAlignment: section.headingAlignment,
+      desktopColumns: section.desktopColumns,
+      mobileColumns: section.mobileColumns,
+      showViewAll: section.showViewAll,
+      viewAllLabel: section.viewAllLabel,
+      viewAllUrl: section.viewAllUrl,
+      editorialEyebrow: section.editorialEyebrow,
+      editorialTitle: section.editorialTitle,
+      editorialImage: section.editorialImage ? resolveMediaUrl(section.editorialImage) : undefined,
+      editorialCtaLabel: section.editorialCtaLabel,
+      editorialCtaUrl: section.editorialCtaUrl,
+      products: sorted.slice(0, limit),
+    } satisfies HydratedSection;
+  });
 }
