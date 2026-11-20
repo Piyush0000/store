@@ -409,6 +409,11 @@ export default function CheckoutPage() {
   }, [buyNowItems, addToCart]);
 
   const handleSelectGiftProduct = useCallback((product: any) => {
+    if (product.inStock === false || (product.stock !== undefined && Number(product.stock) <= 0)) {
+      setCouponError(`"${product.name}" is currently out of stock. Please choose another item.`);
+      return;
+    }
+
     const giftItem = {
       id: product.id,
       name: product.name,
@@ -2283,6 +2288,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="checkout__offers-modal-body" style={{ maxHeight: "60vh", overflowY: "auto", padding: "0 1.25rem 1.25rem" }}>
                       {giftPickerData.products.map((p) => {
+                        const isAvailable = p.inStock !== false && (p.stock === undefined || Number(p.stock) > 0);
                         const discountBadge = giftPickerData.getsDiscountType === "free"
                           ? "FREE"
                           : giftPickerData.getsDiscountType === "percentage"
@@ -2299,7 +2305,8 @@ export default function CheckoutPage() {
                               border: "1px solid #e2e8f0",
                               borderRadius: "8px",
                               marginBottom: "0.625rem",
-                              background: "#fff",
+                              background: isAvailable ? "#fff" : "#f8fafc",
+                              opacity: isAvailable ? 1 : 0.7,
                             }}
                           >
                             <img
@@ -2312,30 +2319,39 @@ export default function CheckoutPage() {
                                 {p.name}
                               </strong>
                               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
-                                <span style={{ fontSize: "0.8rem", color: "#16a34a", fontWeight: "700" }}>
-                                  {discountBadge}
-                                </span>
-                                <span style={{ fontSize: "0.75rem", color: "#94a3b8", textDecoration: "line-through" }}>
-                                  ₹{p.price}
-                                </span>
+                                {isAvailable ? (
+                                  <>
+                                    <span style={{ fontSize: "0.8rem", color: "#16a34a", fontWeight: "700" }}>
+                                      {discountBadge}
+                                    </span>
+                                    <span style={{ fontSize: "0.75rem", color: "#94a3b8", textDecoration: "line-through" }}>
+                                      ₹{p.price}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span style={{ fontSize: "0.78rem", color: "#ef4444", fontWeight: "600" }}>
+                                    Out of Stock
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <button
                               type="button"
-                              onClick={() => handleSelectGiftProduct(p)}
+                              disabled={!isAvailable}
+                              onClick={() => isAvailable && handleSelectGiftProduct(p)}
                               style={{
-                                background: "#0f172a",
-                                color: "#fff",
+                                background: isAvailable ? "#0f172a" : "#cbd5e1",
+                                color: isAvailable ? "#fff" : "#64748b",
                                 border: "none",
                                 borderRadius: "6px",
                                 padding: "7px 14px",
                                 fontSize: "0.8rem",
                                 fontWeight: "600",
-                                cursor: "pointer",
+                                cursor: isAvailable ? "pointer" : "not-allowed",
                                 flexShrink: 0,
                               }}
                             >
-                              Choose
+                              {isAvailable ? "Choose" : "Unavailable"}
                             </button>
                           </div>
                         );
