@@ -61,6 +61,12 @@ export async function validateCouponAction(code: string, orderTotal: number, car
       freeItems: data.freeItems || [],
       type: data.type || data.coupon?.type,
       message: data.message,
+      requiresAction: data.requiresAction,
+      autoAddProduct: data.autoAddProduct,
+      availableGiftProducts: data.availableGiftProducts,
+      getsQty: data.getsQty,
+      getsDiscountType: data.getsDiscountType,
+      getsDiscountValue: data.getsDiscountValue,
     };
   } catch (error: any) {
     console.error('[validateCouponAction] Error:', error);
