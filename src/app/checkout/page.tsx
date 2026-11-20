@@ -88,7 +88,7 @@ const isStepActive = (step: Step, s: Step) => {
 
 export default function CheckoutPage() {
   const { track } = useAnalytics();
-  const { cartItems: contextCartItems, clearCart: contextClearCart, cartTotal: contextCartTotal, isHydrated } = useCart();
+  const { cartItems: contextCartItems, clearCart: contextClearCart, cartTotal: contextCartTotal, isHydrated, addToCart, removeFromCart } = useCart();
   const [buyNowItems, setBuyNowItems] = useState<any[] | null>(null);
   const [buyNowChecked, setBuyNowChecked] = useState(false);
 
@@ -223,6 +223,15 @@ export default function CheckoutPage() {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedGiftItem, setAppliedGiftItem] = useState<any | null>(null);
+  const [giftPickerData, setGiftPickerData] = useState<{
+    isOpen: boolean;
+    products: any[];
+    coupon: any;
+    getsDiscountType: string;
+    getsDiscountValue: number;
+    getsQty: number;
+  } | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [availableOffers, setAvailableOffers] = useState<any[]>([]);
   const [offersOpen, setOffersOpen] = useState(false);
@@ -337,11 +346,106 @@ export default function CheckoutPage() {
   const partialDiscountAmount = (paymentUi === "partial" || paymentMethod === "PARTIAL") && partialSplit
     ? (partialSplit.discountAmount || 0)
     : 0;
-  const onlineDiscountAmount = paymentMethod && paymentMethod !== 'COD' && paymentMethod !== 'PARTIAL' && paymentUi !== 'partial'
+  const onlineDiscountAmount = (paymentUi === 'online' || (paymentMethod && paymentMethod !== 'COD' && paymentMethod !== 'PARTIAL' && paymentUi !== 'partial' && paymentUi !== 'cod'))
     ? Math.round(displaySubtotal * (onlineDiscountPercent / 100))
     : 0;
   
   const displayDiscountTotal = discountAmount + bundleDiscountTotal + onlineDiscountAmount + partialDiscountAmount;
+
+  const handleApplyCouponResult = useCallback((result: any) => {
+    if (!result.success) {
+      setCouponError(result.message || "Invalid coupon code");
+      return;
+    }
+
+    // Case A: Merchant configured 1 specific Y product -> automatically add it!
+    if (result.requiresAction === 'AUTO_ADD' && result.autoAddProduct) {
+      const prod = result.autoAddProduct;
+      const giftItem = {
+        id: prod.id,
+        name: prod.name,
+        price: Number(prod.price || 0),
+        quantity: 1,
+        images: prod.images || (prod.image ? [prod.image] : []),
+        image: prod.image,
+        variantId: prod.variantId || undefined,
+        isFreeGift: true,
+      };
+      setAppliedGiftItem(giftItem);
+      if (buyNowItems) {
+        setBuyNowItems((prev) => (prev ? [...prev.filter((i) => i.id !== giftItem.id), giftItem] : [giftItem]));
+      } else {
+        addToCart(giftItem, 1);
+      }
+      setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
+      setDiscountAmount(result.discountAmount || result.discount || 0);
+      setOffersOpen(false);
+      setCouponError(null);
+      return;
+    }
+
+    // Case B: Merchant gave multiple specific products or any product -> prompt customer to choose!
+    if (result.requiresAction === 'SELECT_ITEM' && result.availableGiftProducts) {
+      setGiftPickerData({
+        isOpen: true,
+        products: result.availableGiftProducts,
+        coupon: result.coupon,
+        getsDiscountType: result.getsDiscountType,
+        getsDiscountValue: result.getsDiscountValue,
+        getsQty: result.getsQty || 1,
+      });
+      setOffersOpen(false);
+      setCouponError(null);
+      return;
+    }
+
+    // Case C: Standard coupon or customer already has the qualifying items
+    if (result.coupon) {
+      setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
+      setDiscountAmount(result.discountAmount || result.discount || 0);
+      setOffersOpen(false);
+      setCouponError(null);
+    }
+  }, [buyNowItems, addToCart]);
+
+  const handleSelectGiftProduct = useCallback((product: any) => {
+    if (product.inStock === false || (product.stock !== undefined && Number(product.stock) <= 0)) {
+      setCouponError(`"${product.name}" is currently out of stock. Please choose another item.`);
+      return;
+    }
+
+    const giftItem = {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price || 0),
+      quantity: 1,
+      images: product.images || (product.image ? [product.image] : []),
+      image: product.image,
+      variantId: product.variantId || product.variants?.[0]?.id || undefined,
+      isFreeGift: true,
+    };
+    setAppliedGiftItem(giftItem);
+    if (buyNowItems) {
+      setBuyNowItems((prev) => (prev ? [...prev.filter((i) => i.id !== giftItem.id), giftItem] : [giftItem]));
+    } else {
+      addToCart(giftItem, 1);
+    }
+
+    let calculatedDiscount = 0;
+    const discType = giftPickerData?.getsDiscountType || 'free';
+    const discValue = Number(giftPickerData?.getsDiscountValue || 0);
+    if (discType === 'free') {
+      calculatedDiscount = giftItem.price;
+    } else if (discType === 'percentage') {
+      calculatedDiscount = giftItem.price * (discValue / 100);
+    } else if (discType === 'amount_off') {
+      calculatedDiscount = Math.min(giftItem.price, discValue);
+    }
+
+    setAppliedCoupon(giftPickerData?.coupon || null);
+    setDiscountAmount(calculatedDiscount);
+    setGiftPickerData(null);
+  }, [buyNowItems, addToCart, giftPickerData]);
 
   const handleApplyCoupon = useCallback(async () => {
     if (!couponInput.trim()) return;
@@ -349,26 +453,28 @@ export default function CheckoutPage() {
     setCouponError(null);
     try {
       const result = await validateCouponAction(couponInput, subtotal, cartItems);
-      if (result.success && result.coupon) {
-        setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
-        setDiscountAmount(result.discount || 0);
-        setOffersOpen(false);
-      } else {
-        setCouponError(result.message || "Invalid coupon code");
-      }
+      handleApplyCouponResult(result);
     } catch (err: any) {
       setCouponError("Failed to validate coupon code. Please try again.");
     } finally {
       setIsApplyingCoupon(false);
     }
-  }, [couponInput, subtotal, cartItems]);
+  }, [couponInput, subtotal, cartItems, handleApplyCouponResult]);
 
   const handleRemoveCoupon = useCallback(() => {
+    if (appliedGiftItem) {
+      if (buyNowItems) {
+        setBuyNowItems((prev) => (prev ? prev.filter((i) => i.id !== appliedGiftItem.id) : null));
+      } else {
+        removeFromCart(appliedGiftItem.id);
+      }
+      setAppliedGiftItem(null);
+    }
     setAppliedCoupon(null);
     setDiscountAmount(0);
     setCouponInput("");
     setCouponError(null);
-  }, []);
+  }, [appliedGiftItem, buyNowItems, removeFromCart]);
 
   useEffect(() => {
     if (step !== "payment") return;
@@ -392,19 +498,13 @@ export default function CheckoutPage() {
     setCouponError(null);
     try {
       const result = await validateCouponAction(code, subtotal, cartItems);
-      if (result.success && result.coupon) {
-        setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
-        setDiscountAmount(result.discount || 0);
-        setOffersOpen(false);
-      } else {
-        setCouponError(result.message || "Invalid coupon code");
-      }
+      handleApplyCouponResult(result);
     } catch {
       setCouponError("Failed to validate coupon code. Please try again.");
     } finally {
       setIsApplyingCoupon(false);
     }
-  }, [subtotal, cartItems]);
+  }, [subtotal, cartItems, handleApplyCouponResult]);
 
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
@@ -2040,7 +2140,12 @@ export default function CheckoutPage() {
                         <ShoppingBag size={16} />
                       )}
                       <div>
-                        <p>{item.name}</p>
+                        <p>
+                          {item.name}
+                          {(item.isFreeGift || item.id === appliedGiftItem?.id) && (
+                            <span style={{ marginLeft: "8px", background: "#dcfce7", color: "#15803d", fontSize: "0.72rem", padding: "2px 7px", borderRadius: "4px", fontWeight: "600" }}>Free Gift</span>
+                          )}
+                        </p>
                         <span>{item.quantity} × ₹{item.price.toLocaleString("en-IN")}</span>
                       </div>
                       <strong>₹{(item.price * item.quantity).toLocaleString("en-IN")}</strong>
@@ -2164,6 +2269,96 @@ export default function CheckoutPage() {
                         )}
                       </div>
                       {couponError && <p className="checkout__error">{couponError}</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {giftPickerData?.isOpen && (
+                <div className="checkout__offers-overlay" onClick={(e) => { if (e.target === e.currentTarget) setGiftPickerData(null); }}>
+                  <div className="checkout__offers-modal" role="dialog" aria-label="Choose your gift item">
+                    <div className="checkout__offers-modal-head">
+                      <h3>Choose Your Gift Item</h3>
+                      <button type="button" onClick={() => setGiftPickerData(null)} aria-label="Close gift selector"><X size={18} /></button>
+                    </div>
+                    <div style={{ padding: "0 1.25rem 0.75rem" }}>
+                      <p style={{ margin: 0, fontSize: "0.85rem", color: "#64748b" }}>
+                        Select {giftPickerData.getsQty || 1} item to receive with your offer:
+                      </p>
+                    </div>
+                    <div className="checkout__offers-modal-body" style={{ maxHeight: "60vh", overflowY: "auto", padding: "0 1.25rem 1.25rem" }}>
+                      {giftPickerData.products.map((p) => {
+                        const isAvailable = p.inStock !== false && (p.stock === undefined || Number(p.stock) > 0);
+                        const discountBadge = giftPickerData.getsDiscountType === "free"
+                          ? "FREE"
+                          : giftPickerData.getsDiscountType === "percentage"
+                            ? `${giftPickerData.getsDiscountValue}% OFF`
+                            : `₹${giftPickerData.getsDiscountValue} OFF`;
+                        return (
+                          <div
+                            key={p.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.875rem",
+                              padding: "0.75rem",
+                              border: "1px solid #e2e8f0",
+                              borderRadius: "8px",
+                              marginBottom: "0.625rem",
+                              background: isAvailable ? "#fff" : "#f8fafc",
+                              opacity: isAvailable ? 1 : 0.7,
+                            }}
+                          >
+                            <img
+                              src={p.image || p.images?.[0] || "/placeholder.png"}
+                              alt={p.name}
+                              style={{ width: "52px", height: "52px", objectFit: "cover", borderRadius: "6px", flexShrink: 0 }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <strong style={{ fontSize: "0.875rem", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {p.name}
+                              </strong>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
+                                {isAvailable ? (
+                                  <>
+                                    <span style={{ fontSize: "0.8rem", color: "#16a34a", fontWeight: "700" }}>
+                                      {discountBadge}
+                                    </span>
+                                    <span style={{ fontSize: "0.75rem", color: "#94a3b8", textDecoration: "line-through" }}>
+                                      ₹{p.price}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span style={{ fontSize: "0.78rem", color: "#ef4444", fontWeight: "600" }}>
+                                    Out of Stock
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={!isAvailable}
+                              onClick={() => isAvailable && handleSelectGiftProduct(p)}
+                              style={{
+                                background: isAvailable ? "#0f172a" : "#cbd5e1",
+                                color: isAvailable ? "#fff" : "#64748b",
+                                border: "none",
+                                borderRadius: "6px",
+                                padding: "7px 14px",
+                                fontSize: "0.8rem",
+                                fontWeight: "600",
+                                cursor: isAvailable ? "pointer" : "not-allowed",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {isAvailable ? "Choose" : "Unavailable"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                      {giftPickerData.products.length === 0 && (
+                        <p className="checkout__pay-empty">No eligible items found.</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2337,7 +2532,12 @@ export default function CheckoutPage() {
                       <img src={item.images?.[0] || 'https://via.placeholder.com/60'} alt={item.name} />
                     </div>
                     <div className="checkout__summary-item-info">
-                      <span className="checkout__summary-item-name">{item.name}</span>
+                      <span className="checkout__summary-item-name">
+                        {item.name}
+                        {(item.isFreeGift || item.id === appliedGiftItem?.id) && (
+                          <span style={{ marginLeft: "8px", background: "#dcfce7", color: "#15803d", fontSize: "0.72rem", padding: "2px 7px", borderRadius: "4px", fontWeight: "600" }}>Free Gift</span>
+                        )}
+                      </span>
                       {item.variants && Object.keys(item.variants).length > 0 && (
                         <span className="checkout__summary-item-variant">
                           {Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ')}
