@@ -204,12 +204,16 @@ export default function CheckoutPage() {
   const [cartSessionId, setCartSessionId] = useState<string | null>(null);
   const [payUData, setPayUData] = useState<any>(null);
   const launchAttemptedRef = useRef(false);
+  const isSubmittingRef = useRef(false);
   const [orderSummary, setOrderSummary] = useState<{
     items: typeof cartItems;
     subtotal: number;
     paymentMethod: string | null;
     discountAmount?: number;
     couponCode?: string | null;
+    shippingFee?: number;
+    shippingLabel?: string;
+    total?: number;
     prepaidAmount?: number;
     codDue?: number;
   } | null>(null);
@@ -954,12 +958,15 @@ export default function CheckoutPage() {
   }, [step, paymentOptionsReady, paymentUi, onlineEnabled, onlineGateway, partialAvailable, codEnabled]);
 
   const handleCreateCodOrder = useCallback(async (): Promise<boolean> => {
+    if (isSubmittingRef.current) return false;
+    isSubmittingRef.current = true;
     setIsLoading(true);
     setError(null);
 
     if (!codEnabled) {
       setError("Cash on Delivery is not enabled for this store.");
       setIsLoading(false);
+      isSubmittingRef.current = false;
       return false;
     }
 
@@ -967,6 +974,7 @@ export default function CheckoutPage() {
     if (!cartItems || cartItems.length === 0) {
       setError("Your cart is empty. Please add items before checkout.");
       setIsLoading(false);
+      isSubmittingRef.current = false;
       return false;
     }
 
@@ -974,6 +982,7 @@ export default function CheckoutPage() {
     if (subtotal <= 0) {
       setError("Invalid cart total. Please refresh the page and try again.");
       setIsLoading(false);
+      isSubmittingRef.current = false;
       return false;
     }
 
@@ -1064,6 +1073,12 @@ export default function CheckoutPage() {
         const capturedSubtotal = totalRegularSubtotal;
         const capturedDiscount = overallDiscount;
         const capturedCouponCode = appliedCoupon?.code || null;
+        const capturedShippingFee = effectiveShippingFee;
+        const capturedTotal =
+          totalRegularSubtotal +
+          codFee +
+          effectiveShippingFee -
+          overallDiscount;
 
         setOrderId(result.orderId);
         setOrderSummary({
@@ -1072,12 +1087,17 @@ export default function CheckoutPage() {
           paymentMethod: "COD",
           discountAmount: capturedDiscount,
           couponCode: capturedCouponCode,
+          shippingFee: capturedShippingFee,
+          shippingLabel: shippingConfig.shippingLabel,
+          total: capturedTotal,
         });
 
         if (process.env.NODE_ENV === "development") {
           console.log("[Checkout] After setOrderSummary, orderSummary:", {
             items: capturedItems.length,
             subtotal: capturedSubtotal,
+            shippingFee: capturedShippingFee,
+            total: capturedTotal,
           });
         }
 
@@ -1119,6 +1139,7 @@ export default function CheckoutPage() {
       return false;
     } finally {
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   }, [
     cartItems,
@@ -1147,6 +1168,11 @@ export default function CheckoutPage() {
     partial?: { prepaidAmount: number; codDue: number } | null,
   ) => {
     const capturedItems = [...cartItems];
+    const capturedShippingFee = effectiveShippingFee;
+    const capturedTotal = Boolean(partial)
+      ? (partialSplit?.total ?? capturedSubtotal + capturedShippingFee - capturedDiscount)
+      : Math.max(0, capturedSubtotal + capturedShippingFee - capturedDiscount);
+
     setOrderId(localOrderId);
     setOrderSummary({
       items: capturedItems,
@@ -1154,6 +1180,9 @@ export default function CheckoutPage() {
       paymentMethod: partial ? "PARTIAL" : gateway,
       discountAmount: capturedDiscount,
       couponCode: appliedCoupon?.code || null,
+      shippingFee: capturedShippingFee,
+      shippingLabel: shippingConfig.shippingLabel,
+      total: capturedTotal,
       prepaidAmount: partial?.prepaidAmount,
       codDue: partial?.codDue,
     });
@@ -1185,12 +1214,15 @@ export default function CheckoutPage() {
     gateway: OnlineGateway,
     options?: { partial?: boolean },
   ): Promise<boolean> => {
+    if (isSubmittingRef.current) return false;
+    isSubmittingRef.current = true;
     setIsLoading(true);
     setError(null);
 
     if (!onlineEnabled) {
       setError("Online payment is not enabled for this store.");
       setIsLoading(false);
+      isSubmittingRef.current = false;
       return false;
     }
 
@@ -1198,12 +1230,14 @@ export default function CheckoutPage() {
     if (!cartItems || cartItems.length === 0) {
       setError("Your cart is empty. Please add items before checkout.");
       setIsLoading(false);
+      isSubmittingRef.current = false;
       return false;
     }
 
     if (subtotal <= 0) {
       setError("Invalid cart total. Please refresh the page and try again.");
       setIsLoading(false);
+      isSubmittingRef.current = false;
       return false;
     }
 
@@ -1390,6 +1424,7 @@ export default function CheckoutPage() {
       return false;
     } finally {
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   }, [
     cartItems,
@@ -1411,6 +1446,7 @@ export default function CheckoutPage() {
   ]);
 
   const handleFinalOrderClick = async (action: PaymentAction) => {
+    if (isLoading || isSubmittingRef.current) return;
     if (action === 'COD' && !codEnabled) {
       setError("Cash on Delivery is not enabled for this store.");
       return;
@@ -1428,11 +1464,11 @@ export default function CheckoutPage() {
     if (action === 'PARTIAL') setPaymentMethod('PARTIAL');
     if (isSessionVerified || !orderOtpEnabled) {
       if (action === 'COD') {
-        handleCreateCodOrder();
+        await handleCreateCodOrder();
       } else if (action === 'PARTIAL' && onlineGateway) {
-        handleInitiateOnlinePayment(onlineGateway, { partial: true });
+        await handleInitiateOnlinePayment(onlineGateway, { partial: true });
       } else if (action !== 'PARTIAL') {
-        handleInitiateOnlinePayment(action);
+        await handleInitiateOnlinePayment(action);
       }
       return;
     }
@@ -1459,16 +1495,17 @@ export default function CheckoutPage() {
   };
 
   const handleProceedToPay = () => {
+    if (isLoading || isSubmittingRef.current) return;
     if (paymentUi === "cod") {
-      handleFinalOrderClick("COD");
+      void handleFinalOrderClick("COD");
       return;
     }
     if (paymentUi === "partial") {
-      handleFinalOrderClick("PARTIAL");
+      void handleFinalOrderClick("PARTIAL");
       return;
     }
     if (onlineGateway && paymentUi === "online") {
-      handleFinalOrderClick(onlineGateway);
+      void handleFinalOrderClick(onlineGateway);
       return;
     }
     setError("Select a payment method to continue.");
@@ -2384,10 +2421,10 @@ export default function CheckoutPage() {
                     <div className="checkout__summary-row"><span>Pay on delivery</span><span>₹{(orderSummary?.codDue ?? partialSplit?.codDue ?? 0).toLocaleString('en-IN')}</span></div>
                   </>
                 )}
-                {effectiveShippingFee > 0 ? (
+                {(orderSummary?.shippingFee !== undefined ? orderSummary.shippingFee : effectiveShippingFee) > 0 ? (
                   <div className="checkout__summary-row">
-                    <span>{shippingConfig.shippingLabel || 'Shipment Fee'}</span>
-                    <span>₹{effectiveShippingFee}</span>
+                    <span>{orderSummary?.shippingLabel || shippingConfig.shippingLabel || 'Shipment Fee'}</span>
+                    <span>₹{orderSummary?.shippingFee !== undefined ? orderSummary.shippingFee : effectiveShippingFee}</span>
                   </div>
                 ) : (
                   <div className="checkout__summary-row checkout__summary-row--green"><span>Shipping</span><span>FREE</span></div>
@@ -2395,7 +2432,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Free Shipping Banner */}
-              {effectiveShippingFee === 0 && (
+              {(orderSummary?.shippingFee !== undefined ? orderSummary.shippingFee : effectiveShippingFee) === 0 && (
                 <div className="checkout__free-shipping-banner">
                   <Truck size={16} className="checkout__free-shipping-icon" />
                   <span>Yay! You get FREE shipping 🥳</span>
@@ -2405,7 +2442,23 @@ export default function CheckoutPage() {
               <div className="checkout__summary-divider" />
               <div className="checkout__summary-row checkout__summary-row--total">
                 <span>Total</span>
-                <span className="checkout__summary-total-price">₹{Math.max(0, (orderSummary?.subtotal ?? displaySubtotal) + ((orderSummary?.paymentMethod === 'COD' || paymentMethod === 'COD' || orderSummary?.paymentMethod === 'PARTIAL' || paymentMethod === 'PARTIAL') ? codFee : 0) + effectiveShippingFee - (orderSummary?.discountAmount ?? displayDiscountTotal)).toLocaleString('en-IN')}</span>
+                <span className="checkout__summary-total-price">
+                  ₹{(orderSummary?.total !== undefined
+                    ? orderSummary.total
+                    : Math.max(
+                        0,
+                        (orderSummary?.subtotal ?? displaySubtotal) +
+                          ((orderSummary?.paymentMethod === 'COD' ||
+                          paymentMethod === 'COD' ||
+                          orderSummary?.paymentMethod === 'PARTIAL' ||
+                          paymentMethod === 'PARTIAL')
+                            ? codFee
+                            : 0) +
+                          effectiveShippingFee -
+                          (orderSummary?.discountAmount ?? displayDiscountTotal)
+                      )
+                  ).toLocaleString('en-IN')}
+                </span>
               </div>
 
               <div className="checkout__summary-badges">
