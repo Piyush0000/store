@@ -377,7 +377,12 @@ export default function CheckoutPage() {
       } else {
         addToCart(giftItem, 1);
       }
-      setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
+      const couponWithMeta = {
+        ...result.coupon,
+        freeShipping: result.freeShipping,
+        applicablePaymentMethods: result.applicablePaymentMethods || result.coupon?.applicablePaymentMethods || 'both',
+      };
+      setAppliedCoupon(couponWithMeta);
       setDiscountAmount(result.discountAmount || result.discount || 0);
       setOffersOpen(false);
       setCouponError(null);
@@ -386,10 +391,15 @@ export default function CheckoutPage() {
 
     // Case B: Merchant gave multiple specific products or any product -> prompt customer to choose!
     if (result.requiresAction === 'SELECT_ITEM' && result.availableGiftProducts) {
+      const couponWithMeta = {
+        ...result.coupon,
+        freeShipping: result.freeShipping,
+        applicablePaymentMethods: result.applicablePaymentMethods || result.coupon?.applicablePaymentMethods || 'both',
+      };
       setGiftPickerData({
         isOpen: true,
         products: result.availableGiftProducts,
-        coupon: result.coupon,
+        coupon: couponWithMeta,
         getsDiscountType: result.getsDiscountType,
         getsDiscountValue: result.getsDiscountValue,
         getsQty: result.getsQty || 1,
@@ -401,7 +411,12 @@ export default function CheckoutPage() {
 
     // Case C: Standard coupon or customer already has the qualifying items
     if (result.coupon) {
-      setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
+      const couponWithMeta = {
+        ...result.coupon,
+        freeShipping: result.freeShipping,
+        applicablePaymentMethods: result.applicablePaymentMethods || result.coupon?.applicablePaymentMethods || 'both',
+      };
+      setAppliedCoupon(couponWithMeta);
       setDiscountAmount(result.discountAmount || result.discount || 0);
       setOffersOpen(false);
       setCouponError(null);
@@ -452,14 +467,15 @@ export default function CheckoutPage() {
     setIsApplyingCoupon(true);
     setCouponError(null);
     try {
-      const result = await validateCouponAction(couponInput, subtotal, cartItems);
+      const pm = paymentUi === 'cod' || paymentMethod === 'COD' ? 'COD' : (paymentUi === 'online' ? 'ONLINE' : (paymentUi === 'partial' || paymentMethod === 'PARTIAL' ? 'PARTIAL' : undefined));
+      const result = await validateCouponAction(couponInput, subtotal, cartItems, pm);
       handleApplyCouponResult(result);
     } catch (err: any) {
       setCouponError("Failed to validate coupon code. Please try again.");
     } finally {
       setIsApplyingCoupon(false);
     }
-  }, [couponInput, subtotal, cartItems, handleApplyCouponResult]);
+  }, [couponInput, subtotal, cartItems, paymentUi, paymentMethod, handleApplyCouponResult]);
 
   const handleRemoveCoupon = useCallback(() => {
     if (appliedGiftItem) {
@@ -497,14 +513,15 @@ export default function CheckoutPage() {
     setIsApplyingCoupon(true);
     setCouponError(null);
     try {
-      const result = await validateCouponAction(code, subtotal, cartItems);
+      const pm = paymentUi === 'cod' || paymentMethod === 'COD' ? 'COD' : (paymentUi === 'online' ? 'ONLINE' : (paymentUi === 'partial' || paymentMethod === 'PARTIAL' ? 'PARTIAL' : undefined));
+      const result = await validateCouponAction(code, subtotal, cartItems, pm);
       handleApplyCouponResult(result);
     } catch {
       setCouponError("Failed to validate coupon code. Please try again.");
     } finally {
       setIsApplyingCoupon(false);
     }
-  }, [subtotal, cartItems, handleApplyCouponResult]);
+  }, [subtotal, cartItems, paymentUi, paymentMethod, handleApplyCouponResult]);
 
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
@@ -647,7 +664,11 @@ export default function CheckoutPage() {
       validateCouponAction(urlCoupon, subtotalRef.current, cartItemsRef.current)
         .then((result) => {
           if (result.success && result.coupon) {
-            setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
+            setAppliedCoupon({
+              ...result.coupon,
+              freeShipping: result.freeShipping,
+              applicablePaymentMethods: result.applicablePaymentMethods || result.coupon?.applicablePaymentMethods || 'both',
+            });
             setDiscountAmount(result.discount || 0);
           } else {
             setCouponError(result.message || "Invalid coupon code");
@@ -1616,6 +1637,20 @@ export default function CheckoutPage() {
     setPaymentUi(ui);
     setError(null);
     setPendingOrderId(null);
+
+    if (appliedCoupon) {
+      const allowed = appliedCoupon.applicablePaymentMethods || "both";
+      if (allowed === "online" && ui === "cod") {
+        const removedCode = appliedCoupon.code;
+        handleRemoveCoupon();
+        setCouponError(`Coupon "${removedCode}" was removed because it applies only to online payments.`);
+      } else if (allowed === "cod" && ui !== "cod") {
+        const removedCode = appliedCoupon.code;
+        handleRemoveCoupon();
+        setCouponError(`Coupon "${removedCode}" was removed because it applies only to Cash on Delivery (COD) orders.`);
+      }
+    }
+
     if (ui === "cod") {
       setPaymentMethod("COD");
       return;
@@ -2237,7 +2272,15 @@ export default function CheckoutPage() {
                         return (
                           <div key={offer.id || offer.code} className="checkout__offer-card">
                             <div>
-                              <strong>{title}</strong>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <strong>{title}</strong>
+                                {offer.applicablePaymentMethods === 'online' && (
+                                  <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>Online only</span>
+                                )}
+                                {offer.applicablePaymentMethods === 'cod' && (
+                                  <span style={{ fontSize: '10px', background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>COD only</span>
+                                )}
+                              </div>
                               <span>{offer.code ? `Code ${offer.code}` : "Merchant offer"}</span>
                             </div>
                             {offer.code && (

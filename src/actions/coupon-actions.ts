@@ -3,7 +3,7 @@
 import { getServerSubdomain } from '@/lib/server-utils';
 import { fetchStorefront } from '@/lib/api';
 
-export async function validateCouponAction(code: string, orderTotal: number, cartItems: any[] = []) {
+export async function validateCouponAction(code: string, orderTotal: number, cartItems: any[] = [], paymentMethod?: string) {
   try {
     const subdomain = await getServerSubdomain();
     const storefront = await fetchStorefront(subdomain);
@@ -35,6 +35,7 @@ export async function validateCouponAction(code: string, orderTotal: number, car
         code,
         storeId,
         orderTotal,
+        paymentMethod,
         cartItems: (cartItems || []).map((i: any) => ({
           productId: i.productId || i.id,
           unitPrice: Number(i.unitPrice ?? i.price ?? 0),
@@ -55,6 +56,7 @@ export async function validateCouponAction(code: string, orderTotal: number, car
     return {
       success: true,
       coupon: data.coupon,
+      applicablePaymentMethods: data.coupon?.applicablePaymentMethods || data.applicablePaymentMethods || 'both',
       discount: data.discount ?? data.discountAmount ?? 0,
       discountAmount: data.discountAmount ?? data.discount ?? 0,
       freeShipping: Boolean(data.freeShipping || data.coupon?.type === 'FREE_SHIPPING'),
