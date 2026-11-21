@@ -25,6 +25,7 @@ function publicStorefrontApiBase(): string {
 }
 
 const domainCache = new Map<string, { subdomain: string; storeId: string; expiry: number }>();
+const subdomainCache = new Map<string, { subdomain: string; id: string; expiry: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export async function proxy(request: Request) {
@@ -82,6 +83,15 @@ export async function proxy(request: Request) {
 
   try {
     let resolvedStore = resolvedFromDomain;
+    const now = Date.now();
+
+    if (!resolvedStore && subdomain && !queryStoreId) {
+      const cached = subdomainCache.get(subdomain);
+      if (cached && cached.expiry > now) {
+        resolvedStore = cached;
+      }
+    }
+
     if (!resolvedStore || queryStoreId) {
       const apiBase = publicStorefrontApiBase();
       const apiUrl = queryStoreId || (!subdomain && storeId)
@@ -93,6 +103,9 @@ export async function proxy(request: Request) {
         return NextResponse.redirect(new URL(`/store-error?reason=${encodeURIComponent(data.message || 'Store not found')}`, request.url));
       }
       resolvedStore = data.store || data.data;
+      if (subdomain && resolvedStore?.id) {
+        subdomainCache.set(subdomain, { subdomain, id: resolvedStore.id, expiry: now + CACHE_TTL_MS });
+      }
     }
 
     if (resolvedStore?.subdomain) subdomain = resolvedStore.subdomain;

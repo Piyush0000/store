@@ -263,6 +263,7 @@ function CartContent() {
 
             <Link
               href={appliedCoupon ? `/checkout?coupon=${encodeURIComponent(appliedCoupon.code)}` : '/checkout'}
+              prefetch
               className="cart__checkout-btn"
             >
               PROCEED TO CHECKOUT
