@@ -1105,7 +1105,8 @@ export default function CheckoutPage() {
       const { orderItems, totalBundleDiscount, totalRegularSubtotal } =
         buildOrderItems();
 
-      const overallDiscount = discountAmount + totalBundleDiscount;
+      // COD orders only receive discounts from explicit applied coupons or bundles, never online payment discounts
+      const overallDiscount = (appliedCoupon ? (discountAmount || 0) : 0) + totalBundleDiscount;
 
       if (process.env.NODE_ENV === "development") {
         console.log("[Checkout] Creating COD order:", {
@@ -1614,6 +1615,7 @@ export default function CheckoutPage() {
   const selectPaymentUi = (ui: Exclude<PaymentUi, null>) => {
     setPaymentUi(ui);
     setError(null);
+    setPendingOrderId(null);
     if (ui === "cod") {
       setPaymentMethod("COD");
       return;

@@ -479,9 +479,17 @@ export async function createCodOrder(data: {
         : Number.isFinite(configuredShippingFee) && configuredShippingFee > 0
           ? configuredShippingFee
           : 0;
-  const expectedTotal = itemSubtotal + COD_FEE + shippingFee - (data.discountAmount || 0);
-  if (Math.abs(data.totalAmount - expectedTotal) > 1) {
-    console.warn('[COD] Total mismatch:', { passed: data.totalAmount, calculated: expectedTotal, itemSubtotal, shippingFee });
+  // For COD orders, discount is ONLY valid if an explicit coupon was applied or bundle discount exists.
+  // Online payment discounts must never be applied to COD orders.
+  const hasBundleItems = data.items.some((i: any) => i.variant?.startsWith('Bundle:') || (i as any).isBundle);
+  const safeDiscount = data.couponCode || hasBundleItems ? Math.max(0, Number(data.discountAmount) || 0) : 0;
+  const calculatedCodTotal = Math.max(0, itemSubtotal + COD_FEE + shippingFee - safeDiscount);
+  const finalCodTotal = data.couponCode || hasBundleItems
+    ? (Number.isFinite(data.totalAmount) && data.totalAmount > 0 ? data.totalAmount : calculatedCodTotal)
+    : calculatedCodTotal;
+
+  if (Math.abs(data.totalAmount - finalCodTotal) > 1) {
+    console.warn('[COD] Corrected COD total without online discount:', { passed: data.totalAmount, enforced: finalCodTotal, itemSubtotal, shippingFee, safeDiscount });
   }
 
   const customerName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Customer';
@@ -521,7 +529,7 @@ export async function createCodOrder(data: {
       phone: data.phone || '',
     },
     subtotal: itemSubtotal,
-    total: data.totalAmount,
+    total: finalCodTotal,
     shipping: shippingFee,
     tax: 0,
     source: 'STOREFRONT',
@@ -529,7 +537,7 @@ export async function createCodOrder(data: {
     paymentStatus: 'PENDING',
     status: 'PENDING',
     couponCode: data.couponCode || null,
-    discountAmount: data.discountAmount || null,
+    discountAmount: safeDiscount > 0 ? safeDiscount : null,
     items: data.items.map((item) => ({
       productId: item.productId || item.name,
       name: item.name,
@@ -599,7 +607,7 @@ export async function createCodOrder(data: {
       variantId: item.variantId,
       variant: item.variant,
     })),
-    totalAmount: data.totalAmount,
+    totalAmount: finalCodTotal,
     subtotal: itemSubtotal,
     tax: 0,
     shipping: shippingFee,
@@ -610,7 +618,7 @@ export async function createCodOrder(data: {
     phone: data.phone,
     shippingAddress: data.shippingAddress,
     couponCode: data.couponCode,
-    discountAmount: data.discountAmount,
+    discountAmount: safeDiscount > 0 ? safeDiscount : undefined,
   });
 
   if (!orderResult.success) {
