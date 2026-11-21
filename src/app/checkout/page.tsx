@@ -224,6 +224,10 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [appliedGiftItem, setAppliedGiftItem] = useState<any | null>(null);
+  const appliedCouponRef = useRef<any>(null);
+  appliedCouponRef.current = appliedCoupon;
+  const appliedGiftItemRef = useRef<any>(null);
+  appliedGiftItemRef.current = appliedGiftItem;
   const [giftPickerData, setGiftPickerData] = useState<{
     isOpen: boolean;
     products: any[];
@@ -377,7 +381,12 @@ export default function CheckoutPage() {
       } else {
         addToCart(giftItem, 1);
       }
-      setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
+      const couponWithMeta = {
+        ...result.coupon,
+        freeShipping: result.freeShipping,
+        applicablePaymentMethods: result.applicablePaymentMethods || result.coupon?.applicablePaymentMethods || 'both',
+      };
+      setAppliedCoupon(couponWithMeta);
       setDiscountAmount(result.discountAmount || result.discount || 0);
       setOffersOpen(false);
       setCouponError(null);
@@ -386,10 +395,15 @@ export default function CheckoutPage() {
 
     // Case B: Merchant gave multiple specific products or any product -> prompt customer to choose!
     if (result.requiresAction === 'SELECT_ITEM' && result.availableGiftProducts) {
+      const couponWithMeta = {
+        ...result.coupon,
+        freeShipping: result.freeShipping,
+        applicablePaymentMethods: result.applicablePaymentMethods || result.coupon?.applicablePaymentMethods || 'both',
+      };
       setGiftPickerData({
         isOpen: true,
         products: result.availableGiftProducts,
-        coupon: result.coupon,
+        coupon: couponWithMeta,
         getsDiscountType: result.getsDiscountType,
         getsDiscountValue: result.getsDiscountValue,
         getsQty: result.getsQty || 1,
@@ -401,7 +415,12 @@ export default function CheckoutPage() {
 
     // Case C: Standard coupon or customer already has the qualifying items
     if (result.coupon) {
-      setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
+      const couponWithMeta = {
+        ...result.coupon,
+        freeShipping: result.freeShipping,
+        applicablePaymentMethods: result.applicablePaymentMethods || result.coupon?.applicablePaymentMethods || 'both',
+      };
+      setAppliedCoupon(couponWithMeta);
       setDiscountAmount(result.discountAmount || result.discount || 0);
       setOffersOpen(false);
       setCouponError(null);
@@ -452,29 +471,39 @@ export default function CheckoutPage() {
     setIsApplyingCoupon(true);
     setCouponError(null);
     try {
-      const result = await validateCouponAction(couponInput, subtotal, cartItems);
+      const pm = paymentUi === 'cod' || paymentMethod === 'COD' ? 'COD' : (paymentUi === 'online' ? 'ONLINE' : (paymentUi === 'partial' || paymentMethod === 'PARTIAL' ? 'PARTIAL' : undefined));
+      const result = await validateCouponAction(couponInput, subtotal, cartItems, pm);
       handleApplyCouponResult(result);
     } catch (err: any) {
       setCouponError("Failed to validate coupon code. Please try again.");
     } finally {
       setIsApplyingCoupon(false);
     }
-  }, [couponInput, subtotal, cartItems, handleApplyCouponResult]);
+  }, [couponInput, subtotal, cartItems, paymentUi, paymentMethod, handleApplyCouponResult]);
 
   const handleRemoveCoupon = useCallback(() => {
-    if (appliedGiftItem) {
+    const gift = appliedGiftItemRef.current || appliedGiftItem;
+    if (gift) {
       if (buyNowItems) {
-        setBuyNowItems((prev) => (prev ? prev.filter((i) => i.id !== appliedGiftItem.id) : null));
+        setBuyNowItems((prev) => (prev ? prev.filter((i) => i.id !== gift.id && !i.isFreeGift) : null));
       } else {
-        removeFromCart(appliedGiftItem.id);
+        removeFromCart(gift.id);
       }
       setAppliedGiftItem(null);
     }
+    if (buyNowItems) {
+      setBuyNowItems((prev) => (prev ? prev.filter((i) => !i.isFreeGift && (!gift || i.id !== gift.id)) : null));
+    }
+    cartItems.forEach((item: any) => {
+      if (item.isFreeGift || (gift && item.id === gift.id)) {
+        removeFromCart(item.id);
+      }
+    });
     setAppliedCoupon(null);
     setDiscountAmount(0);
     setCouponInput("");
     setCouponError(null);
-  }, [appliedGiftItem, buyNowItems, removeFromCart]);
+  }, [appliedGiftItem, buyNowItems, removeFromCart, cartItems]);
 
   useEffect(() => {
     if (step !== "payment") return;
@@ -497,14 +526,15 @@ export default function CheckoutPage() {
     setIsApplyingCoupon(true);
     setCouponError(null);
     try {
-      const result = await validateCouponAction(code, subtotal, cartItems);
+      const pm = paymentUi === 'cod' || paymentMethod === 'COD' ? 'COD' : (paymentUi === 'online' ? 'ONLINE' : (paymentUi === 'partial' || paymentMethod === 'PARTIAL' ? 'PARTIAL' : undefined));
+      const result = await validateCouponAction(code, subtotal, cartItems, pm);
       handleApplyCouponResult(result);
     } catch {
       setCouponError("Failed to validate coupon code. Please try again.");
     } finally {
       setIsApplyingCoupon(false);
     }
-  }, [subtotal, cartItems, handleApplyCouponResult]);
+  }, [subtotal, cartItems, paymentUi, paymentMethod, handleApplyCouponResult]);
 
   // Redirect to PayU Hosted Checkout (to avoid domain whitelisting issues)
   useEffect(() => {
@@ -647,7 +677,11 @@ export default function CheckoutPage() {
       validateCouponAction(urlCoupon, subtotalRef.current, cartItemsRef.current)
         .then((result) => {
           if (result.success && result.coupon) {
-            setAppliedCoupon({ ...result.coupon, freeShipping: result.freeShipping });
+            setAppliedCoupon({
+              ...result.coupon,
+              freeShipping: result.freeShipping,
+              applicablePaymentMethods: result.applicablePaymentMethods || result.coupon?.applicablePaymentMethods || 'both',
+            });
             setDiscountAmount(result.discount || 0);
           } else {
             setCouponError(result.message || "Invalid coupon code");
@@ -1062,6 +1096,18 @@ export default function CheckoutPage() {
     isSubmittingRef.current = true;
     setIsLoading(true);
     setError(null);
+
+    const activeCoupon = appliedCouponRef.current || appliedCoupon;
+    if (activeCoupon) {
+      const allowed = (activeCoupon.applicablePaymentMethods || 'both').toLowerCase();
+      if (allowed === 'online') {
+        handleRemoveCoupon();
+        setError(`Coupon "${activeCoupon.code}" applies only to online payments and cannot be used with Cash on Delivery.`);
+        setIsLoading(false);
+        isSubmittingRef.current = false;
+        return false;
+      }
+    }
 
     if (!codEnabled) {
       setError("Cash on Delivery is not enabled for this store.");
@@ -1561,7 +1607,16 @@ export default function CheckoutPage() {
       return;
     }
     setPendingAction(action);
-    if (action === 'COD') setPaymentMethod('COD');
+    if (action === 'COD') {
+      const activeCoupon = appliedCouponRef.current || appliedCoupon;
+      if (activeCoupon && (activeCoupon.applicablePaymentMethods || 'both').toLowerCase() === 'online') {
+        const code = activeCoupon.code;
+        handleRemoveCoupon();
+        setError(`Coupon "${code}" applies only to online payments and cannot be used with Cash on Delivery.`);
+        return;
+      }
+      setPaymentMethod('COD');
+    }
     if (action === 'PARTIAL') setPaymentMethod('PARTIAL');
     if (isSessionVerified || !orderOtpEnabled) {
       if (action === 'COD') {
@@ -1616,6 +1671,23 @@ export default function CheckoutPage() {
     setPaymentUi(ui);
     setError(null);
     setPendingOrderId(null);
+
+    const activeCoupon = appliedCouponRef.current || appliedCoupon;
+    if (activeCoupon) {
+      const allowed = (activeCoupon.applicablePaymentMethods || "both").toLowerCase();
+      if (allowed === "online" && ui === "cod") {
+        const removedCode = activeCoupon.code;
+        handleRemoveCoupon();
+        setError(`Coupon "${removedCode}" is only valid on online payments and has been removed.`);
+        setCouponError(`Coupon "${removedCode}" was removed because it applies only to online payments.`);
+      } else if (allowed === "cod" && ui !== "cod") {
+        const removedCode = activeCoupon.code;
+        handleRemoveCoupon();
+        setError(`Coupon "${removedCode}" is only valid on Cash on Delivery orders and has been removed.`);
+        setCouponError(`Coupon "${removedCode}" was removed because it applies only to Cash on Delivery (COD) orders.`);
+      }
+    }
+
     if (ui === "cod") {
       setPaymentMethod("COD");
       return;
@@ -2237,7 +2309,15 @@ export default function CheckoutPage() {
                         return (
                           <div key={offer.id || offer.code} className="checkout__offer-card">
                             <div>
-                              <strong>{title}</strong>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <strong>{title}</strong>
+                                {offer.applicablePaymentMethods === 'online' && (
+                                  <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>Online only</span>
+                                )}
+                                {offer.applicablePaymentMethods === 'cod' && (
+                                  <span style={{ fontSize: '10px', background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>COD only</span>
+                                )}
+                              </div>
                               <span>{offer.code ? `Code ${offer.code}` : "Merchant offer"}</span>
                             </div>
                             {offer.code && (

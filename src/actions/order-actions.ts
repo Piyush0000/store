@@ -494,6 +494,39 @@ export async function createCodOrder(data: {
 
   const customerName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Customer';
 
+  if (data.couponCode) {
+    try {
+      const apiBase = getApiBase();
+      let validateUrl = '';
+      if (apiBase.includes('/storefront/public')) {
+        validateUrl = apiBase.replace('/storefront/public', '/coupons/validate');
+      } else {
+        const sanitizedBase = apiBase.replace(/\/+$/, '');
+        validateUrl = sanitizedBase.endsWith('/api') ? `${sanitizedBase}/coupons/validate` : `${sanitizedBase}/api/coupons/validate`;
+      }
+      const vRes = await fetch(validateUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: data.couponCode,
+          storeId,
+          orderTotal: itemSubtotal,
+          paymentMethod: 'COD',
+          cartItems: data.items,
+        }),
+      });
+      const vData = await vRes.json();
+      if (!vRes.ok || !vData.valid) {
+        return {
+          success: false,
+          message: vData.message || `Coupon "${data.couponCode}" is not eligible for Cash on Delivery.`,
+        };
+      }
+    } catch (err: any) {
+      console.warn('[COD] Coupon pre-validation failed:', err.message);
+    }
+  }
+
   const localOrderNumber = generateOrderNumber();
 
   // Try external sync first (for stock validation)
