@@ -3,7 +3,7 @@ function publicStorefrontApiBase(): string {
     return (
       process.env.INTERNAL_API_BASE ||
       process.env.NEXT_PUBLIC_API_BASE ||
-      'http://127.0.0.1:5000/api/storefront/public'
+      'http://127.0.0.1:5001/api/storefront/public'
     ).replace(/\/+$/, '');
   }
   return (
