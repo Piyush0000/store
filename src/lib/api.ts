@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import { getApiBase, getApiUrl, withStoreId } from './config';
 import { resolveMediaTree } from './media';
 import type { CategoryImagesConfig } from './category-card-style';
@@ -367,23 +366,17 @@ const MOCK_STOREFRONT: StorefrontData = {
 };
 
 
-export const fetchStorefront = cache(async (
+export async function fetchStorefront(
   subdomain?: string,
   storeId?: string,
   options: { includeProducts?: boolean; includeLegal?: boolean } = {},
-): Promise<StorefrontData> => {
+): Promise<StorefrontData> {
   try {
     const apiUrl = new URL(withStoreId(getApiUrl(subdomain), storeId));
     apiUrl.searchParams.set('reviewMode', 'summary');
     if (options.includeProducts === false) apiUrl.searchParams.set('includeProducts', 'false');
     if (options.includeLegal === false) apiUrl.searchParams.set('includeLegal', 'false');
-    
-    const isDev = process.env.NODE_ENV !== 'production';
-    const fetchOptions: RequestInit = isDev
-      ? { cache: 'no-store' }
-      : { next: { revalidate: 60, tags: [`store:${subdomain || 'preview'}`] } };
-
-    const res = await fetch(apiUrl.toString(), fetchOptions);
+    const res = await fetch(apiUrl.toString(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`Storefront request failed (${res.status}) for ${apiUrl}`);
     const data = await res.json();
 
@@ -393,7 +386,7 @@ export const fetchStorefront = cache(async (
     console.error('[storefront-api] Error fetching storefront:', err);
     throw err;
   }
-});
+}
 
 export interface CataloguePageResult {
   products: Product[];

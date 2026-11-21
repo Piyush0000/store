@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import './BannersSection.css';
 
 interface Banner {
@@ -40,19 +39,12 @@ export default function BannersSection({ banners, title }: BannersSectionProps) 
             const cardContent = (
               <div className="banners-section__card">
                 <div className="banners-section__image-wrapper">
-                  {banner.image && (
-                    <Image
-                      src={banner.image}
-                      alt={banner.title || 'Promo Banner'}
-                      className="banners-section__image"
-                      width={800}
-                      height={500}
-                      quality={75}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      loading="lazy"
-                      style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
-                    />
-                  )}
+                  <img
+                    src={banner.image}
+                    alt={banner.title || 'Promo Banner'}
+                    className="banners-section__image"
+                    loading="lazy"
+                  />
                   {hasOverlayContent && (
                     <div className="banners-section__overlay">
                       <div className="banners-section__content">

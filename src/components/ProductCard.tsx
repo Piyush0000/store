@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
 import { Heart, Star, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
@@ -31,47 +29,16 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, priority = false }: ProductCardProps) {
-  // Above-the-fold cards start immediately in view; below-the-fold cards load on scroll
-  const [inView, setInView] = useState(() => priority);
-  const [imgLoaded, setImgLoaded] = useState(() => priority);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loadedSlideIndexes, setLoadedSlideIndexes] = useState<Set<number>>(() => new Set([0]));
-  const cardRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const { addToCart, openVariantPicker } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const liked = isInWishlist(product.id);
-
-  // Viewport intersection observer: detects when card scrolls into view
-  useEffect(() => {
-    if (inView) return;
-    const el = cardRef.current;
-    if (!el) return;
-
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
-      setInView(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      {
-        rootMargin: '60px 0px 20px 0px',
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [inView]);
 
   const images = product.images?.length > 0 
     ? product.images 
@@ -84,26 +51,43 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     ? Math.round(((originalPrice - numericPrice) / originalPrice) * 100)
     : 0;
 
-  // Once in view, check cached decode or trigger safety reveal
+  // Handle cached image or decoding check on mount and image index switch
   useEffect(() => {
-    if (!inView) return;
-
     const img = imgRef.current;
-    if (img && img.complete && img.naturalWidth > 0) {
+    if (!img) return;
+
+    let isMounted = true;
+
+    if (img.complete && img.naturalWidth > 0) {
       setImgLoaded(true);
-      return;
+    } else if (typeof img.decode === 'function') {
+      img.decode()
+        .then(() => {
+          if (isMounted) setImgLoaded(true);
+        })
+        .catch(() => {
+          // Fallback to onLoad event if decode fails
+        });
     }
 
-    // Safety timeout ensures no card ever stays stuck in skeleton state
-    const timer = setTimeout(() => {
+    return () => {
+      isMounted = false;
+    };
+  }, [currentImageIndex, images]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.currentTarget;
+    if (typeof target.decode === 'function') {
+      target.decode()
+        .then(() => {
+          setImgLoaded(true);
+        })
+        .catch(() => {
+          setImgLoaded(true);
+        });
+    } else {
       setImgLoaded(true);
-    }, 450);
-
-    return () => clearTimeout(timer);
-  }, [inView, currentImageIndex]);
-
-  const handleImageLoad = () => {
-    setImgLoaded(true);
+    }
   };
 
   const handleImageError = () => {
@@ -178,10 +162,9 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   };
 
   return (
-    <div ref={cardRef} className="product-card scroll-fade-up">
-      <Link 
+    <div className="product-card">
+      <a 
         href={`/product/${product.slug || product.id}`} 
-        prefetch
         className="product-card__image-wrap"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -197,41 +180,35 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             const isFirst = index === 0;
             const isEager = priority && isFirst;
             const src = imgError && isFirst ? 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' : img;
-            const shouldLoad = isFirst ? inView : loadedSlideIndexes.has(index);
+            const shouldLoad = loadedSlideIndexes.has(index);
             if (isVideoUrl(src)) {
               return (
-                <div key={index} style={{ position: 'relative', flex: '0 0 100%', width: '100%', height: '100%' }}>
-                  <video
-                    src={shouldLoad ? src : undefined}
-                    className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
-                    muted
-                    playsInline
-                    loop
-                    preload={isFirst ? "metadata" : "none"}
-                    onLoadedMetadata={isFirst ? () => setImgLoaded(true) : undefined}
-                    onError={isFirst ? handleImageError : undefined}
-                  />
-                </div>
+                <video
+                  key={index}
+                  src={shouldLoad ? src : undefined}
+                  className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
+                  muted
+                  playsInline
+                  loop
+                  preload={isFirst ? "metadata" : "none"}
+                  onLoadedMetadata={isFirst ? () => setImgLoaded(true) : undefined}
+                  onError={isFirst ? handleImageError : undefined}
+                />
               );
             }
             return (
-              <div key={index} style={{ position: 'relative', flex: '0 0 100%', width: '100%', height: '100%' }}>
-                {shouldLoad && (
-                  <Image
-                    ref={isFirst ? imgRef : undefined}
-                    src={src}
-                    alt={`${product.name} - Image ${index + 1}`}
-                    fill
-                    quality={75}
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
-                    onLoad={isFirst ? handleImageLoad : undefined}
-                    onError={isFirst ? handleImageError : undefined}
-                    priority={isEager}
-                    loading={isEager ? undefined : "lazy"}
-                  />
-                )}
-              </div>
+              <img
+                key={index}
+                ref={isFirst ? imgRef : undefined}
+                src={shouldLoad ? src : undefined}
+                alt={`${product.name} - Image ${index + 1}`}
+                className={`product-card__slider-image ${imgLoaded ? 'loaded' : ''}`}
+                onLoad={isFirst ? handleImageLoad : undefined}
+                onError={isFirst ? handleImageError : undefined}
+                loading={isEager ? "eager" : "lazy"}
+                decoding="async"
+                {...(isEager ? { fetchPriority: "high" as const } : {})}
+              />
             );
           })}
         </div>
@@ -258,7 +235,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             {outOfStock ? "Out of stock" : "Quick Add"}
           </button>
         </div>
-      </Link>
+      </a>
 
       <button
         className={`product-card__heart ${liked ? 'product-card__heart--active' : ''}`}
@@ -269,9 +246,9 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       </button>
 
       <div className="product-card__info">
-        <Link href={`/product/${product.slug || product.id}`} prefetch className="product-card__name">
+        <a href={`/product/${product.slug || product.id}`} className="product-card__name">
           {product.name}
-        </Link>
+        </a>
 
         {rating > 0 && (
           <div className="product-card__rating">
