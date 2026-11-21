@@ -224,6 +224,10 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [appliedGiftItem, setAppliedGiftItem] = useState<any | null>(null);
+  const appliedCouponRef = useRef<any>(null);
+  appliedCouponRef.current = appliedCoupon;
+  const appliedGiftItemRef = useRef<any>(null);
+  appliedGiftItemRef.current = appliedGiftItem;
   const [giftPickerData, setGiftPickerData] = useState<{
     isOpen: boolean;
     products: any[];
@@ -478,19 +482,28 @@ export default function CheckoutPage() {
   }, [couponInput, subtotal, cartItems, paymentUi, paymentMethod, handleApplyCouponResult]);
 
   const handleRemoveCoupon = useCallback(() => {
-    if (appliedGiftItem) {
+    const gift = appliedGiftItemRef.current || appliedGiftItem;
+    if (gift) {
       if (buyNowItems) {
-        setBuyNowItems((prev) => (prev ? prev.filter((i) => i.id !== appliedGiftItem.id) : null));
+        setBuyNowItems((prev) => (prev ? prev.filter((i) => i.id !== gift.id && !i.isFreeGift) : null));
       } else {
-        removeFromCart(appliedGiftItem.id);
+        removeFromCart(gift.id);
       }
       setAppliedGiftItem(null);
     }
+    if (buyNowItems) {
+      setBuyNowItems((prev) => (prev ? prev.filter((i) => !i.isFreeGift && (!gift || i.id !== gift.id)) : null));
+    }
+    cartItems.forEach((item: any) => {
+      if (item.isFreeGift || (gift && item.id === gift.id)) {
+        removeFromCart(item.id);
+      }
+    });
     setAppliedCoupon(null);
     setDiscountAmount(0);
     setCouponInput("");
     setCouponError(null);
-  }, [appliedGiftItem, buyNowItems, removeFromCart]);
+  }, [appliedGiftItem, buyNowItems, removeFromCart, cartItems]);
 
   useEffect(() => {
     if (step !== "payment") return;
@@ -1084,6 +1097,18 @@ export default function CheckoutPage() {
     setIsLoading(true);
     setError(null);
 
+    const activeCoupon = appliedCouponRef.current || appliedCoupon;
+    if (activeCoupon) {
+      const allowed = (activeCoupon.applicablePaymentMethods || 'both').toLowerCase();
+      if (allowed === 'online') {
+        handleRemoveCoupon();
+        setError(`Coupon "${activeCoupon.code}" applies only to online payments and cannot be used with Cash on Delivery.`);
+        setIsLoading(false);
+        isSubmittingRef.current = false;
+        return false;
+      }
+    }
+
     if (!codEnabled) {
       setError("Cash on Delivery is not enabled for this store.");
       setIsLoading(false);
@@ -1582,7 +1607,16 @@ export default function CheckoutPage() {
       return;
     }
     setPendingAction(action);
-    if (action === 'COD') setPaymentMethod('COD');
+    if (action === 'COD') {
+      const activeCoupon = appliedCouponRef.current || appliedCoupon;
+      if (activeCoupon && (activeCoupon.applicablePaymentMethods || 'both').toLowerCase() === 'online') {
+        const code = activeCoupon.code;
+        handleRemoveCoupon();
+        setError(`Coupon "${code}" applies only to online payments and cannot be used with Cash on Delivery.`);
+        return;
+      }
+      setPaymentMethod('COD');
+    }
     if (action === 'PARTIAL') setPaymentMethod('PARTIAL');
     if (isSessionVerified || !orderOtpEnabled) {
       if (action === 'COD') {
@@ -1638,15 +1672,18 @@ export default function CheckoutPage() {
     setError(null);
     setPendingOrderId(null);
 
-    if (appliedCoupon) {
-      const allowed = appliedCoupon.applicablePaymentMethods || "both";
+    const activeCoupon = appliedCouponRef.current || appliedCoupon;
+    if (activeCoupon) {
+      const allowed = (activeCoupon.applicablePaymentMethods || "both").toLowerCase();
       if (allowed === "online" && ui === "cod") {
-        const removedCode = appliedCoupon.code;
+        const removedCode = activeCoupon.code;
         handleRemoveCoupon();
+        setError(`Coupon "${removedCode}" is only valid on online payments and has been removed.`);
         setCouponError(`Coupon "${removedCode}" was removed because it applies only to online payments.`);
       } else if (allowed === "cod" && ui !== "cod") {
-        const removedCode = appliedCoupon.code;
+        const removedCode = activeCoupon.code;
         handleRemoveCoupon();
+        setError(`Coupon "${removedCode}" is only valid on Cash on Delivery orders and has been removed.`);
         setCouponError(`Coupon "${removedCode}" was removed because it applies only to Cash on Delivery (COD) orders.`);
       }
     }
