@@ -46,7 +46,7 @@ export default function ProductsSection({
     '--products-mobile-columns': Math.min(2, Math.max(1, Number(mobileColumns) || 2)),
   } as CSSProperties;
 
-  const cards = (items: NormalizedProduct[], wrapperClass: string) => <div className={wrapperClass}>{items.map((product) => <div className="products-section__card-slot" key={product.id}><ProductCard product={product} priority={false} /></div>)}</div>;
+  const cards = (items: NormalizedProduct[], wrapperClass: string) => <div className={wrapperClass}>{items.map((product, idx) => <div className="products-section__card-slot" key={product.id}><ProductCard product={product} priority={idx < 4} /></div>)}</div>;
 
   return (
     <section className={`products-section products-section--${layout} scroll-fade-up ${className}`} style={style}>
@@ -55,9 +55,9 @@ export default function ProductsSection({
 
         {layout === 'editorial' && <div className="products-section__editorial"><aside className="products-section__story" style={editorialImage || products[0]?.image ? { backgroundImage: `linear-gradient(180deg, transparent 28%, rgba(14,28,18,.78)), url("${editorialImage || products[0]?.image}")` } : undefined}><div className="products-section__story-copy"><span>{editorialEyebrow}</span><h3>{editorialTitle}</h3><a href={safeLink(editorialCtaUrl)}>{editorialCtaLabel} <b aria-hidden="true">→</b></a></div></aside>{cards(visibleProducts.slice(0, 4), 'products-section__editorial-products')}</div>}
 
-        {layout === 'spotlight' && <div className="products-section__spotlight">{visibleProducts.map((product, idx) => <div key={product.id} className={`products-section__card-slot ${idx === 0 ? 'products-section__card-slot--hero' : ''}`}><ProductCard product={product} priority={false} /></div>)}</div>}
+        {layout === 'spotlight' && <div className="products-section__spotlight">{visibleProducts.map((product, idx) => <div key={product.id} className={`products-section__card-slot ${idx === 0 ? 'products-section__card-slot--hero' : ''}`}><ProductCard product={product} priority={idx < 4} /></div>)}</div>}
 
-        {layout === 'shelf' && <div className="products-section__shelf-wrapper"><button className="products-section__nav products-section__nav--prev" onClick={() => scroll('left')} aria-label="Previous products">‹</button><div className="products-section__shelf" ref={sliderRef}>{visibleProducts.map((product) => <div key={product.id} className="products-section__shelf-item"><ProductCard product={product} priority={false} /></div>)}</div><button className="products-section__nav products-section__nav--next" onClick={() => scroll('right')} aria-label="Next products">›</button></div>}
+        {layout === 'shelf' && <div className="products-section__shelf-wrapper"><button className="products-section__nav products-section__nav--prev" onClick={() => scroll('left')} aria-label="Previous products">‹</button><div className="products-section__shelf" ref={sliderRef}>{visibleProducts.map((product, idx) => <div key={product.id} className="products-section__shelf-item"><ProductCard product={product} priority={idx < 4} /></div>)}</div><button className="products-section__nav products-section__nav--next" onClick={() => scroll('right')} aria-label="Next products">›</button></div>}
 
         {layout === 'category-tabs' && <>{categories.length > 1 && <div className="products-section__tabs" role="tablist" aria-label={`${title} categories`}><button role="tab" aria-selected={activeCategory === 'All'} className={activeCategory === 'All' ? 'active' : ''} onClick={() => setSelectedCategory('All')}>All</button>{categories.map((category) => <button role="tab" aria-selected={activeCategory === category} className={activeCategory === category ? 'active' : ''} onClick={() => setSelectedCategory(category)} key={category}>{category}</button>)}</div>}{cards(visibleProducts, 'products-section__collection')}</>}
 

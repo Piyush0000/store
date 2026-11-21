@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   Star,
   Heart,
@@ -216,7 +214,6 @@ export default function ProductClient({
   );
   const recentSalesCount =
     customFields.recentSalesCount || product.recentSalesCount;
-  const router = useRouter();
   const { addToCart, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const liked = isInWishlist(product.id);
@@ -233,11 +230,6 @@ export default function ProductClient({
     seconds: 0,
   });
   const imgRef = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    router.prefetch("/checkout?buyNow=true");
-    router.prefetch("/checkout");
-  }, [router]);
 
   // Update sale countdown every second (resets every 12 hours)
   useEffect(() => {
@@ -391,19 +383,7 @@ export default function ProductClient({
         title={unavailable ? `${label} is out of stock` : label}
       >
         <span className="product-page__variant-card-image">
-          {image ? (
-            <Image
-              src={image}
-              alt={label}
-              width={48}
-              height={48}
-              quality={70}
-              sizes="48px"
-              style={{ objectFit: "cover" }}
-            />
-          ) : (
-            <span>{label.slice(0, 1)}</span>
-          )}
+          {image ? <img src={image} alt="" loading="lazy" /> : <span>{label.slice(0, 1)}</span>}
         </span>
         <span className="product-page__variant-card-name">{label}</span>
         <span className="product-page__variant-card-price">₹{price.toLocaleString("en-IN")}</span>
@@ -544,7 +524,11 @@ export default function ProductClient({
 
     sessionStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
     setIsCartOpen(false);
-    router.push("/checkout?buyNow=true");
+    
+    // Redirect with buyNow parameter
+    setTimeout(() => {
+      window.location.href = "/checkout?buyNow=true";
+    }, 100);
   };
 
   const renderStars = (rating: number) => {
@@ -627,16 +611,7 @@ export default function ProductClient({
                         aria-label={`Thumbnail ${index + 1}`}
                       />
                     ) : (
-                      <Image
-                        src={img}
-                        alt={`Thumbnail ${index + 1}`}
-                        width={80}
-                        height={80}
-                        quality={70}
-                        sizes="80px"
-                        loading="lazy"
-                        style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                      />
+                      <img src={img} alt={`Thumbnail ${index + 1}`} />
                     )}
                   </button>
                 ))}
@@ -678,24 +653,13 @@ export default function ProductClient({
                   );
                 }
                 return (
-                  <Image
+                  <img
                     ref={imgRef}
                     src={mediaUrl}
                     alt={product.name}
-                    width={800}
-                    height={800}
-                    quality={80}
-                    priority
-                    sizes="(max-width: 768px) 100vw, 50vw"
                     onLoad={() => setImageLoading(false)}
                     onError={() => setImageLoading(false)}
-                    style={{
-                      width: "100%",
-                      height: "auto",
-                      borderRadius: "4px",
-                      backgroundColor: "#fff",
-                      objectFit: "contain",
-                    }}
+                    style={{ borderRadius: "4px", backgroundColor: "#fff" }}
                   />
                 );
               })()}
