@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import "./TestimonialsSection.css";
 import {
   bentoSpan,
@@ -139,7 +140,16 @@ export default function TestimonialsSection({
         >
           {active.image && (
             <div className="testimonials-spotlight__media">
-              <img src={active.image} alt={active.name} loading="lazy" />
+              <Image
+                src={active.image}
+                alt={active.name}
+                width={500}
+                height={500}
+                quality={70}
+                sizes="(max-width: 640px) 100vw, 400px"
+                loading="lazy"
+                style={{ objectFit: "cover", width: "100%", height: "100%" }}
+              />
             </div>
           )}
           <div className="testimonials-spotlight__panel">
@@ -175,7 +185,16 @@ export default function TestimonialsSection({
                 aria-current={i === currentIndex}
               >
                 {t.image ? (
-                  <img src={t.image} alt="" loading="lazy" />
+                  <Image
+                    src={t.image}
+                    alt=""
+                    width={60}
+                    height={60}
+                    quality={70}
+                    sizes="60px"
+                    loading="lazy"
+                    style={{ objectFit: "cover" }}
+                  />
                 ) : (
                   <span>{initials(t.name)}</span>
                 )}
@@ -204,11 +223,16 @@ export default function TestimonialsSection({
                 className={`testimonials-bento__tile testimonials-bento__tile--${span} ${hasImage ? "testimonials-bento__tile--media" : ""}`}
               >
                 {hasImage && (
-                  <img
-                    src={t.image}
+                  <Image
+                    src={t.image!}
                     alt={t.name}
+                    width={400}
+                    height={400}
+                    quality={70}
+                    sizes="(max-width: 640px) 100vw, 300px"
                     className="testimonials-bento__image"
                     loading="lazy"
+                    style={{ objectFit: "cover" }}
                   />
                 )}
                 <div className="testimonials-bento__body">
@@ -280,11 +304,16 @@ export default function TestimonialsSection({
                   className={`testimonials-cinematic__card ${t.image ? "" : "testimonials-cinematic__card--plain"}`}
                 >
                   {t.image && (
-                    <img
-                      src={t.image}
+                    <Image
+                      src={t.image!}
                       alt={t.name}
+                      width={500}
+                      height={600}
+                      quality={70}
+                      sizes="(max-width: 640px) 100vw, 400px"
                       className="testimonials-cinematic__image"
                       loading="lazy"
+                      style={{ objectFit: "cover" }}
                     />
                   )}
                   <div className="testimonials-cinematic__scrim">
@@ -406,7 +435,16 @@ export default function TestimonialsSection({
             <article key={t.id} className="testimonials-summary__item">
               <div className="testimonials-summary__avatar">
                 {t.image ? (
-                  <img src={t.image} alt="" loading="lazy" />
+                  <Image
+                    src={t.image}
+                    alt=""
+                    width={60}
+                    height={60}
+                    quality={70}
+                    sizes="60px"
+                    loading="lazy"
+                    style={{ objectFit: "cover" }}
+                  />
                 ) : (
                   <span>{initials(t.name)}</span>
                 )}
@@ -495,14 +533,19 @@ export default function TestimonialsSection({
                   style={{ width: `${100 / slidesPerPage}%` }}
                 >
                   <div className="testimonials-section__card">
-                    <img
+                    <Image
                       src={
                         t.image ||
                         "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80"
                       }
                       alt={t.name}
+                      width={400}
+                      height={400}
+                      quality={70}
+                      sizes="(max-width: 640px) 100vw, 300px"
                       className="testimonials-section__image"
                       loading="lazy"
+                      style={{ objectFit: "cover" }}
                     />
                     <div className="testimonials-section__content">
                       <div className="testimonials-section__quote-icon">

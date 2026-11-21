@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Link from 'next/link';
 import { fetchStorefront, fetchPageBySlug } from '@/lib/api';
 import { getServerSubdomain } from '@/lib/server-utils';

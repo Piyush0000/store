@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   reactCompiler: true,
   allowedDevOrigins: [
     "*.evoclabs.com",
@@ -9,36 +10,19 @@ const nextConfig: NextConfig = {
     "172.16.0.2:3000",
   ],
   images: {
+    dangerouslyAllowLocalIP: true,
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [360, 480, 640, 768, 1024, 1280, 1600],
+    imageSizes: [32, 48, 64, 96, 128, 256],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-      {
-        protocol: "https",
-        hostname: "api.evoclabs.com",
+        hostname: "**",
       },
       {
         protocol: "http",
-        hostname: "localhost",
-        port: "5000",
-      },
-      {
-        protocol: "http",
-        hostname: "127.0.0.1",
-        port: "5000",
-      },
-      {
-        protocol: "https",
-        hostname: "d1311wbk6unapo.cloudfront.net",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-      {
-        protocol: "https",
-        hostname: "www.facebook.com",
+        hostname: "**",
       },
     ],
     qualities: [70, 75, 80],

@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { fetchPageBySlug } from '@/lib/api';
 import { getServerSubdomain } from '@/lib/server-utils';
 import '@/app/policy.css';
@@ -24,7 +22,10 @@ export default async function TermsOfServicePage() {
     const page = await fetchPageBySlug('terms-of-service', subdomain);
     content = page?.content || '';
     title = page?.title || title;
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.digest === "DYNAMIC_SERVER_USAGE" || String(error?.message).includes("Dynamic server usage")) {
+      throw error;
+    }
     console.error('Failed to fetch terms-of-service page:', error);
   }
 

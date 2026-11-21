@@ -282,13 +282,13 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
       {bodyFont && (
         <link
           rel="stylesheet"
-          href={`https://fonts.googleapis.com/css2?family=${bodyFont.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`}
+          href={`https://fonts.googleapis.com/css2?family=${bodyFont.replace(/\s+/g, '+')}:wght@400;600;700&display=swap`}
         />
       )}
       {headingFont && headingFont !== bodyFont && (
         <link
           rel="stylesheet"
-          href={`https://fonts.googleapis.com/css2?family=${headingFont.replace(/\s+/g, '+')}:wght@400;500;600;700&display=swap`}
+          href={`https://fonts.googleapis.com/css2?family=${headingFont.replace(/\s+/g, '+')}:wght@400;600;700&display=swap`}
         />
       )}
       <style dangerouslySetInnerHTML={{ __html: css }} />

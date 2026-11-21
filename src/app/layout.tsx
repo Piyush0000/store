@@ -73,8 +73,8 @@ export default async function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href={faviconUrl} />
-        <link rel="preconnect" href="https://images.unsplash.com" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://d1311wbk6unapo.cloudfront.net" />
         <link rel="dns-prefetch" href="https://d1311wbk6unapo.cloudfront.net" />
         {pixelId && (
