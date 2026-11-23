@@ -19,6 +19,7 @@ import {
 } from "@/lib/category-card-style";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FestivalCollection, FestivalHero } from "@/components/FestivalExperience";
+import HeroCarousel from "@/components/HeroCarousel";
 import { festivalAreaEnabled, festivalIsActive, type FestivalTheme } from "@/lib/festival-theme";
 import "./page.css";
 
@@ -144,6 +145,9 @@ function buildHeroSlides(customization: any | null) {
           slide.subtitle || slide.subheadline || slide.description || "",
         cta: slide.ctaText || slide.buttonText || "",
         link: slide.ctaLink || slide.link || "",
+        align: slide.align,
+        valign: slide.valign,
+        overlay: slide.overlay,
       }));
     }
 
@@ -216,7 +220,7 @@ function buildCategories(
       }
 
       return {
-        name: cat.toUpperCase(),
+        name: cat,
         path: `/catalogue?category=${encodeURIComponent(catKey)}`,
         image,
       };
@@ -267,7 +271,6 @@ export default function HomeClient({
   categories,
   productSections = [],
 }: HomeClientProps) {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [customizationState, setCustomizationState] = useState(customization);
   const [festivalNow, setFestivalNow] = useState(() => Date.now());
 
@@ -308,27 +311,6 @@ export default function HomeClient({
     bestSellers,
   );
   const videoUrl = buildVideoUrl(customizationState);
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide(
-      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
-    );
-  };
-
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    const timerId = setTimeout(() => {
-      intervalId = setInterval(nextSlide, 5000);
-    }, 100);
-    return () => {
-      clearTimeout(timerId);
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [heroSlides.length]);
-
   const scrollGrid = (direction: "left" | "right") => {
     const grid = document.getElementById("category-grid");
     if (grid) {
@@ -348,72 +330,7 @@ export default function HomeClient({
     )
       return null;
     return (
-      <section className="hero-carousel">
-        <div
-          className="hero-carousel__track"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {heroSlides.map((slide: any, index: number) => (
-            <div key={slide.id} className="hero-carousel__slide">
-              {slide.link ? (
-                <Link href={slide.link} className="hero-carousel__image-link">
-                  <img
-                    src={slide.image}
-                    alt={slide.title || "Hero Banner"}
-                    className="hero-carousel__image"
-                    loading={index === 0 ? "eager" : "lazy"}
-                    {...(index === 0 ? { fetchPriority: "high" } : {})}
-                    decoding="async"
-                  />
-                </Link>
-              ) : (
-                <img
-                  src={slide.image}
-                  alt={slide.title || "Hero Banner"}
-                  className="hero-carousel__image"
-                  loading={index === 0 ? "eager" : "lazy"}
-                  {...(index === 0 ? { fetchPriority: "high" } : {})}
-                  decoding="async"
-                />
-              )}
-              <div className="hero-carousel__content">
-                {slide.title && <h1>{slide.title}</h1>}
-                {slide.subtitle && <p>{slide.subtitle}</p>}
-                {slide.cta && (
-                  <Link href={slide.link} className="hero-carousel__cta">
-                    {slide.cta}
-                  </Link>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        {heroSlides.length > 1 && (
-          <>
-            <button
-              className="hero-carousel__nav hero-carousel__nav--prev"
-              onClick={prevSlide}
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              className="hero-carousel__nav hero-carousel__nav--next"
-              onClick={nextSlide}
-            >
-              <ChevronRight size={24} />
-            </button>
-            <div className="hero-carousel__dots">
-              {heroSlides.map((_: any, index: number) => (
-                <button
-                  key={index}
-                  className={`hero-carousel__dot ${index === currentSlide ? "active" : ""}`}
-                  onClick={() => setCurrentSlide(index)}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </section>
+      <HeroCarousel slides={heroSlides} settings={customizationState?.heroSection} />
     );
   };
 
@@ -468,6 +385,7 @@ export default function HomeClient({
                 />
                 <div className="shop-category__overlay">
                   <span className="shop-category__name">{cat.name}</span>
+                  <span className="shop-category__cta">Shop now →</span>
                 </div>
               </Link>
             ))}

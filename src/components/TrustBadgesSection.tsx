@@ -13,6 +13,8 @@ export type TrustBadge = {
 
 export type TrustBadgesConfig = {
   enabled?: boolean;
+  heading?: string;
+  subheading?: string;
   badges?: TrustBadge[];
   layout?: "classic" | "stacked" | "round" | "semicircle" | "matrix" | "minimal" | "horizontal";
   borderColor?: string;
@@ -78,10 +80,21 @@ export default function TrustBadgesSection({ config }: { config?: TrustBadgesCon
     </article>
   );
 
+  const heading = typeof config.heading === "string" ? config.heading.trim() : "";
+  const subheading = typeof config.subheading === "string" ? config.subheading.trim() : "";
+  const header = heading || subheading ? (
+    <header className="trust-badges-header">
+      {heading ? <h2 className="trust-badges-heading">{heading}</h2> : null}
+      {heading ? <span className="trust-badges-accent" aria-hidden="true" /> : null}
+      {subheading ? <p className="trust-badges-subheading">{subheading}</p> : null}
+    </header>
+  ) : null;
+
   const sectionClass = `trust-badges-section trust-badges--${layout}${isAnimated ? " trust-badges--scrolling" : ""}`;
   if (isAnimated) {
     return (
       <section className={sectionClass} style={sectionStyle} aria-label="Store Benefits">
+        {header}
         <div className="trust-badges-marquee-wrap">
           <div className={`trust-badges-marquee-track ${direction}`}>
             {[false, true].map((copy) => (
@@ -97,6 +110,7 @@ export default function TrustBadgesSection({ config }: { config?: TrustBadgesCon
 
   return (
     <section className={sectionClass} style={sectionStyle} aria-label="Store Benefits">
+      {header}
       <div className="trust-badges-grid">
         {visibleBadges.map((badge, index) => renderBadge(badge, index))}
       </div>

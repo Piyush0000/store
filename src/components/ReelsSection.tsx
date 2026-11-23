@@ -11,6 +11,24 @@ interface Reel {
   category: string;
   videoUrl: string;
   ctaLink?: string;
+  ctaText?: string;
+  thumbnail?: string;
+}
+
+/**
+ * The button under a video: a link to a product or page, with an optional label.
+ * Only same-site paths and http(s) links are accepted, so a pasted value can't run script.
+ */
+function reelCta(reel: Reel): { href: string; label: string } | null {
+  const link = (reel.ctaLink || '').trim();
+  const safe = /^(\/(?!\/)|https?:\/\/)/i.test(link) ? link : '';
+  if (!safe && !reel.category) return null;
+  // A product/page link wins; otherwise go to the category's own page.
+  const categoryPage = `/catalogue?category=${encodeURIComponent((reel.category || '').toLowerCase().trim())}`;
+  return {
+    href: safe || categoryPage,
+    label: (reel.ctaText || '').trim() || 'Shop now',
+  };
 }
 
 export type ReelDisplayType = 'grid' | 'carousel' | 'stories' | 'pop' | 'sales-page' | 'ugc';
@@ -32,7 +50,7 @@ export default function ReelsSection({
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(1200);
   const [inView, setInView] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
@@ -73,7 +91,6 @@ export default function ReelsSection({
       setIsMuted(!isMuted);
     } else {
       setCurrentIndex(idx);
-      setIsMuted(true);
     }
   };
 
@@ -108,13 +125,13 @@ export default function ReelsSection({
         <div className="store-reels__story-picker" aria-label="Video stories">
           {activeReels.map((reel, idx) => (
             <button key={reel.id} type="button" className={`store-reels__story${idx === currentIndex ? ' store-reels__story--active' : ''}`} onClick={() => setCurrentIndex(idx)}>
-              <span className="store-reels__story-ring"><video src={inView ? reel.videoUrl : undefined} muted playsInline preload="none" /></span>
+              <span className="store-reels__story-ring"><ReelThumb reel={reel} /></span>
               <span>{reel.sub || reel.category || `Story ${idx + 1}`}</span>
             </button>
           ))}
         </div>
         <div className="store-reels__story-player">
-          <video key={activeReel.id} src={inView ? activeReel.videoUrl : undefined} controls autoPlay={inView} muted loop playsInline preload="none" />
+          <ReelPlayer key={activeReel.id} reel={activeReel} inView={inView} />
           <VideoDetails reel={activeReel} />
         </div>
       </section>
@@ -130,7 +147,7 @@ export default function ReelsSection({
         {isPopOpen ? (
           <aside className="store-reels__pop-card" aria-label="Featured shopping video">
             <button type="button" className="store-reels__pop-close" onClick={() => setIsPopOpen(false)} aria-label="Close video">×</button>
-            <video key={activeReel.id} src={inView ? activeReel.videoUrl : undefined} controls autoPlay={inView} muted loop playsInline preload="none" />
+            <ReelPlayer key={activeReel.id} reel={activeReel} inView={inView} />
             <VideoDetails reel={activeReel} compact />
             {activeReels.length > 1 && <button type="button" className="store-reels__pop-next" onClick={handleNext}>Next video ›</button>}
           </aside>
@@ -145,14 +162,14 @@ export default function ReelsSection({
     const activeReel = activeReels[currentIndex];
     return (
       <section id="store-reels" ref={sectionRef} className="store-reels store-reels--sales">
-        <div className="store-reels__sales-player"><video key={activeReel.id} src={inView ? activeReel.videoUrl : undefined} controls autoPlay={inView} muted loop playsInline preload="none" /></div>
+        <div className="store-reels__sales-player"><ReelPlayer key={activeReel.id} reel={activeReel} inView={inView} /></div>
         <div className="store-reels__sales-content">
           <ReelsHeading eyebrow={activeReel.sub || 'Video shopping'} title={activeReel.title || 'Watch it. Love it. Shop it.'} />
-          {activeReel.category && <a className="store-reels__cta" href={activeReel.ctaLink || '/catalogue'}>Shop {activeReel.category}</a>}
+          {reelCta(activeReel) && <a className="store-reels__cta" href={reelCta(activeReel)!.href}>{reelCta(activeReel)!.label}</a>}
           <div className="store-reels__sales-thumbs">
             {activeReels.map((reel, idx) => (
               <button key={reel.id} type="button" className={idx === currentIndex ? 'is-active' : ''} onClick={() => setCurrentIndex(idx)}>
-                <video src={inView ? reel.videoUrl : undefined} muted playsInline preload="none" /><span>{reel.title || `Video ${idx + 1}`}</span>
+                <ReelThumb reel={reel} /><span>{reel.title || `Video ${idx + 1}`}</span>
               </button>
             ))}
           </div>
@@ -246,6 +263,7 @@ export default function ReelsSection({
               opacity={opacity}
               blur={blur}
               onToggleMute={() => setIsMuted(!isMuted)}
+              onSoundBlocked={() => setIsMuted(true)}
               onClick={() => handleReelClick(idx)}
             />
           );
@@ -280,12 +298,9 @@ export default function ReelsSection({
       <div className="store-reels__caption">
         <span className="store-reels__sub">{activeReels[currentIndex].sub}</span>
         <h4 className="store-reels__title">{activeReels[currentIndex].title}</h4>
-        {activeReels[currentIndex].category && (
-          <a
-            href={activeReels[currentIndex].ctaLink || '/catalogue'}
-            className="store-reels__cta"
-          >
-            Shop {activeReels[currentIndex].category}
+        {reelCta(activeReels[currentIndex]) && (
+          <a href={reelCta(activeReels[currentIndex])!.href} className="store-reels__cta">
+            {reelCta(activeReels[currentIndex])!.label}
           </a>
         )}
       </div>
@@ -301,7 +316,7 @@ function VideoDetails({ reel, compact = false }: { reel: Reel; compact?: boolean
   return (
     <div className={`store-reels__details${compact ? ' store-reels__details--compact' : ''}`}>
       {reel.sub && <span>{reel.sub}</span>}{reel.title && <h3>{reel.title}</h3>}
-      {reel.category && <a href={reel.ctaLink || '/catalogue'}>Shop {reel.category}</a>}
+      {reelCta(reel) && <a href={reelCta(reel)!.href}>{reelCta(reel)!.label}</a>}
     </div>
   );
 }
@@ -309,13 +324,13 @@ function VideoDetails({ reel, compact = false }: { reel: Reel; compact?: boolean
 function GalleryReel({ reel, compact = false, inView }: { reel: Reel; compact?: boolean; inView: boolean }) {
   return (
     <article className={`store-reels__gallery-card${compact ? ' store-reels__gallery-card--compact' : ''}`}>
-      <video src={inView ? reel.videoUrl : undefined} controls muted loop playsInline preload="none" /><VideoDetails reel={reel} compact={compact} />
+      <video src={inView ? reel.videoUrl : undefined} poster={reel.thumbnail || undefined} controls muted loop playsInline preload="none" /><VideoDetails reel={reel} compact={compact} />
     </article>
   );
 }
 
 function ReelCard({
-  reel, offset, isMuted, inView, translateX, scale, zIndex, opacity, blur, onToggleMute, onClick,
+  reel, offset, isMuted, inView, translateX, scale, zIndex, opacity, blur, onToggleMute, onSoundBlocked, onClick,
 }: {
   reel: Reel;
   offset: number;
@@ -327,6 +342,7 @@ function ReelCard({
   opacity: number;
   blur: boolean;
   onToggleMute: () => void;
+  onSoundBlocked: () => void;
   onClick: () => void;
 }) {
   const isActive = offset === 0;
@@ -335,11 +351,17 @@ function ReelCard({
   useEffect(() => {
     if (!videoRef.current) return;
     if (isActive) {
-      videoRef.current.play().catch(() => {});
+      const video = videoRef.current;
+      video.play().catch(() => {
+        // Browsers refuse autoplay with sound until the visitor interacts; fall back to muted.
+        onSoundBlocked();
+        video.muted = true;
+        video.play().catch(() => {});
+      });
     } else {
       videoRef.current.pause();
     }
-  }, [isActive]);
+  }, [isActive, inView]);
 
   return (
     <div
@@ -368,10 +390,66 @@ function ReelCard({
           loop
           playsInline
           preload={isActive ? 'auto' : 'metadata'}
+          poster={reel.thumbnail || undefined}
           className="store-reels__video"
         >
           <source src={reel.videoUrl} type={videoMimeType(reel.videoUrl)} />
         </video>
+      )}
+    </div>
+  );
+}
+
+/** Small preview tile: the merchant's thumbnail, or the video's first frame when none is set. */
+function ReelThumb({ reel }: { reel: Reel }) {
+  if (reel.thumbnail) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={reel.thumbnail} alt="" loading="lazy" decoding="async" />;
+  }
+  return <video src={`${reel.videoUrl}#t=0.1`} muted playsInline preload="metadata" />;
+}
+
+/**
+ * Main player. Starts with sound on; if the browser blocks that (it does until the
+ * visitor has interacted with the page) it plays muted and shows a "Tap for sound" button.
+ */
+function ReelPlayer({ reel, inView }: { reel: Reel; inView: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !inView) return;
+    video.muted = false;
+    video.play().then(() => setSoundBlocked(false)).catch(() => {
+      video.muted = true;
+      setSoundBlocked(true);
+      video.play().catch(() => {});
+    });
+  }, [inView, reel.id]);
+
+  const enableSound = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = false;
+    setSoundBlocked(false);
+  };
+
+  return (
+    <div className="store-reels__player">
+      <video
+        ref={videoRef}
+        src={inView ? reel.videoUrl : undefined}
+        poster={reel.thumbnail || undefined}
+        controls
+        loop
+        playsInline
+        preload={inView ? 'auto' : 'none'}
+      />
+      {soundBlocked && (
+        <button type="button" className="store-reels__sound" onClick={enableSound}>
+          🔇 Tap for sound
+        </button>
       )}
     </div>
   );

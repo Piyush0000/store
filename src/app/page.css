@@ -278,9 +278,9 @@
 
 /* 1. Rounded Rectangle */
 .shop-category__card--rounded-rect {
-  flex: 0 0 340px;
-  aspect-ratio: 16/10;
-  border-radius: 24px;
+  flex: 0 0 290px;
+  aspect-ratio: 4/5;
+  border-radius: 28px;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.02);
   transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
   scroll-snap-align: start;
@@ -366,20 +366,53 @@
 .shop-category__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.35) 38%, transparent 65%);
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 20px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 0 16px 22px;
+  text-align: center;
 }
 
 .shop-category__name {
-  font-family: var(--font-body);
-  font-size: 14px;
+  max-width: 100%;
+  font-family: var(--font-heading, var(--font-body));
+  font-size: clamp(20px, 2vw, 26px);
   font-weight: 600;
-  letter-spacing: 0.1em;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
   color: #fff;
-  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+
+.shop-category__cta {
+  display: inline-block;
+  padding: 9px 22px;
+  border-radius: 999px;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.shop-category__card:hover .shop-category__cta {
+  background: #f1ece3;
+  transform: translateY(-1px);
+}
+
+/* A round card has no room for the button; keep just the name. */
+.shop-category__card--circle .shop-category__cta {
+  display: none;
+}
+.shop-category__card--circle .shop-category__overlay {
+  justify-content: center;
+  padding-bottom: 0;
 }
 
 /* Category Slider Navigation */
@@ -586,7 +619,7 @@
   }
 
   .shop-category__card--rounded-rect {
-    flex: 0 0 240px;
+    flex: 0 0 220px;
   }
   .shop-category__card--circle {
     flex: 0 0 160px;

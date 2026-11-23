@@ -246,7 +246,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       </button>
 
       <div className="product-card__info">
-        <a href={`/product/${product.slug || product.id}`} className="product-card__name">
+        <a href={`/product/${product.slug || product.id}`} className="product-card__name" title={product.name}>
           {product.name}
         </a>
 
