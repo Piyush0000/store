@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import type { Metadata } from "next";
 import { fetchCataloguePage, fetchStorefront, fetchProduct, Testimonial, TestimonialSection } from "@/lib/api";
 import { getServerSubdomain, getServerStoreId } from "@/lib/server-utils";
 import ProductClient from "./ProductClient";
+import ProductCard from "@/components/ProductCard";
 
 /**
  * Safely validates and sanitizes a URL.
@@ -40,6 +43,91 @@ function sanitizeCtaLink(raw: unknown): string {
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+/** Async RSC — fetches related products independently so the main product page paints first */
+async function RelatedProductsSection({
+  subdomain,
+  storeId,
+  productId,
+  targetCategory,
+  fallbackCategory,
+}: {
+  subdomain: string;
+  storeId: string;
+  productId: string;
+  targetCategory: string | undefined;
+  fallbackCategory: string | undefined;
+}) {
+  let relatedProducts: any[] = [];
+  try {
+    const page = await fetchCataloguePage(subdomain, storeId, { category: targetCategory || undefined, limit: 5 });
+    relatedProducts = page.products.filter((p: any) => p.id !== productId).slice(0, 4);
+
+    if (relatedProducts.length === 0 && targetCategory !== fallbackCategory) {
+      const fb = await fetchCataloguePage(subdomain, storeId, { category: fallbackCategory || undefined, limit: 5 });
+      relatedProducts = fb.products.filter((p: any) => p.id !== productId).slice(0, 4);
+    }
+  } catch {
+    return null;
+  }
+
+  if (relatedProducts.length === 0) return null;
+
+  return (
+    <section className="featured-collection scroll-fade-up">
+      <h2 className="section-title inline-block mb-2">YOU MAY ALSO LIKE</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-6 grid-rows-auto gap-2">
+        {relatedProducts.map((p: any) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RelatedProductsSkeleton() {
+  return (
+    <section className="featured-collection scroll-fade-up">
+      <div
+        className="layer-shimmer mb-4 rounded"
+        style={{ height: "24px", width: "180px", borderRadius: "6px" }}
+      />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-6 grid-rows-auto gap-2">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="layer-shimmer rounded-xl"
+            style={{ aspectRatio: "3/4", borderRadius: "12px" }}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const subdomain = await getServerSubdomain();
+    const storeId = await getServerStoreId();
+    const product = await fetchProduct(id, subdomain, storeId);
+    if (!product) return {};
+    const title = product.name;
+    const description = product.description ? product.description.slice(0, 160) : product.name;
+    const image = product.images?.[0] ? [{ url: product.images[0] }] : [];
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: image,
+      },
+    };
+  } catch {
+    return {};
+  }
 }
 
 export default async function ProductPage({ params }: PageProps) {
@@ -96,19 +184,6 @@ export default async function ProductPage({ params }: PageProps) {
 
   const targetCategory = customFields?.relatedCategory || product.category;
 
-  let relatedProducts: any[] = [];
-  try {
-    const page = await fetchCataloguePage(subdomain, storeId, { category: targetCategory || undefined, limit: 5 });
-    relatedProducts = page.products.filter(p => p.id !== product.id).slice(0, 4);
-
-    if (relatedProducts.length === 0 && targetCategory !== product.category) {
-      const fallback = await fetchCataloguePage(subdomain, storeId, { category: product.category || undefined, limit: 5 });
-      relatedProducts = fallback.products.filter(p => p.id !== product.id).slice(0, 4);
-    }
-  } catch (error) {
-    console.error("Failed to fetch related products:", error);
-  }
-
   // Routing logic: product reviews take priority over homepage testimonials when set
   const reviewMode = customFields?.reviewMode ?? "homepage";
   const rawReviews = Array.isArray(customFields?.productReviews)
@@ -144,14 +219,26 @@ export default async function ProductPage({ params }: PageProps) {
   const normalizedProduct = { ...product, customFields };
 
   return (
-    <ProductClient
-      product={normalizedProduct}
-      relatedProducts={relatedProducts}
-      testimonials={effectiveTestimonials as any}
-      reelsSection={reelsSection}
-      subdomain={subdomain}
-      codEnabled={codEnabled}
-      globalBadges={globalBadges}
-    />
+    <>
+      <ProductClient
+        product={normalizedProduct}
+        relatedProducts={[]}
+        testimonials={effectiveTestimonials as any}
+        reelsSection={reelsSection}
+        subdomain={subdomain}
+        codEnabled={codEnabled}
+        globalBadges={globalBadges}
+      />
+      {/* Stream related products after main product paints — "loads in layers" effect */}
+      <Suspense fallback={<RelatedProductsSkeleton />}>
+        <RelatedProductsSection
+          subdomain={subdomain}
+          storeId={storeId}
+          productId={product.id}
+          targetCategory={targetCategory}
+          fallbackCategory={product.category}
+        />
+      </Suspense>
+    </>
   );
 }

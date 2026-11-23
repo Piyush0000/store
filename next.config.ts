@@ -9,7 +9,12 @@ const nextConfig: NextConfig = {
     "172.16.0.2:3000",
   ],
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.evoclabs.com",
+      },
       {
         protocol: "https",
         hostname: "res.cloudinary.com",

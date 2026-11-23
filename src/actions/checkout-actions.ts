@@ -75,7 +75,7 @@ export async function getInitialCheckoutState(): Promise<InitialCheckoutState> {
     const storefrontPromise = (async () => {
       try {
         const subdomain = await getServerSubdomain();
-        const storefront = await fetchStorefront(subdomain);
+        const storefront = await fetchStorefront(subdomain, undefined, { includeProducts: false, includeLegal: false });
         const settings = storefront.settings || {};
         const customization = storefront.customization || {};
         const shippingSettings = (customization as any).shippingSettings || {};

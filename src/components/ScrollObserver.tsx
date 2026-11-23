@@ -39,9 +39,14 @@ export default function ScrollObserver() {
     // Initial observation
     observeElements();
 
-    // Watch for dynamically rendered sections/components
+    // Watch for dynamically rendered sections/components with debouncing
+    let debounceTimer: any = null;
     const mutationObserver = new MutationObserver(() => {
-      observeElements();
+      if (debounceTimer) return;
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        observeElements();
+      }, 100);
     });
 
     mutationObserver.observe(document.body, {
@@ -50,6 +55,7 @@ export default function ScrollObserver() {
     });
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       observer.disconnect();
       mutationObserver.disconnect();
     };

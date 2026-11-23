@@ -56,7 +56,7 @@
 
 .product-page__main-image {
   position: relative;
-  background: #fff;
+  background: #faf9f6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,32 +82,21 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.product-page__loading-spinner {
+/* Progressive Image Shimmer Layer */
+.product-page__image-skeleton {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  inset: 0;
+  background: linear-gradient(90deg, #f0ede6 25%, #faf8f4 50%, #f0ede6 75%);
+  background-size: 200% 100%;
+  animation: layerShimmer 1.5s ease-in-out infinite;
+  z-index: 2;
+  transition: opacity 0.4s ease-out;
+  pointer-events: none;
 }
 
-.spinner-icon {
-  width: 32px;
-  height: 32px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.product-page__image-skeleton.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .product-page__main-image > img,
@@ -118,6 +107,20 @@
   min-height: 450px;
   max-height: 550px;
   object-fit: contain;
+  opacity: 0;
+  filter: blur(4px);
+  transform: scale(0.99);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, filter, transform;
+}
+
+.product-page__main-image > img.is-loaded,
+.product-page__main-image > video.is-loaded {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
 }
 
 /* Info */
@@ -1632,4 +1635,57 @@ a.product-page__store-link:hover {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+}
+
+/* ========================================================
+   Shrine PRO / Nevira Cascading Layer Loading System
+   ======================================================== */
+.animate-section {
+  --animation-duration: 600ms;
+  --init-delay: 60ms;
+  --child-delay: 110ms;
+}
+
+.animate-section.animate--hidden .animate-item {
+  opacity: 0;
+  filter: blur(2px);
+  transform: translateY(22px);
+}
+
+.animate-section.animate--shown .animate-item {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+  transition: opacity var(--animation-duration) cubic-bezier(0.16, 1, 0.3, 1),
+    filter var(--animation-duration) cubic-bezier(0.16, 1, 0.3, 1),
+    transform var(--animation-duration) cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform, filter;
+}
+
+.animate-section.animate--shown .animate-item.animate-item--child {
+  transition-delay: calc(
+    var(--init-delay) + (var(--child-delay) * var(--index, 0))
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-section.animate--hidden .animate-item,
+  .animate-section.animate--shown .animate-item {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Shimmer animation for skeletons while layers stream in */
+@keyframes layerShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.layer-shimmer {
+  background: linear-gradient(90deg, #f0ede6 25%, #f8f6f0 50%, #f0ede6 75%);
+  background-size: 200% 100%;
+  animation: layerShimmer 1.6s ease-in-out infinite;
 }

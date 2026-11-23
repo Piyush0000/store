@@ -5,7 +5,6 @@ import CatalogueClient from './CatalogueClient';
 import { CategorySkeleton, ProductGridSkeleton } from './Skeleton';
 import './catalogue.css';
 
-export const dynamic = 'force-dynamic';
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
