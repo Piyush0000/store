@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
 import './CartDrawer.css';
@@ -73,14 +72,12 @@ export default function CartDrawer() {
               {cartItems.map((item) => (
                 <li key={`${item.id}-${item.variantId || JSON.stringify(item.variants || {})}`} className="cart-item">
                   <div className="cart-item__image">
-                    <Image
+                    <img
                       src={item.images?.[0] || 'https://via.placeholder.com/80'}
                       alt={item.name}
                       width={80}
                       height={80}
-                      quality={70}
-                      sizes="80px"
-                      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                      style={{ objectFit: 'cover' }}
                     />
                   </div>
                   <div className="cart-item__details">
@@ -89,7 +86,6 @@ export default function CartDrawer() {
                     ) : (
                       <Link
                         href={`/product/${item.id}`}
-                        prefetch
                         className="cart-item__name"
                         onClick={() => setIsCartOpen(false)}
                       >
@@ -148,10 +144,10 @@ export default function CartDrawer() {
               <span>₹{cartTotal.toLocaleString()}</span>
             </div>
             <p className="cart-drawer__shipping">Shipping calculated at checkout</p>
-            <Link href="/checkout" prefetch className="cart-drawer__checkout-btn" onClick={() => setIsCartOpen(false)}>
+            <Link href="/checkout" className="cart-drawer__checkout-btn" onClick={() => setIsCartOpen(false)}>
               Proceed to Checkout
             </Link>
-            <Link href="/cart" prefetch className="cart-drawer__view-cart" onClick={() => setIsCartOpen(false)}>
+            <Link href="/cart" className="cart-drawer__view-cart" onClick={() => setIsCartOpen(false)}>
               View Full Cart
             </Link>
           </div>

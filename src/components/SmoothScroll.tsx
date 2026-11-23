@@ -1,28 +1,36 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import Lenis from "lenis";
 
-/**
- * Handles instant top-of-page scroll positioning on navigation and resets scrollRestoration.
- * Uses native browser scrolling to prevent layout shifting, scrollbar offset bugs, or right-side gaps.
- */
 export default function SmoothScroll() {
-  const pathname = usePathname();
-
-  // Disable browser automatic scroll restoration to ensure every page opens at the top
   useEffect(() => {
-    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
+    // Initialize Lenis smooth scrolling instance
+    const lenis = new Lenis({
+      duration: 1.2, // Premium, lightweight desktop inertia (~1.2s)
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Exponential deceleration curve
+      orientation: "vertical",
+      gestureOrientation: "vertical",
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 1, // Keep native touch behavior intact on mobile
+      infinite: false,
+    });
+
+    // Single performant requestAnimationFrame loop
+    let rafId: number;
+    function raf(time: number) {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
     }
-  }, []);
+    rafId = requestAnimationFrame(raf);
 
-  // ALWAYS scroll to top immediately on route change
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-  }, [pathname]);
+    // Proper cleanup on unmount to avoid memory leaks
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
 
   return null;
 }

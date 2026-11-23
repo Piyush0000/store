@@ -4,6 +4,8 @@ import { getServerSubdomain, getServerStoreId } from '@/lib/server-utils';
 import HomeClient from './HomeClient';
 import './page.css';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage({ searchParams }: { searchParams: Promise<any> | any }) {
   let customization: Customization | null = null;
   let categories: string[] = [];
@@ -25,14 +27,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     if (customization?.productSections?.length) {
       productSections = buildSectionData(customization.productSections, bestSellers);
     }
-  } catch (error: any) {
-    if (
-      error &&
-      (error.digest === "DYNAMIC_SERVER_USAGE" ||
-        String(error.message).includes("Dynamic server usage"))
-    ) {
-      throw error;
-    }
+  } catch (error) {
     console.error('[HomePage] Failed to fetch storefront data:', error);
   }
 

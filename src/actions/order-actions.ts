@@ -112,6 +112,7 @@ const orderInputSchema = z.object({
   couponCode: z.string().optional(),
   discountAmount: z.number().optional(),
   orderNumber: z.string().optional(),
+  existingOrderId: z.string().optional(),
 });
 
 function getCodFailureMessage(responseBody: string, status: number): string {
@@ -275,66 +276,124 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
       };
     }
 
-    const order = await prisma.order.create({
-      data: {
-        userId: orderData.userId,
-        storeId: storeId,
-        orderNumber: orderData.orderNumber || generateOrderNumber(),
-        customerEmail: orderData.email,
-        customerName: [orderData.firstName, orderData.lastName].filter(Boolean).join(' ') || 'Customer',
-        shippingAddress: {
-          firstName: orderData.firstName,
-          lastName: orderData.lastName || '',
-          street: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
-          city: shippingAddress.city,
-          state: shippingAddress.state,
-          zipCode: shippingAddress.pincode,
-          phone: orderData.phone || '',
-          ...(partialRecord ? { partialPayment: partialRecord } : {}),
-        },
-        billingAddress: {
-          firstName: orderData.firstName,
-          lastName: orderData.lastName || '',
-          street: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
-          city: shippingAddress.city,
-          state: shippingAddress.state,
-          zipCode: shippingAddress.pincode,
-          phone: orderData.phone || '',
-        },
-        subtotal: orderData.subtotal ?? orderData.totalAmount,
-        tax: orderData.tax ?? 0,
-        shipping: orderData.shipping ?? 0,
-        total: totalAmount,
-        paymentMethod: orderData.paymentMethod,
-        paymentStatus: 'PENDING',
-        fulfillmentStatus: 'UNFULFILLED',
-        status: 'PENDING',
-        couponCode: orderData.couponCode,
-        discountAmount: orderData.discountAmount,
-        source: 'STOREFRONT',
-        riskLevel: 'Low',
-        payuTxnId: orderData.payuTxnId,
-        items: {
-          create: orderData.items.map(item => {
-            let variantInfo: any = undefined;
-            if (item.variantId) {
-              variantInfo = { variantId: item.variantId, variant: item.variant, image: item.image };
-            } else if (item.variant) {
-              variantInfo = { variant: item.variant, image: item.image };
-            } else if (item.image) {
-              variantInfo = { image: item.image };
-            }
-            return {
-              productId: item.productId,
-              name: item.name,
-              quantity: item.quantity,
-              price: Number(item.price), // Ensure price is a number, not string
-              variantInfo,
-            };
-          }),
-        },
-      },
+    const orderItemsCreateData = orderData.items.map(item => {
+      let variantInfo: any = undefined;
+      if (item.variantId) {
+        variantInfo = { variantId: item.variantId, variant: item.variant, image: item.image };
+      } else if (item.variant) {
+        variantInfo = { variant: item.variant, image: item.image };
+      } else if (item.image) {
+        variantInfo = { image: item.image };
+      }
+      return {
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: Number(item.price), // Ensure price is a number, not string
+        variantInfo,
+      };
     });
+
+    let order: any = null;
+    if (orderData.existingOrderId) {
+      const existing = await prisma.order.findUnique({
+        where: { id: orderData.existingOrderId },
+        include: { items: true },
+      });
+      // Only reuse if not already paid
+      if (existing && existing.paymentStatus !== 'PAID') {
+        await prisma.orderItem.deleteMany({ where: { orderId: existing.id } });
+        order = await prisma.order.update({
+          where: { id: existing.id },
+          data: {
+            customerEmail: orderData.email,
+            customerName: [orderData.firstName, orderData.lastName].filter(Boolean).join(' ') || 'Customer',
+            shippingAddress: {
+              firstName: orderData.firstName,
+              lastName: orderData.lastName || '',
+              street: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+              city: shippingAddress.city,
+              state: shippingAddress.state,
+              zipCode: shippingAddress.pincode,
+              phone: orderData.phone || '',
+              ...(partialRecord ? { partialPayment: partialRecord } : {}),
+            },
+            billingAddress: {
+              firstName: orderData.firstName,
+              lastName: orderData.lastName || '',
+              street: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+              city: shippingAddress.city,
+              state: shippingAddress.state,
+              zipCode: shippingAddress.pincode,
+              phone: orderData.phone || '',
+            },
+            subtotal: orderData.subtotal ?? orderData.totalAmount,
+            tax: orderData.tax ?? 0,
+            shipping: orderData.shipping ?? 0,
+            total: totalAmount,
+            paymentMethod: orderData.paymentMethod,
+            paymentStatus: 'PENDING',
+            status: 'PENDING',
+            couponCode: orderData.couponCode,
+            discountAmount: orderData.discountAmount,
+            payuTxnId: orderData.payuTxnId,
+            items: {
+              create: orderItemsCreateData,
+            },
+          },
+          include: { items: true },
+        });
+        console.log(`[createOrder] Reusing existing pending order ${order.id} (${order.orderNumber})`);
+      }
+    }
+
+    if (!order) {
+      order = await prisma.order.create({
+        data: {
+          userId: orderData.userId,
+          storeId: storeId,
+          orderNumber: orderData.orderNumber || generateOrderNumber(),
+          customerEmail: orderData.email,
+          customerName: [orderData.firstName, orderData.lastName].filter(Boolean).join(' ') || 'Customer',
+          shippingAddress: {
+            firstName: orderData.firstName,
+            lastName: orderData.lastName || '',
+            street: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            zipCode: shippingAddress.pincode,
+            phone: orderData.phone || '',
+            ...(partialRecord ? { partialPayment: partialRecord } : {}),
+          },
+          billingAddress: {
+            firstName: orderData.firstName,
+            lastName: orderData.lastName || '',
+            street: `${shippingAddress.flatHouse}, ${shippingAddress.areaStreet}`,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            zipCode: shippingAddress.pincode,
+            phone: orderData.phone || '',
+          },
+          subtotal: orderData.subtotal ?? orderData.totalAmount,
+          tax: orderData.tax ?? 0,
+          shipping: orderData.shipping ?? 0,
+          total: totalAmount,
+          paymentMethod: orderData.paymentMethod,
+          paymentStatus: 'PENDING',
+          fulfillmentStatus: 'UNFULFILLED',
+          status: 'PENDING',
+          couponCode: orderData.couponCode,
+          discountAmount: orderData.discountAmount,
+          source: 'STOREFRONT',
+          riskLevel: 'Low',
+          payuTxnId: orderData.payuTxnId,
+          items: {
+            create: orderItemsCreateData,
+          },
+        },
+        include: { items: true },
+      });
+    }
 
     // Pre-sync pending online order to Orbit backend so webhooks (Cashfree, Razorpay, PayU)
     // can fulfill it immediately even if mobile UPI backgrounds or kills the browser tab.
@@ -1049,4 +1108,41 @@ export async function confirmAndSyncOnlineOrder(
 
 export async function confirmAndSyncPayUOrder(orderId: string, txnId: string, payuStatus?: string, payuResponse?: any) {
   return confirmAndSyncOnlineOrder(orderId, 'PAYU', txnId, payuStatus, payuResponse);
+}
+
+export async function cancelPendingOrder(orderId: string) {
+  try {
+    const existing = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, paymentStatus: true, status: true, storeId: true },
+    });
+    if (!existing || existing.paymentStatus === 'PAID') {
+      return { success: false, message: 'Order cannot be cancelled' };
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'CANCELLED',
+        paymentStatus: 'VOIDED',
+      },
+    });
+
+    try {
+      const apiBase = getApiBase();
+      const cancelUrl = `${apiBase.replace('/storefront/public', '/orders')}/${encodeURIComponent(orderId)}/status`;
+      await fetch(cancelUrl, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CANCELLED' }),
+      });
+    } catch (e: any) {
+      console.warn('[cancelPendingOrder] Failed to sync cancellation to backend (non-critical):', e.message);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.warn('[cancelPendingOrder] Error:', error.message);
+    return { success: false, message: error.message };
+  }
 }

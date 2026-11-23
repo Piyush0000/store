@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import ProductCard from "@/components/ProductCard";
 import ProductsSection from "@/components/ProductsSection";
 import ReelsSection from "@/components/ReelsSection";
@@ -19,9 +18,8 @@ import {
   type CategoryImagesConfig,
 } from "@/lib/category-card-style";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { FestivalCollection, FestivalHero } from "@/components/FestivalHero";
+import { FestivalCollection, FestivalHero } from "@/components/FestivalExperience";
 import { festivalAreaEnabled, festivalIsActive, type FestivalTheme } from "@/lib/festival-theme";
-import LazySection from "@/components/LazySection";
 import "./page.css";
 
 interface Product {
@@ -271,31 +269,13 @@ export default function HomeClient({
 }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [customizationState, setCustomizationState] = useState(customization);
-  const [isFestivalActive, setIsFestivalActive] = useState(() =>
-    festivalIsActive(customization?.festivalTheme)
-  );
+  const [festivalNow, setFestivalNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const festival = customizationState?.festivalTheme;
-    setIsFestivalActive(festivalIsActive(festival));
-    if (!festival?.enabled) return;
-
-    const now = Date.now();
-    const start = festival.startsAt ? Date.parse(festival.startsAt) : NaN;
-    const end = festival.endsAt ? Date.parse(festival.endsAt) : NaN;
-
-    const timers: number[] = [];
-    if (Number.isFinite(start) && start > now) {
-      timers.push(window.setTimeout(() => setIsFestivalActive(festivalIsActive(festival)), start - now));
-    }
-    if (Number.isFinite(end) && end > now) {
-      timers.push(window.setTimeout(() => setIsFestivalActive(festivalIsActive(festival)), end - now));
-    }
-
-    return () => {
-      timers.forEach((t) => window.clearTimeout(t));
-    };
-  }, [customizationState?.festivalTheme]);
+    if (!customizationState?.festivalTheme?.enabled) return;
+    const interval = window.setInterval(() => setFestivalNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [customizationState?.festivalTheme?.enabled]);
 
   const liveProductSections = productSections.map((section, index) => {
     const configuredSections = Array.isArray(customizationState?.productSections)
@@ -359,7 +339,7 @@ export default function HomeClient({
 
   const renderHero = () => {
     const festival = customizationState?.festivalTheme;
-    if (isFestivalActive && festival && festivalAreaEnabled(festival, 'hero')) {
+    if (festivalIsActive(festival, festivalNow) && festival && festivalAreaEnabled(festival, 'hero')) {
       return <><FestivalHero theme={festival} /><FestivalCollection theme={festival} /></>;
     }
     if (
@@ -373,43 +353,40 @@ export default function HomeClient({
           className="hero-carousel__track"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
-          {heroSlides.map((slide: any, index: number) => {
-            const heroImg = (
-              <Image
-                src={slide.image}
-                alt={slide.title || "Hero Banner"}
-                className="hero-carousel__image"
-                width={1200}
-                height={675}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1400px"
-                priority={index === 0}
-                loading={index === 0 ? "eager" : "lazy"}
-                fetchPriority={index === 0 ? "high" : "auto"}
-                quality={75}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            );
-            return (
-              <div key={slide.id} className="hero-carousel__slide">
-                {slide.link ? (
-                  <Link href={slide.link} className="hero-carousel__image-link">
-                    {heroImg}
+          {heroSlides.map((slide: any, index: number) => (
+            <div key={slide.id} className="hero-carousel__slide">
+              {slide.link ? (
+                <Link href={slide.link} className="hero-carousel__image-link">
+                  <img
+                    src={slide.image}
+                    alt={slide.title || "Hero Banner"}
+                    className="hero-carousel__image"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    {...(index === 0 ? { fetchPriority: "high" } : {})}
+                    decoding="async"
+                  />
+                </Link>
+              ) : (
+                <img
+                  src={slide.image}
+                  alt={slide.title || "Hero Banner"}
+                  className="hero-carousel__image"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  {...(index === 0 ? { fetchPriority: "high" } : {})}
+                  decoding="async"
+                />
+              )}
+              <div className="hero-carousel__content">
+                {slide.title && <h1>{slide.title}</h1>}
+                {slide.subtitle && <p>{slide.subtitle}</p>}
+                {slide.cta && (
+                  <Link href={slide.link} className="hero-carousel__cta">
+                    {slide.cta}
                   </Link>
-                ) : (
-                  heroImg
                 )}
-                <div className="hero-carousel__content">
-                  {slide.title && <h1>{slide.title}</h1>}
-                  {slide.subtitle && <p>{slide.subtitle}</p>}
-                  {slide.cta && (
-                    <Link href={slide.link} className="hero-carousel__cta">
-                      {slide.cta}
-                    </Link>
-                  )}
-                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
         {heroSlides.length > 1 && (
           <>
@@ -482,15 +459,12 @@ export default function HomeClient({
                 href={cat.path}
                 className={`shop-category__card shop-category__card--${cardStyle.shape}`}
               >
-                <Image
+                <img
                   src={cat.image}
                   alt={cat.name}
                   className="shop-category__image"
-                  width={300}
-                  height={300}
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
                   loading="lazy"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  decoding="async"
                 />
                 <div className="shop-category__overlay">
                   <span className="shop-category__name">{cat.name}</span>
@@ -529,14 +503,12 @@ export default function HomeClient({
           className={`brand-video scroll-fade-up${customizationState?.homePageConfig?.bannerOverlay === false ? " brand-video--fullbleed" : ""}${customizationState?.homePageConfig?.showBorders === false ? " brand-video--no-borders" : ""}`}
         >
           <div className="brand-video__wrapper">
-            <Image
+            <img
               src={customizationState.homePageConfig.imageUrl}
               alt="Brand Banner"
               className="brand-video__player"
-              width={1920}
-              height={600}
-              sizes="100vw"
               loading="lazy"
+              decoding="async"
               style={{
                 width: "100%",
                 height: "auto",
@@ -815,7 +787,7 @@ export default function HomeClient({
   }
 
   const festival = customizationState?.festivalTheme;
-  const showFestivalHero = festival && isFestivalActive && festivalAreaEnabled(festival, 'hero');
+  const showFestivalHero = festival && festivalIsActive(festival, festivalNow) && festivalAreaEnabled(festival, 'hero');
   const hasVisibleHeroSection = syncedSections.some((section: any) => section.type === 'heroSection' && section.enabled !== false);
 
   return (
@@ -823,52 +795,39 @@ export default function HomeClient({
       {showFestivalHero && !hasVisibleHeroSection && <><FestivalHero theme={festival} /><FestivalCollection theme={festival} /></>}
       {syncedSections
         .filter((sec: any) => sec.enabled !== false)
-        .map((sec: any, index: number) => {
-          const isAboveFold = index <= 1 || sec.type === "heroSection" || sec.type === "trustBadgesSection";
-
-          const renderContent = () => {
-            switch (sec.type) {
-              case "heroSection":
-                return renderHero();
-              case "trustBadgesSection":
-                return renderTrustBadges();
-              case "reelsSection":
-                return renderReels();
-              case "categoryImages":
-                return renderCategories();
-              case "brandVideo":
-                return renderBrandVideo();
-              case "bannersSection":
-                return renderBanners();
-              case "productSections":
-                return renderProductSection(sec.id, sec.refIndex);
-              case "mostBuySection":
-                return renderMostBuy();
-              case "featuredProducts":
-                return renderFeatured();
-              case "tickerBar":
-                return renderTicker();
-              case "testimonialsSection":
-                return renderTestimonials();
-              case "faqSection":
-                return renderFaqSection(sec.instanceData);
-              default:
-                return null;
-            }
-          };
-
-          const content = renderContent();
-          if (!content) return null;
-
-          if (isAboveFold) {
-            return <div key={sec.id}>{content}</div>;
+        .map((sec: any) => {
+          switch (sec.type) {
+            case "heroSection":
+              return <div key={sec.id}>{renderHero()}</div>;
+            case "trustBadgesSection":
+              return <div key={sec.id}>{renderTrustBadges()}</div>;
+            case "reelsSection":
+              return <div key={sec.id}>{renderReels()}</div>;
+            case "categoryImages":
+              return <div key={sec.id}>{renderCategories()}</div>;
+            case "brandVideo":
+              return <div key={sec.id}>{renderBrandVideo()}</div>;
+            case "bannersSection":
+              return <div key={sec.id}>{renderBanners()}</div>;
+            case "productSections":
+              return (
+                <div key={sec.id}>
+                  {renderProductSection(sec.id, sec.refIndex)}
+                </div>
+              );
+            case "mostBuySection":
+              return <div key={sec.id}>{renderMostBuy()}</div>;
+            case "featuredProducts":
+              return <div key={sec.id}>{renderFeatured()}</div>;
+            case "tickerBar":
+              return <div key={sec.id}>{renderTicker()}</div>;
+            case "testimonialsSection":
+              return <div key={sec.id}>{renderTestimonials()}</div>;
+            case "faqSection":
+              return <div key={sec.id}>{renderFaqSection(sec.instanceData)}</div>;
+            default:
+              return null;
           }
-
-          return (
-            <LazySection key={sec.id} minHeight={420} rootMargin="100px 0px 50px 0px" className="section-deferred">
-              {content}
-            </LazySection>
-          );
         })}
     </div>
   );

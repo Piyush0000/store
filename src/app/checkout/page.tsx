@@ -28,6 +28,7 @@ import {
   createAddress,
   createOrder,
   createCodOrder,
+  cancelPendingOrder,
 } from "@/actions/order-actions";
 import { initializeCartSession, completeCartSession } from "@/actions/cart-actions";
 import {
@@ -205,6 +206,24 @@ export default function CheckoutPage() {
   const [payUData, setPayUData] = useState<any>(null);
   const launchAttemptedRef = useRef(false);
   const isSubmittingRef = useRef(false);
+  const pendingOnlineOrderRef = useRef<{
+    orderId: string;
+    orderNumber: string;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("active_pending_online_order");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.orderId && parsed?.orderNumber) {
+          pendingOnlineOrderRef.current = parsed;
+          setPendingOrderId(parsed.orderId);
+        }
+      }
+    } catch {}
+  }, []);
+
   const [orderSummary, setOrderSummary] = useState<{
     items: typeof cartItems;
     subtotal: number;
@@ -1097,6 +1116,15 @@ export default function CheckoutPage() {
     setIsLoading(true);
     setError(null);
 
+    // Cancel any previously initiated online pending order for this session
+    if (pendingOnlineOrderRef.current?.orderId) {
+      cancelPendingOrder(pendingOnlineOrderRef.current.orderId).catch(console.error);
+      pendingOnlineOrderRef.current = null;
+      try {
+        sessionStorage.removeItem("active_pending_online_order");
+      } catch {}
+    }
+
     const activeCoupon = appliedCouponRef.current || appliedCoupon;
     if (activeCoupon) {
       const allowed = (activeCoupon.applicablePaymentMethods || 'both').toLowerCase();
@@ -1333,6 +1361,10 @@ export default function CheckoutPage() {
       prepaidAmount: partial?.prepaidAmount,
       codDue: partial?.codDue,
     });
+    pendingOnlineOrderRef.current = null;
+    try {
+      sessionStorage.removeItem("active_pending_online_order");
+    } catch {}
     clearCart();
 
     const activeCartId = cartSessionId || (typeof window !== "undefined"
@@ -1389,9 +1421,14 @@ export default function CheckoutPage() {
     }
 
     try {
-      const ordId = `ORD-${Date.now().toString(36).toUpperCase()}`;
+      const existingPending = pendingOnlineOrderRef.current;
+      const ordId = existingPending?.orderNumber || `ORD-${Date.now().toString(36).toUpperCase()}`;
       const txnId = ordId.slice(-12).toUpperCase();
-      setPendingOrderId(ordId);
+      if (existingPending?.orderId) {
+        setPendingOrderId(existingPending.orderId);
+      } else {
+        setPendingOrderId(ordId);
+      }
 
       let uid = userId;
       if (!uid) {
@@ -1455,6 +1492,8 @@ export default function CheckoutPage() {
         payuTxnId: gateway === "PAYU" ? txnId : undefined,
         couponCode: appliedCoupon?.code || undefined,
         discountAmount: overallDiscount || undefined,
+        existingOrderId: existingPending?.orderId || undefined,
+        orderNumber: existingPending?.orderNumber || ordId,
       });
 
       if (!result.success || !result.data) {
@@ -1462,7 +1501,18 @@ export default function CheckoutPage() {
       }
 
       const localOrderId = result.data.id;
+      const activeOrderNumber = result.data.orderNumber || ordId;
+      pendingOnlineOrderRef.current = {
+        orderId: localOrderId,
+        orderNumber: activeOrderNumber,
+      };
       setPendingOrderId(localOrderId);
+      try {
+        sessionStorage.setItem("active_pending_online_order", JSON.stringify({
+          orderId: localOrderId,
+          orderNumber: activeOrderNumber,
+        }));
+      } catch {}
 
       if (gateway === "PAYU") {
         const payUResult = await initiatePayUPayment({
