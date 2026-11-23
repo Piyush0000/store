@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { getApiBase, getApiUrl, withStoreId } from './config';
 import { resolveMediaTree } from './media';
 import type { CategoryImagesConfig } from './category-card-style';
@@ -366,17 +367,21 @@ const MOCK_STOREFRONT: StorefrontData = {
 };
 
 
-export async function fetchStorefront(
+export const fetchStorefront = cache(async (
   subdomain?: string,
   storeId?: string,
   options: { includeProducts?: boolean; includeLegal?: boolean } = {},
-): Promise<StorefrontData> {
+): Promise<StorefrontData> => {
   try {
     const apiUrl = new URL(withStoreId(getApiUrl(subdomain), storeId));
     apiUrl.searchParams.set('reviewMode', 'summary');
     if (options.includeProducts === false) apiUrl.searchParams.set('includeProducts', 'false');
     if (options.includeLegal === false) apiUrl.searchParams.set('includeLegal', 'false');
-    const res = await fetch(apiUrl.toString(), { cache: 'no-store' });
+    const isDev = process.env.NODE_ENV !== 'production';
+    const fetchOptions: RequestInit = isDev
+      ? { cache: 'no-store' }
+      : { next: { revalidate: 300, tags: [`store:${subdomain || 'preview'}`] } };
+    const res = await fetch(apiUrl.toString(), fetchOptions);
     if (!res.ok) throw new Error(`Storefront request failed (${res.status}) for ${apiUrl}`);
     const data = await res.json();
 
@@ -386,18 +391,18 @@ export async function fetchStorefront(
     console.error('[storefront-api] Error fetching storefront:', err);
     throw err;
   }
-}
+});
 
 export interface CataloguePageResult {
   products: Product[];
   pagination: { total: number; limit: number; offset: number; hasMore: boolean };
 }
 
-export async function fetchCataloguePage(
+export const fetchCataloguePage = cache(async (
   subdomain: string,
   storeId: string,
   filters: { category?: string; search?: string; stream?: string; sort?: string; offset?: number; limit?: number },
-): Promise<CataloguePageResult> {
+): Promise<CataloguePageResult> => {
   const apiUrl = new URL(withStoreId(`${getApiBase()}/${encodeURIComponent(subdomain || 'preview')}/products`, storeId));
   apiUrl.searchParams.set('reviewMode', 'summary');
   apiUrl.searchParams.set('limit', String(filters.limit ?? 24));
@@ -413,17 +418,25 @@ export async function fetchCataloguePage(
   };
   const streamParam = streamParams[filters.stream || ''];
   if (streamParam) apiUrl.searchParams.set(streamParam, 'true');
-  const response = await fetch(apiUrl.toString(), { cache: 'no-store' });
+  const isDev = process.env.NODE_ENV !== 'production';
+  const fetchOptions: RequestInit = isDev
+    ? { cache: 'no-store' }
+    : { next: { revalidate: 300, tags: [`catalogue:${subdomain || 'preview'}`] } };
+  const response = await fetch(apiUrl.toString(), fetchOptions);
   if (!response.ok) throw new Error(`Catalogue request failed (${response.status})`);
   const data = await response.json();
   if (!data.success || !data.data?.pagination) throw new Error(data.message || 'Failed to fetch catalogue');
   return resolveMediaTree(data.data) as CataloguePageResult;
-}
+});
 
-export async function fetchProduct(id: string, subdomain?: string, storeId?: string): Promise<Product> {
+export const fetchProduct = cache(async (id: string, subdomain?: string, storeId?: string): Promise<Product> => {
   try {
     const apiUrl = withStoreId(`${getApiUrl(subdomain)}/products/${encodeURIComponent(id)}`, storeId);
-    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const isDev = process.env.NODE_ENV !== 'production';
+    const fetchOptions: RequestInit = isDev
+      ? { cache: 'no-store' }
+      : { next: { revalidate: 300, tags: [`product:${id}`] } };
+    const res = await fetch(apiUrl, fetchOptions);
     if (!res.ok) throw new Error(`Product request failed (${res.status})`);
     const data = await res.json();
     if (!data.success || !data.product) throw new Error(data.message || `Failed to fetch product ${id}`);
@@ -437,7 +450,7 @@ export async function fetchProduct(id: string, subdomain?: string, storeId?: str
     console.error(`[storefront-api] Error fetching product ${id}:`, err);
     throw err;
   }
-}
+});
 
 export async function fetchAnnouncements(subdomain?: string): Promise<Announcement[]> {
   try {

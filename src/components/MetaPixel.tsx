@@ -50,7 +50,6 @@ export default function MetaPixel({ pixelId }: { pixelId: string }) {
 
     if (!isInitialized.current) {
       window.fbq('init', pixelId);
-      window.fbq('track', 'PageView');
       isInitialized.current = true;
     }
   }, [pixelId]);

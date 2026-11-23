@@ -138,6 +138,39 @@ interface ProductClientProps {
   globalBadges?: { icon?: string; text?: string; color?: string }[] | null;
 }
 
+function SaleCountdown() {
+  const [saleTime, setSaleTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const targetHour = currentHour < 12 ? 12 : 24;
+      const targetDate = new Date(now);
+      targetDate.setHours(targetHour, 0, 0, 0);
+
+      const diffMs = targetDate.getTime() - now.getTime();
+      const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
+
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      setSaleTime({ hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    <span>
+      {pad(saleTime.hours)}H:{pad(saleTime.minutes)}M:{pad(saleTime.seconds)}S
+    </span>
+  );
+}
+
 export default function ProductClient({
   product,
   relatedProducts,
@@ -224,38 +257,11 @@ export default function ProductClient({
   const [activeTab, setActiveTab] = useState("description");
   const [imageLoading, setImageLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [saleTime, setSaleTime] = useState({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Update sale countdown every second (resets every 12 hours)
   useEffect(() => {
-    const updateCountdown = () => {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const targetHour = currentHour < 12 ? 12 : 24;
-      const targetDate = new Date(now);
-      targetDate.setHours(targetHour, 0, 0, 0);
-
-      const diffMs = targetDate.getTime() - now.getTime();
-      const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
-
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-
-      setSaleTime({ hours, minutes, seconds });
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
+    // Always scroll to top when product page loads / product changes
+    try { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); } catch {}
     setSelectedVariant(null);
     setPickedOptions({});
     if (product) {
@@ -621,15 +627,9 @@ export default function ProductClient({
               {discount > 0 && (
                 <span className="product-page__discount">{discount}% OFF</span>
               )}
-              {imageLoading && (
-                <div className="product-page__loading-spinner">
-                  <img
-                    src="/spinner.svg"
-                    alt="Loading..."
-                    className="spinner-icon"
-                  />
-                </div>
-              )}
+              <div
+                className={`product-page__image-skeleton ${!imageLoading ? "hidden" : ""}`}
+              />
               {(() => {
                 const mediaUrl =
                   galleryImages?.[selectedImageIndex] ||
@@ -645,6 +645,7 @@ export default function ProductClient({
                       muted
                       loop
                       preload="metadata"
+                      className={!imageLoading ? "is-loaded" : ""}
                       onLoadedData={() => setImageLoading(false)}
                       onError={() => setImageLoading(false)}
                     >
@@ -655,11 +656,16 @@ export default function ProductClient({
                 return (
                   <img
                     ref={imgRef}
+                    key={mediaUrl}
                     src={mediaUrl}
                     alt={product.name}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    className={!imageLoading ? "is-loaded" : ""}
                     onLoad={() => setImageLoading(false)}
                     onError={() => setImageLoading(false)}
-                    style={{ borderRadius: "4px", backgroundColor: "#fff" }}
+                    style={{ borderRadius: "4px" }}
                   />
                 );
               })()}
@@ -671,52 +677,51 @@ export default function ProductClient({
               <span className="product-page__brand">{product.brand}</span>
             )}
 
-            {(isBestseller || isFastSelling) && (
-              <div className="product-page__badge-capsules">
-                {isBestseller && (
-                  <span className="badge-capsule badge-capsule--bestseller">
-                    <Star size={12} className="badge-capsule__icon" />
-                    <span>Bestseller</span>
-                  </span>
-                )}
-                {isFastSelling && (
-                  <span className="badge-capsule badge-capsule--fast-selling">
-                    <TrendingUp size={12} className="badge-capsule__icon" />
-                    <span>Fast Selling</span>
-                  </span>
+              {(isBestseller || isFastSelling) && (
+                <div className="product-page__badge-capsules">
+                  {isBestseller && (
+                    <span className="badge-capsule badge-capsule--bestseller">
+                      <Star size={12} className="badge-capsule__icon" />
+                      <span>Bestseller</span>
+                    </span>
+                  )}
+                  {isFastSelling && (
+                    <span className="badge-capsule badge-capsule--fast-selling">
+                      <TrendingUp size={12} className="badge-capsule__icon" />
+                      <span>Fast Selling</span>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <h1 className="product-page__title">{product.name}</h1>
+
+              <div className="product-page__rating">
+                <span>Ratings : </span>
+                {renderStars(product.averageRating || 0)}
+              </div>
+
+              <div className="product-page__pricing">
+                <span className="product-page__price">
+                  ₹{displayPrice?.toLocaleString("en-IN")}
+                </span>
+                {originalPrice && (
+                  <>
+                    <span className="product-page__original-price">
+                      ₹{originalPrice.toLocaleString("en-IN")}
+                    </span>
+                    <span className="product-page__discount">
+                      {discount}% OFF
+                    </span>
+                  </>
                 )}
               </div>
-            )}
 
-            <h1 className="product-page__title">{product.name}</h1>
-
-            <div className="product-page__rating">
-              <span>Ratings : </span>
-              {renderStars(product.averageRating || 0)}
-            </div>
-
-            <div className="product-page__pricing">
-              <span className="product-page__price">
-                ₹{displayPrice?.toLocaleString("en-IN")}
-              </span>
-              {originalPrice && (
-                <>
-                  <span className="product-page__original-price">
-                    ₹{originalPrice.toLocaleString("en-IN")}
-                  </span>
-                  <span className="product-page__discount">
-                    {discount}% OFF
-                  </span>
-                </>
-              )}
-            </div>
-
-            <div className="product-page__sale-timer">
+              <div className="product-page__sale-timer">
               <span className="sale-live-badge">Sale Is Live!</span>
               <span className="sale-countdown">
                 <Clock size={16} className="sale-clock-icon" />
-                {pad(saleTime.hours)}H:{pad(saleTime.minutes)}M:
-                {pad(saleTime.seconds)}S
+                <SaleCountdown />
               </span>
             </div>
             {lowStock ? <p className="product-page__low-stock">Low stock</p> : null}
@@ -809,77 +814,77 @@ export default function ProductClient({
             )}
 
             <div className="product-page__quantity">
-              <label>Quantity:</label>
-              <div className="product-page__quantity-controls">
+                <label>Quantity:</label>
+                <div className="product-page__quantity-controls">
+                  <button
+                    disabled={outOfStock}
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  >
+                    −
+                  </button>
+                  <span>{quantity}</span>
+                  <button
+                    disabled={outOfStock}
+                    onClick={() =>
+                      setQuantity((prev) => Math.min(stockLeft, prev + 1))
+                    }
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="product-page__actions">
                 <button
-                  disabled={outOfStock}
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="product-page__add-cart"
+                  onClick={handleAddToCart}
+                  disabled={purchaseBlocked}
                 >
-                  −
+                  <ShoppingBag size={16} />
+                  {addedToCart ? "Added!" : "Add to Cart"}
                 </button>
-                <span>{quantity}</span>
                 <button
-                  disabled={outOfStock}
-                  onClick={() =>
-                    setQuantity((prev) => Math.min(stockLeft, prev + 1))
-                  }
+                  className="product-page__buy-now"
+                  onClick={handleBuyNow}
+                  disabled={purchaseBlocked}
                 >
-                  +
+                  <span>Buy Now</span>
+                  <img
+                    src="/buynow.png"
+                    alt="Buy Now"
+                    className="product-page__buy-now-img"
+                  />
                 </button>
               </div>
-            </div>
+              {needsVariant ? (
+                <p className="product-page__out-of-stock">{variantPrompt}</p>
+              ) : outOfStock ? (
+                <p className="product-page__out-of-stock">This is out of stock</p>
+              ) : null}
 
-            <div className="product-page__actions">
               <button
-                className="product-page__add-cart"
-                onClick={handleAddToCart}
-                disabled={purchaseBlocked}
+                className={`product-page__wishlist ${liked ? "product-page__wishlist--active" : ""}`}
+                onClick={() =>
+                  toggleWishlist({
+                    id: product.id,
+                    name: product.name,
+                    price: displayPrice,
+                    images: galleryImages.length ? galleryImages : product.images,
+                    variants: product.variants,
+                  })
+                }
               >
-                <ShoppingBag size={16} />
-                {addedToCart ? "Added!" : "Add to Cart"}
-              </button>
-              <button
-                className="product-page__buy-now"
-                onClick={handleBuyNow}
-                disabled={purchaseBlocked}
-              >
-                <span>Buy Now</span>
-                <img
-                  src="/buynow.png"
-                  alt="Buy Now"
-                  className="product-page__buy-now-img"
+                <Heart
+                  size={16}
+                  fill={liked ? "var(--gold-light, #c9a84c)" : "none"}
+                  stroke={liked ? "var(--gold-light, #c9a84c)" : "currentColor"}
                 />
+                {liked ? "Remove from Wishlist" : "Add to Wishlist"}
               </button>
-            </div>
-            {needsVariant ? (
-              <p className="product-page__out-of-stock">{variantPrompt}</p>
-            ) : outOfStock ? (
-              <p className="product-page__out-of-stock">This is out of stock</p>
-            ) : null}
 
-            <button
-              className={`product-page__wishlist ${liked ? "product-page__wishlist--active" : ""}`}
-              onClick={() =>
-                toggleWishlist({
-                  id: product.id,
-                  name: product.name,
-                  price: displayPrice,
-                  images: galleryImages.length ? galleryImages : product.images,
-                  variants: product.variants,
-                })
-              }
-            >
-              <Heart
-                size={16}
-                fill={liked ? "var(--gold-light, #c9a84c)" : "none"}
-                stroke={liked ? "var(--gold-light, #c9a84c)" : "currentColor"}
-              />
-              {liked ? "Remove from Wishlist" : "Add to Wishlist"}
-            </button>
-
-            {coupons && coupons.length > 0 && (
-              <SpecialOffersCard coupons={coupons} />
-            )}
+              {coupons && coupons.length > 0 && (
+                <SpecialOffersCard coupons={coupons} />
+              )}
 
             <div className="product-page__benefits">
               {pageBadges.length > 0 ? (
@@ -945,28 +950,30 @@ export default function ProductClient({
           </div>
         </div>
 
-        <div className="product-page__tabs">
-          <button
-            className={`product-page__tab ${activeTab === "description" ? "active" : ""}`}
-            onClick={() => setActiveTab("description")}
-          >
-            Description
-          </button>
-          <button
-            className={`product-page__tab ${activeTab === "reviews" ? "active" : ""}`}
-            onClick={() => setActiveTab("reviews")}
-          >
-            Reviews ({product.reviewCount || product.reviews?.length || 0})
-          </button>
-          <button
-            className={`product-page__tab ${activeTab === "shipping" ? "active" : ""}`}
-            onClick={() => setActiveTab("shipping")}
-          >
-            Shipping
-          </button>
-        </div>
+        {/* Tabs & Content Layer (Scroll Reveal) */}
+        <div className="scroll-fade-up">
+          <div className="product-page__tabs">
+            <button
+              className={`product-page__tab ${activeTab === "description" ? "active" : ""}`}
+              onClick={() => setActiveTab("description")}
+            >
+              Description
+            </button>
+            <button
+              className={`product-page__tab ${activeTab === "reviews" ? "active" : ""}`}
+              onClick={() => setActiveTab("reviews")}
+            >
+              Reviews ({product.reviewCount || product.reviews?.length || 0})
+            </button>
+            <button
+              className={`product-page__tab ${activeTab === "shipping" ? "active" : ""}`}
+              onClick={() => setActiveTab("shipping")}
+            >
+              Shipping
+            </button>
+          </div>
 
-        <div className="product-page__tab-content">
+          <div className="product-page__tab-content">
           {activeTab === "description" && (
             <div className="product-page__description-container">
               {/* 1. Product Information (Table) */}
@@ -1033,6 +1040,7 @@ export default function ProductClient({
             </div>
           )}
         </div>
+        </div>
 
         {/* testimonial section */}
         {testimonials &&
@@ -1040,7 +1048,7 @@ export default function ProductClient({
           testimonials.testimonials &&
           testimonials.testimonials.length > 0 && (
             <div
-              className="w-full flex flex-col items-center justify-center"
+              className="w-full flex flex-col items-center justify-center scroll-fade-up"
               style={{ marginTop: "60px" }}
             >
               <div style={{ width: "100%" }}>
@@ -1060,7 +1068,7 @@ export default function ProductClient({
           reelsSection.reels &&
           reelsSection.reels.length > 0 && (
             <div
-              className="w-full"
+              className="w-full scroll-fade-up"
               style={{ marginTop: "48px", marginBottom: "32px" }}
             >
               <ReelsSection

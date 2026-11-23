@@ -49,7 +49,7 @@ export async function initializeCartSession(
 
     if (!storeId && activeSubdomain) {
       try {
-        const storefront = await fetchStorefront(activeSubdomain);
+        const storefront = await fetchStorefront(activeSubdomain, undefined, { includeProducts: false, includeLegal: false });
         if (storefront?.store?.id && storefront.store.id !== 's-1') {
           storeId = storefront.store.id;
         }

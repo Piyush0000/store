@@ -1,4 +1,5 @@
 import "./globals.css";
+import type { Metadata } from "next";
 import { CartProvider } from "@/components/CartProvider";
 import { WishlistProvider } from "@/components/WishlistProvider";
 import CartDrawer from "@/components/CartDrawer";
@@ -10,17 +11,48 @@ import FakeSalesPopup from "@/components/FakeSalesPopup";
 import FloatingLogo from "@/components/FloatingLogo";
 import SmoothScroll from "@/components/SmoothScroll";
 import ScrollObserver from "@/components/ScrollObserver";
+import ScrollManager from "@/components/ScrollManager";
 
 import { fetchCataloguePage, fetchStorefront } from "@/lib/api";
 import { extractPixelId } from "@/lib/pixel";
 import MetaPixel from "@/components/MetaPixel";
 import { getServerSubdomain, getServerStoreId } from "@/lib/server-utils";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import PreviewBridge from "@/components/PreviewBridge";
-import FestivalExperience from "@/components/FestivalExperience";
+
+const FestivalExperience = dynamic(() => import("@/components/FestivalExperience"));
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { CustomerAiMount } from "@/features/customer-ai/components/customer-ai-mount";
 
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const subdomain = await getServerSubdomain();
+    const storeId = await getServerStoreId();
+    const data = await fetchStorefront(subdomain, storeId, { includeProducts: false, includeLegal: false });
+    const store = data?.store;
+    const customization = data?.customization;
+    const storeName = store?.name || "Store";
+    const title = customization?.metaTitle || storeName;
+    const description = customization?.metaDescription || store?.description || "";
+    const logoUrl = customization?.logo || "";
+
+    return {
+      title: { default: title, template: `%s | ${storeName}` },
+      description,
+      openGraph: {
+        title,
+        description,
+        images: logoUrl ? [{ url: logoUrl }] : [],
+      },
+    };
+  } catch {
+    return {
+      title: "Store",
+    };
+  }
+}
 
 export default async function RootLayout({
   children,
@@ -72,6 +104,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('scrollRestoration' in history){history.scrollRestoration='manual';}`,
+          }}
+        />
         <link rel="icon" href={faviconUrl} />
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
@@ -90,11 +127,14 @@ export default async function RootLayout({
         )}
       </head>
       <body>
+        <ScrollManager />
         <SmoothScroll />
         <ScrollObserver />
         {pixelId && <MetaPixel pixelId={pixelId} />}
         <PreviewBridge initialCustomization={customization} />
-        <FestivalExperience initialTheme={customization?.festivalTheme} />
+        {customization?.festivalTheme?.enabled && (
+          <FestivalExperience initialTheme={customization.festivalTheme} />
+        )}
         <WishlistProvider>
           <AnalyticsProvider
             customization={customization}

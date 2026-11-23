@@ -130,7 +130,7 @@ export default function ReelsSection({
         {isPopOpen ? (
           <aside className="store-reels__pop-card" aria-label="Featured shopping video">
             <button type="button" className="store-reels__pop-close" onClick={() => setIsPopOpen(false)} aria-label="Close video">×</button>
-            <video key={activeReel.id} src={inView ? activeReel.videoUrl : undefined} controls autoPlay={inView} muted loop playsInline preload="none" />
+            <video key={activeReel.id} src={isPopOpen ? activeReel.videoUrl : undefined} controls autoPlay={isPopOpen} muted loop playsInline preload="metadata" />
             <VideoDetails reel={activeReel} compact />
             {activeReels.length > 1 && <button type="button" className="store-reels__pop-next" onClick={handleNext}>Next video ›</button>}
           </aside>

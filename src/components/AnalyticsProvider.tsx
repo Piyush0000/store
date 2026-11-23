@@ -115,18 +115,25 @@ export function AnalyticsProvider({
       // Extract user ID if present in localStorage or user context
       const userId = localStorage.getItem('user_id') || undefined;
 
-      await fetch(eventUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          sessionId,
-          eventName,
-          pageUrl: window.location.href,
-          referrer: document.referrer || null,
-          payload
-        })
+      const body = JSON.stringify({
+        userId,
+        sessionId,
+        eventName,
+        pageUrl: window.location.href,
+        referrer: document.referrer || null,
+        payload
       });
+
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon(eventUrl, new Blob([body], { type: 'text/plain' }));
+      } else {
+        fetch(eventUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body,
+          keepalive: true,
+        }).catch(() => {});
+      }
     } catch (error) {
       console.error('[Analytics] Failed to dispatch tracking event:', error);
     }

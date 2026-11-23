@@ -273,7 +273,8 @@ export default function HomeClient({
 
   useEffect(() => {
     if (!customizationState?.festivalTheme?.enabled) return;
-    const interval = window.setInterval(() => setFestivalNow(Date.now()), 1000);
+    // Check festival active window every 60s instead of every 1s to prevent full-page re-renders
+    const interval = window.setInterval(() => setFestivalNow(Date.now()), 60000);
     return () => window.clearInterval(interval);
   }, [customizationState?.festivalTheme?.enabled]);
 

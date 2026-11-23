@@ -55,6 +55,40 @@ function CatalogueClientInner({ products, categories, total, hasMore, subdomain,
     setVisibleCount(24);
   }, [searchParams]);
 
+  // Restore scroll position ONLY when navigating back from product page
+  useEffect(() => {
+    try {
+      // Only restore on back/forward navigation, not fresh arrival
+      const navEntries = window.performance?.getEntriesByType?.('navigation') as PerformanceNavigationTiming[] | undefined;
+      const navType = navEntries?.[0]?.type;
+      const isBackNav = navType === 'back_forward' ||
+        (typeof window !== 'undefined' && (window as any).__catalogue_navigating_back === true);
+
+      if (isBackNav) {
+        const savedScroll = sessionStorage.getItem('catalogue_scroll_pos');
+        if (savedScroll) {
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: Number(savedScroll), behavior: 'instant' as ScrollBehavior });
+          });
+        }
+      } else {
+        // Fresh arrival — scroll to top and clear stale position
+        window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+        sessionStorage.removeItem('catalogue_scroll_pos');
+      }
+
+      // Always save scroll position so back-nav can restore it
+      const saveScroll = () => {
+        sessionStorage.setItem('catalogue_scroll_pos', String(window.scrollY));
+      };
+
+      window.addEventListener('scroll', saveScroll, { passive: true });
+      return () => {
+        window.removeEventListener('scroll', saveScroll);
+      };
+    } catch {}
+  }, []);
+
   const categoryList = categories.length > 0
     ? [{ id: 'all', label: 'All' }, ...categories.map(c => ({ id: c.toLowerCase().replace(/\s+/g, '-'), label: c }))]
     : [{ id: 'all', label: 'All' }, { id: 'jewellery-sets', label: 'Jewellery Sets' }, { id: 'necklace', label: 'Necklace' }, { id: 'earrings', label: 'Earrings' }];

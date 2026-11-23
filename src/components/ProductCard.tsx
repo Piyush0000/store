@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Heart, Star, ShoppingBag } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
@@ -29,12 +31,20 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, priority = false }: ProductCardProps) {
+  const router = useRouter();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loadedSlideIndexes, setLoadedSlideIndexes] = useState<Set<number>>(() => new Set([0]));
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+
+  const productHref = `/product/${product.slug || product.id}`;
+  const handlePrefetch = () => {
+    try {
+      router.prefetch(productHref);
+    } catch {}
+  };
 
   const { addToCart, openVariantPicker } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -163,8 +173,12 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
   return (
     <div className="product-card">
-      <a 
-        href={`/product/${product.slug || product.id}`} 
+      <Link 
+        href={productHref} 
+        prefetch={false}
+        onClick={() => { try { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); } catch {} }}
+        onPointerEnter={handlePrefetch}
+        onTouchStart={handlePrefetch}
         className="product-card__image-wrap"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -207,6 +221,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                 onError={isFirst ? handleImageError : undefined}
                 loading={isEager ? "eager" : "lazy"}
                 decoding="async"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 {...(isEager ? { fetchPriority: "high" as const } : {})}
               />
             );
@@ -235,7 +250,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             {outOfStock ? "Out of stock" : "Quick Add"}
           </button>
         </div>
-      </a>
+      </Link>
 
       <button
         className={`product-card__heart ${liked ? 'product-card__heart--active' : ''}`}
@@ -246,9 +261,16 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       </button>
 
       <div className="product-card__info">
-        <a href={`/product/${product.slug || product.id}`} className="product-card__name">
+        <Link 
+          href={productHref} 
+          prefetch={false}
+          onClick={() => { try { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); } catch {} }}
+          onPointerEnter={handlePrefetch}
+          onTouchStart={handlePrefetch}
+          className="product-card__name"
+        >
           {product.name}
-        </a>
+        </Link>
 
         {rating > 0 && (
           <div className="product-card__rating">

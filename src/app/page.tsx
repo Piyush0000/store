@@ -4,7 +4,6 @@ import { getServerSubdomain, getServerStoreId } from '@/lib/server-utils';
 import HomeClient from './HomeClient';
 import './page.css';
 
-export const dynamic = 'force-dynamic';
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<any> | any }) {
   let customization: Customization | null = null;

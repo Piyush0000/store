@@ -181,16 +181,19 @@ html.lenis, html.lenis body {
   overflow: hidden;
 }
 
-/* ── Hardware-Accelerated Scroll Reveal (Fade-Up) ── */
+/* ── Hardware-Accelerated Scroll Reveal (Fade-Up with Blur Transition like Shrine PRO) ── */
 .scroll-fade-up {
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  filter: blur(2px);
+  transform: translateY(24px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform, filter;
 }
 
 .scroll-fade-up.is-revealed {
   opacity: 1;
+  filter: blur(0);
   transform: translateY(0);
 }

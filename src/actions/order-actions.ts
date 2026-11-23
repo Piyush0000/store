@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { getServerSubdomain, getServerStoreId } from '@/lib/server-utils';
 import { fetchStorefront } from '@/lib/api';
+import { getStoreContext, getCheckoutSettings } from '@/lib/store-context';
 import { splitPartialPayment, type PartialPaymentConfig } from '@/lib/partial-payment';
 
 const addressSchema = z.object({
@@ -18,9 +19,8 @@ const addressSchema = z.object({
 });
 
 export async function getStorefrontCodFee(): Promise<number> {
-  const subdomain = await getServerSubdomain();
-  const storefront = await fetchStorefront(subdomain);
-  return storefront.settings?.codFee ?? 0;
+  const { settings } = await getCheckoutSettings();
+  return settings?.codFee ?? 0;
 }
 
 export async function getStorefrontShippingFee(): Promise<{
@@ -30,16 +30,12 @@ export async function getStorefrontShippingFee(): Promise<{
   enabled: boolean;
 }> {
   try {
-    const subdomain = await getServerSubdomain();
-    const storefront = await fetchStorefront(subdomain);
-    const settings = storefront.settings || {};
-    const customization = storefront.customization || {};
-
-    const shippingSettings = (customization as any).shippingSettings || {};
-    const shippingFee = Number(shippingSettings.shippingFee ?? (settings as any).shippingFee ?? 0);
-    const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? (settings as any).freeShippingThreshold ?? 0);
-    const shippingLabel = shippingSettings.shippingLabel || 'Shipment Fee';
-    const enabled = shippingSettings.enabled !== false;
+    const { settings, shippingSettings } = await getCheckoutSettings();
+    const ship = (shippingSettings as any) || {};
+    const shippingFee = Number(ship.shippingFee ?? (settings as any)?.shippingFee ?? 0);
+    const freeShippingThreshold = Number(ship.freeShippingThreshold ?? (settings as any)?.freeShippingThreshold ?? 0);
+    const shippingLabel = ship.shippingLabel || 'Shipment Fee';
+    const enabled = ship.enabled !== false;
 
     return {
       shippingFee,
@@ -187,10 +183,8 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
     let storeId = orderData.storeId;
     const subdomain = await getServerSubdomain();
     if (!storeId) {
-      const storefront = await fetchStorefront(subdomain);
-      if (storefront.store?.id) {
-        storeId = storefront.store.id;
-      }
+      const ctx = await getStoreContext();
+      storeId = ctx.storeId;
     }
 
     if (!storeId) {
@@ -231,9 +225,8 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
     } | null = null;
 
     if (orderData.paymentMethod === 'PARTIAL') {
-      const subdomain = await getServerSubdomain();
-      const storefront = await fetchStorefront(subdomain);
-      const gateways = storefront.settings?.enabledGateways || (storefront as any).store?.enabledGateways || {};
+      const { settings, store } = await getCheckoutSettings();
+      const gateways = settings?.enabledGateways || (store as any)?.enabledGateways || {};
       const partialRaw = (gateways as any).partial;
       const partialValue = Number(partialRaw?.value);
       const partialDiscountValue = Number(partialRaw?.discountValue);
@@ -256,7 +249,7 @@ export async function createOrder(data: z.infer<typeof orderInputSchema>) {
       const split = splitPartialPayment(
         partialConfig,
         lineTotal + shipping - coupon,
-        storefront.settings?.codFee ?? 0,
+        settings?.codFee ?? 0,
       );
       if (!split || !partialConfig) {
         return {
@@ -494,15 +487,14 @@ export async function createCodOrder(data: {
   couponCode?: string;
   discountAmount?: number;
 }) {
-  const subdomain = await getServerSubdomain();
-  const storefront = await fetchStorefront(subdomain);
-  const storeId = data.storeId || storefront.store?.id;
+  const { storeId: resolvedStoreId, settings, store, shippingSettings: rawShippingSettings } = await getCheckoutSettings();
+  const storeId = data.storeId || resolvedStoreId;
 
   if (!storeId) {
     return { success: false, message: 'STORE_ID is required to validate COD stock' };
   }
 
-  const gateways = storefront.settings?.enabledGateways || (storefront as any).store?.enabledGateways || {};
+  const gateways = settings?.enabledGateways || (store as any)?.enabledGateways || {};
   const codEnabled = Boolean((gateways as any).cod?.enabled ?? (gateways as any).cod);
   if (!codEnabled) {
     return { success: false, message: 'Cash on Delivery is not enabled for this store' };
@@ -523,10 +515,10 @@ export async function createCodOrder(data: {
   }
 
   // Validate total matches items + COD fee + shipping - discount
-  const COD_FEE = storefront.settings?.codFee ?? 0;
-  const shippingSettings = (storefront.customization as any)?.shippingSettings || {};
+  const COD_FEE = settings?.codFee ?? 0;
+  const shippingSettings = (rawShippingSettings as any) || {};
   const configuredShippingFee = Number(
-    shippingSettings.shippingFee ?? (storefront.settings as any)?.shippingFee ?? 0
+    shippingSettings.shippingFee ?? (settings as any)?.shippingFee ?? 0
   );
   const freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 0);
   const shippingEnabled = shippingSettings.enabled !== false;
@@ -768,13 +760,10 @@ export async function getOrderById(orderId: string, storeId?: string) {
     }
     if (!targetStoreId) {
       try {
-        const subdomain = await getServerSubdomain();
-        if (subdomain) {
-          const storefront = await fetchStorefront(subdomain);
-          if (storefront.store?.id) targetStoreId = storefront.store.id;
-        }
+        const ctx = await getStoreContext();
+        if (ctx.storeId) targetStoreId = ctx.storeId;
       } catch (err) {
-        console.warn('[getOrderById] Error resolving storeId from subdomain:', err);
+        console.warn('[getOrderById] Error resolving storeId from context:', err);
       }
     }
 
@@ -820,15 +809,10 @@ export async function getOrdersByPhone(phone: string, userId?: string, storeId?:
     }
     if (!targetStoreId) {
       try {
-        const subdomain = await getServerSubdomain();
-        if (subdomain) {
-          const storefront = await fetchStorefront(subdomain);
-          if (storefront.store?.id) {
-            targetStoreId = storefront.store.id;
-          }
-        }
+        const ctx = await getStoreContext();
+        if (ctx.storeId) targetStoreId = ctx.storeId;
       } catch (err) {
-        console.warn('[getOrdersByPhone] Error resolving storeId from subdomain:', err);
+        console.warn('[getOrdersByPhone] Error resolving storeId from context:', err);
       }
     }
 
@@ -957,13 +941,10 @@ export async function getOrdersByUser(userId: string, phone?: string, storeId?: 
     }
     if (!targetStoreId) {
       try {
-        const subdomain = await getServerSubdomain();
-        if (subdomain) {
-          const storefront = await fetchStorefront(subdomain);
-          if (storefront.store?.id) targetStoreId = storefront.store.id;
-        }
+        const ctx = await getStoreContext();
+        if (ctx.storeId) targetStoreId = ctx.storeId;
       } catch (err) {
-        console.warn('[getOrdersByUser] Error resolving storeId from subdomain:', err);
+        console.warn('[getOrdersByUser] Error resolving storeId from context:', err);
       }
     }
 

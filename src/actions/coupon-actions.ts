@@ -1,13 +1,11 @@
 'use server';
 
+import { getStoreContext } from '@/lib/store-context';
 import { getServerSubdomain } from '@/lib/server-utils';
-import { fetchStorefront } from '@/lib/api';
 
 export async function validateCouponAction(code: string, orderTotal: number, cartItems: any[] = [], paymentMethod?: string) {
   try {
-    const subdomain = await getServerSubdomain();
-    const storefront = await fetchStorefront(subdomain);
-    const storeId = storefront.store?.id;
+    const { storeId, subdomain } = await getStoreContext();
 
     if (!storeId) {
       return { success: false, message: 'Store not found' };
