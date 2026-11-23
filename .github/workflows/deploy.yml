@@ -33,8 +33,9 @@ jobs:
             echo "Current Storefront Commit:"
             git log -1 --oneline
 
-            # 2. Install dependencies & build Next.js application (keep .next live during build)
+            # 2. Install dependencies & build Next.js application
             echo "Building Storefront App..."
+            rm -rf .next
             npm install
             npm run build
 
