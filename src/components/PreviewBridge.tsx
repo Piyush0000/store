@@ -47,47 +47,6 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
   const [customization, setCustomization] = useState(initialCustomization);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('isEditor') !== 'true') return;
-    let selected: HTMLElement | null = null;
-    const mark = (element: HTMLElement | null) => {
-      if (selected) selected.style.outline = '';
-      selected = element;
-      if (selected) {
-        selected.style.outline = '2px solid #3b82f6';
-        selected.style.outlineOffset = '-2px';
-      }
-    };
-    const onMessage = (event: MessageEvent) => {
-      if (event.source !== window.parent || event.data?.type !== 'ORBIT_EDITOR_SELECT') return;
-      const id = event.data.sectionId;
-      const target = id === 'headerStyle' ? document.querySelector<HTMLElement>('.header')
-        : id === 'announcementBar' ? document.querySelector<HTMLElement>('.announcement-bar')
-        : id === 'footerContent' ? document.querySelector<HTMLElement>('footer')
-        : Array.from(document.querySelectorAll<HTMLElement>('[data-orbit-section-id]'))
-          .find((element) => element.dataset.orbitSectionId === id) || Array.from(document.querySelectorAll<HTMLElement>('[data-orbit-section-type]'))
-          .find((element) => element.dataset.orbitSectionType === event.data.sectionType);
-      mark(target || null);
-      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-    const onClick = (event: MouseEvent) => {
-      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-orbit-section-id], .announcement-bar, .header, footer');
-      if (!target) return;
-      const sectionId = target.dataset.orbitSectionId || (target.matches('.announcement-bar') ? 'announcementBar' : target.matches('.header') ? 'headerStyle' : 'footerContent');
-      event.preventDefault();
-      event.stopPropagation();
-      mark(target);
-      window.parent.postMessage({ type: 'ORBIT_SECTION_CLICK', sectionId, sectionType: target.dataset.orbitSectionType }, '*');
-    };
-    window.addEventListener('message', onMessage);
-    document.addEventListener('click', onClick, true);
-    return () => {
-      window.removeEventListener('message', onMessage);
-      document.removeEventListener('click', onClick, true);
-      mark(null);
-    };
-  }, []);
-
-  useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
       // Allow any origin for local dev/preview, but check message type
       if (e.data?.type === 'ORBIT_CUSTOMIZATION_UPDATE') {
