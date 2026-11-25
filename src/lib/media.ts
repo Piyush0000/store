@@ -8,12 +8,6 @@ export function resolveMediaUrl(url?: string | null): string {
   if (!url) return '';
   const trimmed = String(url).trim();
   if (!trimmed) return '';
-
-  if (process.env.NODE_ENV !== 'production' && trimmed.includes('api.evoclabs.com/uploads/')) {
-    const uploadPath = trimmed.slice(trimmed.indexOf('/uploads/'));
-    return `${getMediaOrigin()}${uploadPath}`;
-  }
-
   if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
     return trimmed;
   }
