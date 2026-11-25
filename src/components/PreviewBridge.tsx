@@ -210,9 +210,6 @@ export default function PreviewBridge({ initialCustomization }: PreviewBridgePro
           .header__icon-btn, .header__logo-text, .header__nav-link, .header__mobile-toggle {
             color: #ffffff !important;
           }
-          .header__logo-img {
-            filter: brightness(0) invert(1) !important;
-          }
           .header__icon-btn:hover, .header__mobile-toggle:hover {
             background: rgba(255, 255, 255, 0.1) !important;
             color: #ffffff !important;
