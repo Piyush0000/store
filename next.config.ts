@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "*.r2.dev",
+      },
+      {
+        protocol: "https",
         hostname: "cdn.evoclabs.com",
       },
       {
@@ -26,12 +30,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
-        port: "5000",
       },
       {
         protocol: "http",
         hostname: "127.0.0.1",
-        port: "5000",
       },
       {
         protocol: "https",
