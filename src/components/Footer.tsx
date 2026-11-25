@@ -567,6 +567,7 @@ export default function Footer({
 
   return (
     <footer
+      data-orbit-section-type="footerContent"
       className={`footer footer--${footerVariant} ${
         policyLayout === "vertical" ? "footer--vertical-policies" : ""
       }`}

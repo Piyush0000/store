@@ -202,6 +202,7 @@ export default function AnnouncementBar({ initialCustomization, storeSubdomain }
   return (
     <div
       className={`announcement-bar announcement-bar--${animation}`}
+      data-orbit-section-type="announcementBar"
       style={{ ...barStyle, '--announcement-emoji-size': `${emojiSize}px` } as CSSProperties}
     >
       {animation === 'floating-emoji' && (

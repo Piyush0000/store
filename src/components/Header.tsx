@@ -458,7 +458,7 @@ export default function Header({ initialCustomization, storeName: propStoreName,
 
   return (
     <>
-      <header style={headerStyleVariables} data-nav-hover={navigationStyle.navHoverEffect || 'default'} className={`header ${bannerBackground ? 'header--banner-nav' : ''} ${customBackground ? 'header--image-nav' : ''} ${navigationStyle.navSticky === false ? 'header--not-sticky' : ''} header--logo-${logoPosition} header--nav-${navVariant} header--mobile-${mobileHeaderVariant} ${mobileHeaderOverHero ? 'header--mobile-over-hero' : ''} ${scrolled ? 'header--scrolled' : ''} ${animationEffect !== 'none' ? `header--animation-${animationEffect}` : ''}`}>
+      <header style={headerStyleVariables} data-orbit-section-type="headerStyle" data-nav-hover={navigationStyle.navHoverEffect || 'default'} className={`header ${bannerBackground ? 'header--banner-nav' : ''} ${customBackground ? 'header--image-nav' : ''} ${navigationStyle.navSticky === false ? 'header--not-sticky' : ''} header--logo-${logoPosition} header--nav-${navVariant} header--mobile-${mobileHeaderVariant} ${mobileHeaderOverHero ? 'header--mobile-over-hero' : ''} ${scrolled ? 'header--scrolled' : ''} ${animationEffect !== 'none' ? `header--animation-${animationEffect}` : ''}`}>
         <HeaderAnimationLayer config={{ ...headerAnimation, effect: animationEffect }} />
         {logoPosition === 'above' && <div className="header__logo-row">{renderLogo()}</div>}
         <div className="header__main">
