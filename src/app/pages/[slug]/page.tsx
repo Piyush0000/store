@@ -36,8 +36,8 @@ export default async function CustomPage({ params }: PageProps) {
   }
 
   return (
-    <div className="policy-page" data-orbit-section-id="store-page-content" data-orbit-section-type="storePageContent">
-      <div className="policy-page__header" data-orbit-section-type="storePageContent" style={{ textAlign: 'center', marginBottom: '40px' }}>
+    <div className="policy-page">
+      <div className="policy-page__header" style={{ textAlign: 'center', marginBottom: '40px' }}>
         <h1 style={{ fontSize: '36px', fontWeight: 'bold' }}>{page.title}</h1>
       </div>
       <div 
