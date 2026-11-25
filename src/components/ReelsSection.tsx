@@ -47,7 +47,10 @@ export default function ReelsSection({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setInView(entry.isIntersecting);
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
       },
       { rootMargin: '200px' }
     );
@@ -108,13 +111,13 @@ export default function ReelsSection({
         <div className="store-reels__story-picker" aria-label="Video stories">
           {activeReels.map((reel, idx) => (
             <button key={reel.id} type="button" className={`store-reels__story${idx === currentIndex ? ' store-reels__story--active' : ''}`} onClick={() => setCurrentIndex(idx)}>
-              <span className="store-reels__story-ring"><video src={inView ? reel.videoUrl : undefined} muted playsInline preload="none" /></span>
+              <span className="store-reels__story-ring"><video src={inView ? `${reel.videoUrl}#t=0.001` : undefined} muted playsInline preload="metadata" /></span>
               <span>{reel.sub || reel.category || `Story ${idx + 1}`}</span>
             </button>
           ))}
         </div>
         <div className="store-reels__story-player">
-          <video key={activeReel.id} src={inView ? activeReel.videoUrl : undefined} controls autoPlay={inView} muted loop playsInline preload="none" />
+          <video key={activeReel.id} src={inView ? activeReel.videoUrl : undefined} controls autoPlay={inView} muted loop playsInline preload="metadata" />
           <VideoDetails reel={activeReel} />
         </div>
       </section>
@@ -152,7 +155,7 @@ export default function ReelsSection({
           <div className="store-reels__sales-thumbs">
             {activeReels.map((reel, idx) => (
               <button key={reel.id} type="button" className={idx === currentIndex ? 'is-active' : ''} onClick={() => setCurrentIndex(idx)}>
-                <video src={inView ? reel.videoUrl : undefined} muted playsInline preload="none" /><span>{reel.title || `Video ${idx + 1}`}</span>
+                <video src={inView ? `${reel.videoUrl}#t=0.001` : undefined} muted playsInline preload="metadata" /><span>{reel.title || `Video ${idx + 1}`}</span>
               </button>
             ))}
           </div>
@@ -309,7 +312,7 @@ function VideoDetails({ reel, compact = false }: { reel: Reel; compact?: boolean
 function GalleryReel({ reel, compact = false, inView }: { reel: Reel; compact?: boolean; inView: boolean }) {
   return (
     <article className={`store-reels__gallery-card${compact ? ' store-reels__gallery-card--compact' : ''}`}>
-      <video src={inView ? reel.videoUrl : undefined} controls muted loop playsInline preload="none" /><VideoDetails reel={reel} compact={compact} />
+      <video src={inView ? `${reel.videoUrl}#t=0.001` : undefined} controls muted loop playsInline preload="metadata" /><VideoDetails reel={reel} compact={compact} />
     </article>
   );
 }
