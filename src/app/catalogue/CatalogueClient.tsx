@@ -208,7 +208,7 @@ function CatalogueClientInner({ products, categories, total, hasMore, subdomain,
 
   return (
     <div className="catalogue">
-      <div className="catalogue__header" data-orbit-section-id="collection-header" data-orbit-section-type="collectionHeader">
+      <div className="catalogue__header">
         <div>
           <h1>{categoryLabel.toUpperCase()}</h1>
           {searchQueryParam && (
@@ -232,7 +232,7 @@ function CatalogueClientInner({ products, categories, total, hasMore, subdomain,
       </div>
 
       <div className="catalogue__layout">
-        <aside className="catalogue__sidebar" data-orbit-section-id="collection-filters" data-orbit-section-type="collectionFilters">
+        <aside className="catalogue__sidebar">
           <div className="catalogue__filter-group">
             <h3>Categories</h3>
             <div className="catalogue__filter-options">
@@ -251,7 +251,7 @@ function CatalogueClientInner({ products, categories, total, hasMore, subdomain,
           </div>
         </aside>
 
-        <div className="catalogue__main" data-orbit-section-id="collection-grid" data-orbit-section-type="collectionGrid">
+        <div className="catalogue__main">
           <div className="catalogue__toolbar">
             <span>{resultCount} products</span>
             <select value={sortBy} onChange={(e) => handleSortChange(e.target.value)}>

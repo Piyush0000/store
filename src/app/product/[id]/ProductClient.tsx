@@ -594,9 +594,9 @@ export default function ProductClient({
 
   return (
     <>
-      <section className="product-page" data-orbit-section-type="productInformation">
+      <section className="product-page">
         <div className="product-page__container">
-          <div className="product-page__gallery" data-orbit-section-id="product-gallery" data-orbit-section-type="productGallery">
+          <div className="product-page__gallery">
             {galleryImages.length > 1 && (
               <div className="product-page__thumbnails">
                 {galleryImages.map((img: string, index: number) => (
@@ -672,7 +672,7 @@ export default function ProductClient({
             </div>
           </div>
 
-          <div className="product-page__info" data-orbit-section-id="product-information" data-orbit-section-type="productInformation">
+          <div className="product-page__info">
             {product.brand && (
               <span className="product-page__brand">{product.brand}</span>
             )}
@@ -952,7 +952,7 @@ export default function ProductClient({
 
         {/* Tabs & Content Layer (Scroll Reveal) */}
         <div className="scroll-fade-up">
-          <div className="product-page__tabs" data-orbit-section-id="product-reviews" data-orbit-section-type="productReviews">
+          <div className="product-page__tabs">
             <button
               className={`product-page__tab ${activeTab === "description" ? "active" : ""}`}
               onClick={() => setActiveTab("description")}
