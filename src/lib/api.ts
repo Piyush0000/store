@@ -367,30 +367,56 @@ const MOCK_STOREFRONT: StorefrontData = {
 };
 
 
+// ─── Internal API Secret Header Helper ──────────────────────────────────────────
+const getInternalHeaders = (): Record<string, string> => {
+  const secret = process.env.INTERNAL_API_SECRET;
+  if (!secret) return {};
+  return {
+    'x-storefront-internal': secret,
+  };
+};
+
 export const fetchStorefront = cache(async (
   subdomain?: string,
   storeId?: string,
   options: { includeProducts?: boolean; includeLegal?: boolean } = {},
 ): Promise<StorefrontData> => {
-  try {
-    const apiUrl = new URL(withStoreId(getApiUrl(subdomain), storeId));
-    apiUrl.searchParams.set('reviewMode', 'summary');
-    if (options.includeProducts === false) apiUrl.searchParams.set('includeProducts', 'false');
-    if (options.includeLegal === false) apiUrl.searchParams.set('includeLegal', 'false');
-    const isDev = process.env.NODE_ENV !== 'production';
-    const fetchOptions: RequestInit = isDev
-      ? { cache: 'no-store' }
-      : { next: { revalidate: 300, tags: [`store:${subdomain || 'preview'}`] } };
-    const res = await fetch(apiUrl.toString(), fetchOptions);
-    if (!res.ok) throw new Error(`Storefront request failed (${res.status}) for ${apiUrl}`);
-    const data = await res.json();
+  const apiUrl = new URL(withStoreId(getApiUrl(subdomain), storeId));
+  apiUrl.searchParams.set('reviewMode', 'summary');
+  if (options.includeProducts === false) apiUrl.searchParams.set('includeProducts', 'false');
+  if (options.includeLegal === false) apiUrl.searchParams.set('includeLegal', 'false');
 
-    if (!data.success) throw new Error(data.message || 'Failed to fetch storefront');
-    return resolveMediaTree(data);
-  } catch (err) {
-    console.error('[storefront-api] Error fetching storefront:', err);
-    throw err;
+  // Step 2: Use cache: 'no-store' for customization so Next.js data cache never serves
+  // stale customizations after a merchant saves. Backend versioned cache handles caching.
+  // React cache() provides per-request deduplication across RootLayout and Page.
+  const fetchOptions: RequestInit = {
+    cache: 'no-store',
+    headers: getInternalHeaders(),
+  };
+
+  // Perform request with a single retry for resilience against transient hiccups
+  let lastError: any = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(apiUrl.toString(), fetchOptions);
+      if (!res.ok) {
+        throw new Error(`Storefront request failed (${res.status}) for ${apiUrl}`);
+      }
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch storefront');
+      }
+      return resolveMediaTree(data);
+    } catch (err) {
+      lastError = err;
+      if (attempt === 1) {
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    }
   }
+
+  console.error('[storefront-api] Error fetching storefront after retry:', lastError);
+  throw lastError;
 });
 
 export interface CataloguePageResult {
@@ -420,8 +446,8 @@ export const fetchCataloguePage = cache(async (
   if (streamParam) apiUrl.searchParams.set(streamParam, 'true');
   const isDev = process.env.NODE_ENV !== 'production';
   const fetchOptions: RequestInit = isDev
-    ? { cache: 'no-store' }
-    : { next: { revalidate: 300, tags: [`catalogue:${subdomain || 'preview'}`] } };
+    ? { cache: 'no-store', headers: getInternalHeaders() }
+    : { next: { revalidate: 300, tags: [`catalogue:${subdomain || 'preview'}`] }, headers: getInternalHeaders() };
   const response = await fetch(apiUrl.toString(), fetchOptions);
   if (!response.ok) throw new Error(`Catalogue request failed (${response.status})`);
   const data = await response.json();
@@ -434,8 +460,8 @@ export const fetchProduct = cache(async (id: string, subdomain?: string, storeId
     const apiUrl = withStoreId(`${getApiUrl(subdomain)}/products/${encodeURIComponent(id)}`, storeId);
     const isDev = process.env.NODE_ENV !== 'production';
     const fetchOptions: RequestInit = isDev
-      ? { cache: 'no-store' }
-      : { next: { revalidate: 300, tags: [`product:${id}`] } };
+      ? { cache: 'no-store', headers: getInternalHeaders() }
+      : { next: { revalidate: 300, tags: [`product:${id}`] }, headers: getInternalHeaders() };
     const res = await fetch(apiUrl, fetchOptions);
     if (!res.ok) throw new Error(`Product request failed (${res.status})`);
     const data = await res.json();
@@ -455,7 +481,7 @@ export const fetchProduct = cache(async (id: string, subdomain?: string, storeId
 export async function fetchAnnouncements(subdomain?: string): Promise<Announcement[]> {
   try {
     const apiUrl = withStoreId(`${getApiUrl(subdomain)}/announcements`);
-    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const res = await fetch(apiUrl, { cache: 'no-store', headers: getInternalHeaders() });
     if (!res.ok) return [];
     const data = await res.json();
     if (!data.success) return [];
@@ -468,7 +494,7 @@ export async function fetchAnnouncements(subdomain?: string): Promise<Announceme
 export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
   try {
     const apiUrl = withStoreId(`${getApiUrl(subdomain)}/legal`);
-    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const res = await fetch(apiUrl, { cache: 'no-store', headers: getInternalHeaders() });
     if (!res.ok) return [];
     const data = await res.json();
     if (!data.success) return [];
@@ -481,7 +507,7 @@ export async function fetchLegal(subdomain?: string): Promise<LegalPage[]> {
 export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
   try {
     const apiUrl = withStoreId(`${getApiUrl(subdomain)}/pages`);
-    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const res = await fetch(apiUrl, { cache: 'no-store', headers: getInternalHeaders() });
     if (!res.ok) return [];
     const data = await res.json();
     if (!data.success) return [];
@@ -494,7 +520,7 @@ export async function fetchPages(subdomain?: string): Promise<StorePage[]> {
 export async function fetchPageBySlug(slug: string, subdomain?: string): Promise<StorePage | null> {
   try {
     const apiUrl = withStoreId(`${getApiUrl(subdomain)}/pages/${slug}`);
-    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const res = await fetch(apiUrl, { cache: 'no-store', headers: getInternalHeaders() });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.success) return null;

@@ -163,8 +163,14 @@ export default async function ProductPage({ params }: PageProps) {
       .filter((item: any) => String(item?.text || "").trim() || String(item?.icon || "").trim())
       .slice(0, 6);
     codEnabled = Boolean(data.settings?.enabledGateways?.cod?.enabled);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to fetch product:", error);
+    // If the backend explicitly reported 404 (product doesn't exist), show notFound()
+    // For any outage, network glitch, or 500 error, throw to error.tsx (503) so search engines don't de-index
+    if (error && (String(error?.message).includes("404") || error?.status === 404)) {
+      notFound();
+    }
+    throw error;
   }
 
   if (!product) {

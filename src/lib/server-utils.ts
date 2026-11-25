@@ -41,6 +41,7 @@ export async function getServerSubdomain(): Promise<string> {
       if (hostname.endsWith('.evoclabs.com')) {
         return hostname.split('.')[0] || '';
       }
+      return hostname || process.env.NEXT_PUBLIC_SUBDOMAIN || '';
     }
   } catch (error: any) {
     if (error && (error.digest === 'DYNAMIC_SERVER_USAGE' || String(error.message).includes('Dynamic server usage'))) {
