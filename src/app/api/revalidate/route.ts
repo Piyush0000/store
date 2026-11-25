@@ -1,8 +1,8 @@
 import { revalidateTag } from 'next/cache';
 
 export async function POST(req: Request) {
-  const secret = process.env.REVALIDATE_SECRET || 'evoc_revalidate_secret_2026';
-  if (req.headers.get('x-revalidate-secret') !== secret) {
+  const secret = process.env.REVALIDATE_SECRET;
+  if (!secret || req.headers.get('x-revalidate-secret') !== secret) {
     return new Response('forbidden', { status: 403 });
   }
   const { tags } = await req.json();

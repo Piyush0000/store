@@ -72,7 +72,11 @@ export default async function RootLayout({
     storeSubdomain = data.store?.subdomain || subdomain;
     products = data.products || [];
     if (customization?.fakeSalesPopup?.enabled) {
-      products = (await fetchCataloguePage(subdomain, storeId, { limit: 8 })).products;
+      try {
+        products = (await fetchCataloguePage(subdomain, storeId, { limit: 8 })).products;
+      } catch (popupErr) {
+        console.warn("[RootLayout] Failed to fetch fake sales popup products:", popupErr);
+      }
     }
   } catch (err: any) {
     if (
@@ -86,6 +90,7 @@ export default async function RootLayout({
       "[RootLayout] Failed to fetch storefront customization:",
       err,
     );
+    throw err;
   }
 
   let headerStyle = customization?.headerStyle;

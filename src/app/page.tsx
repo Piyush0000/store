@@ -11,23 +11,20 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   let bestSellers: any[] = [];
   let productSections: HydratedSection[] = [];
 
-  try {
-    const params = await searchParams;
-    const querySubdomain = params?.subdomain;
-    const queryStoreId = params?.storeId;
-    const resolvedSubdomain = querySubdomain || (await getServerSubdomain());
-    const storeId = queryStoreId || (await getServerStoreId());
-    const data: StorefrontData = await fetchStorefront(resolvedSubdomain, storeId);
+  const params = await searchParams;
+  const querySubdomain = params?.subdomain;
+  const queryStoreId = params?.storeId;
+  const resolvedSubdomain = querySubdomain || (await getServerSubdomain());
+  const storeId = queryStoreId || (await getServerStoreId());
 
-    customization = data.customization;
-    categories = data.categories || [];
-    bestSellers = data.products || [];
+  const data: StorefrontData = await fetchStorefront(resolvedSubdomain, storeId);
 
-    if (customization?.productSections?.length) {
-      productSections = buildSectionData(customization.productSections, bestSellers);
-    }
-  } catch (error) {
-    console.error('[HomePage] Failed to fetch storefront data:', error);
+  customization = data.customization;
+  categories = data.categories || [];
+  bestSellers = data.products || [];
+
+  if (customization?.productSections?.length) {
+    productSections = buildSectionData(customization.productSections, bestSellers);
   }
 
   return (
