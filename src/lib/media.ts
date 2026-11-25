@@ -14,7 +14,15 @@ export function resolveMediaUrl(url?: string | null): string {
     return `${getMediaOrigin()}${uploadPath}`;
   }
 
-  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+  if (/^https?:\/\//i.test(trimmed)) {
+    if (process.env.NODE_ENV === 'production' && (trimmed.includes('localhost:5000') || trimmed.includes('127.0.0.1:5000') || trimmed.includes('localhost:5001') || trimmed.includes('127.0.0.1:5001'))) {
+      const uploadPath = trimmed.slice(trimmed.indexOf('/uploads/'));
+      return `https://api.evoclabs.com${uploadPath}`;
+    }
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
     return trimmed;
   }
   if (trimmed.startsWith('/uploads/')) return `${getMediaOrigin()}${trimmed}`;

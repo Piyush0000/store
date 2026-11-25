@@ -22,9 +22,18 @@ export function getApiBase(): string {
 export function getBackendOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_MEDIA_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_URL;
   if (explicit) return explicit.replace(/\/+$/, '');
+
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://api.evoclabs.com';
+  }
+
   try {
     const raw = API_BASE.includes('://') ? API_BASE : `https://${API_BASE}`;
-    return new URL(raw).origin;
+    const origin = new URL(raw).origin;
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return origin;
+    }
+    return 'https://api.evoclabs.com';
   } catch {
     return 'https://api.evoclabs.com';
   }
