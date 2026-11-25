@@ -198,7 +198,11 @@ function CatalogueClientInner({ products, categories, total, hasMore, subdomain,
   if (searchQueryParam) {
     categoryLabel = `Results for "${searchQueryParam}"`;
   } else if (selectedStream) {
-    const streamName = selectedStream.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const streamName = (selectedStream || '')
+      .split('-')
+      .filter(Boolean)
+      .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
+      .join(' ');
     categoryLabel = `${streamName} Products`;
   }
 

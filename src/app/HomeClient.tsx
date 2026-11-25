@@ -129,29 +129,48 @@ interface HomeClientProps {
 }
 
 function buildHeroSlides(customization: any | null) {
-  const hero = customization?.heroSection;
+  let hero = customization?.heroSection;
+  if (!hero && Array.isArray(customization?.homepageSections)) {
+    const heroBlock = customization.homepageSections.find(
+      (b: any) => b?.type === "heroSection",
+    );
+    if (heroBlock?.instanceData?.heroSection) {
+      hero = heroBlock.instanceData.heroSection;
+    }
+  }
+
   if (hero) {
     if (Array.isArray(hero.slides) && hero.slides.length > 0) {
-      return hero.slides.map((slide: any, idx: number) => ({
-        id: slide.id || idx + 1,
-        image:
-          slide.backgroundImage ||
-          slide.image ||
-          slide.imageUrl ||
-          "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80",
-        title: slide.title || slide.headline || "",
-        subtitle:
-          slide.subtitle || slide.subheadline || slide.description || "",
-        cta: slide.ctaText || slide.buttonText || "",
-        link: slide.ctaLink || slide.link || "",
-      }));
+      const validSlides = hero.slides.filter(
+        (slide: any) => slide && typeof slide === "object",
+      );
+      if (validSlides.length > 0) {
+        return validSlides.map((slide: any, idx: number) => ({
+          id: slide.id || idx + 1,
+          image:
+            slide.backgroundImage ||
+            slide.image ||
+            slide.imageUrl ||
+            customization?.heroBanner ||
+            "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1400&q=80",
+          title: slide.title || slide.headline || "",
+          subtitle:
+            slide.subtitle || slide.subheadline || slide.description || "",
+          cta: slide.ctaText || slide.buttonText || "",
+          link: slide.ctaLink || slide.link || "",
+        }));
+      }
     }
 
     const title = hero.title || hero.headline || "";
     const subtitle =
       hero.subtitle || hero.subheadline || hero.description || "";
     const cta = hero.ctaText || hero.buttonText || "";
-    const image = hero.backgroundImage || hero.imageUrl || "";
+    const image =
+      hero.backgroundImage ||
+      hero.imageUrl ||
+      customization?.heroBanner ||
+      "";
     const link = hero.ctaLink || "/catalogue";
 
     if (title || subtitle || cta || image) {
@@ -168,6 +187,19 @@ function buildHeroSlides(customization: any | null) {
         },
       ];
     }
+  }
+
+  if (customization?.heroBanner) {
+    return [
+      {
+        id: 1,
+        image: customization.heroBanner,
+        title: "",
+        subtitle: "",
+        cta: "Shop Now",
+        link: "/catalogue",
+      },
+    ];
   }
 
   return [
@@ -291,8 +323,15 @@ export default function HomeClient({
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
-        console.log("[HomeClient] Received customizer update:", e.data.data);
-        setCustomizationState(e.data.data);
+        const update = e.data.data;
+        if (!update || typeof update !== "object" || Object.keys(update).length === 0) {
+          return;
+        }
+        console.log("[HomeClient] Received customizer update:", update);
+        setCustomizationState((prev: any) => ({
+          ...(prev || {}),
+          ...update,
+        }));
       }
     };
     window.addEventListener("message", handleMessage);
