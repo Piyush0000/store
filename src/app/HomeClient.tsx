@@ -322,6 +322,39 @@ export default function HomeClient({
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
+      if (e.source !== window.parent) return;
+      if (e.data?.type === "ORBIT_SCROLL_TO_SECTION") {
+        const { sectionId, sectionType } = e.data;
+        let attempts = 0;
+        const findAndScroll = () => {
+          const sectionNodes = Array.from(
+            document.querySelectorAll<HTMLElement>("[data-orbit-section-id], [data-orbit-section-type]"),
+          );
+          const target =
+            (sectionId && sectionNodes.find((node) => node.dataset.orbitSectionId === String(sectionId))) ||
+            sectionNodes.find((node) => node.dataset.orbitSectionType === sectionType) ||
+            (sectionType === "announcementBar" ? document.querySelector<HTMLElement>(".announcement-bar") : null) ||
+            (sectionType === "headerStyle" ? document.querySelector<HTMLElement>(".header") : null) ||
+            (["footerContent", "footerStyle", "newsletter"].includes(sectionType)
+              ? document.querySelector<HTMLElement>("footer.footer")
+              : null);
+
+          if (!target) {
+            if (attempts++ < 12) window.setTimeout(findAndScroll, 100);
+            return;
+          }
+
+          const header = document.querySelector<HTMLElement>(".header");
+          const isHeaderTarget = sectionType === "headerStyle" || sectionType === "announcementBar";
+          const stickyOffset = isHeaderTarget
+            ? 0
+            : (header?.getBoundingClientRect().height || 0) + 12;
+          const top = window.scrollY + target.getBoundingClientRect().top - stickyOffset;
+          window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        };
+        findAndScroll();
+        return;
+      }
       if (e.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
         const update = e.data.data;
         if (!update || typeof update !== "object" || Object.keys(update).length === 0) {
@@ -838,33 +871,33 @@ export default function HomeClient({
         .map((sec: any) => {
           switch (sec.type) {
             case "heroSection":
-              return <div key={sec.id}>{renderHero()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderHero()}</div>;
             case "trustBadgesSection":
-              return <div key={sec.id}>{renderTrustBadges()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderTrustBadges()}</div>;
             case "reelsSection":
-              return <div key={sec.id}>{renderReels()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderReels()}</div>;
             case "categoryImages":
-              return <div key={sec.id}>{renderCategories()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderCategories()}</div>;
             case "brandVideo":
-              return <div key={sec.id}>{renderBrandVideo()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderBrandVideo()}</div>;
             case "bannersSection":
-              return <div key={sec.id}>{renderBanners()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderBanners()}</div>;
             case "productSections":
               return (
-                <div key={sec.id}>
+                <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>
                   {renderProductSection(sec.id, sec.refIndex)}
                 </div>
               );
             case "mostBuySection":
-              return <div key={sec.id}>{renderMostBuy()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderMostBuy()}</div>;
             case "featuredProducts":
-              return <div key={sec.id}>{renderFeatured()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderFeatured()}</div>;
             case "tickerBar":
-              return <div key={sec.id}>{renderTicker()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderTicker()}</div>;
             case "testimonialsSection":
-              return <div key={sec.id}>{renderTestimonials()}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderTestimonials()}</div>;
             case "faqSection":
-              return <div key={sec.id}>{renderFaqSection(sec.instanceData)}</div>;
+              return <div key={sec.id} data-orbit-section-id={sec.id} data-orbit-section-type={sec.type}>{renderFaqSection(sec.instanceData)}</div>;
             default:
               return null;
           }
