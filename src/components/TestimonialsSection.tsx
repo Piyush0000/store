@@ -118,13 +118,14 @@ export default function TestimonialsSection({
     ) : null;
 
   const initials = (name: string) =>
-    name
+    (name || "")
       .trim()
       .split(/\s+/)
+      .filter(Boolean)
       .slice(0, 2)
-      .map((w) => w[0])
+      .map((w) => (w && w.length > 0 ? w[0] : ""))
       .join("")
-      .toUpperCase();
+      .toUpperCase() || "U";
 
   if (style === "spotlight") {
     const active = validTestimonials[Math.min(currentIndex, maxIndex)];
