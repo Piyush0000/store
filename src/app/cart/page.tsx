@@ -98,7 +98,7 @@ function CartContent() {
   if (isRecovering) {
     return (
       <div className="cart">
-        <h1 className="cart__title">MY BAG</h1>
+        <h1 className="cart__title" data-orbit-section-type="cartItems">MY BAG</h1>
         <div className="cart__empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '4rem 1rem' }}>
           <Loader2 className="animate-spin" size={40} style={{ animation: 'spin 1s linear infinite' }} />
           <p className="cart__empty-title">Restoring your cart...</p>
@@ -111,7 +111,7 @@ function CartContent() {
     console.log('[PAGE:Cart] Cart is empty, showing empty state');
     return (
       <div className="cart">
-        <h1 className="cart__title">MY BAG</h1>
+        <h1 className="cart__title" data-orbit-section-type="cartItems">MY BAG</h1>
         <div className="cart__empty">
           <ShoppingBag size={64} strokeWidth={1} />
           <p className="cart__empty-title">Your bag is empty</p>
@@ -128,11 +128,11 @@ function CartContent() {
 
   return (
     <div className="cart">
-      <h1 className="cart__title">MY BAG</h1>
+      <h1 className="cart__title" data-orbit-section-type="cartItems">MY BAG</h1>
       <p className="cart__subtitle">{cartCount} {cartCount === 1 ? 'item' : 'items'}</p>
 
       <div className="cart__layout">
-        <div className="cart__items">
+        <div className="cart__items" data-orbit-section-id="cart-items" data-orbit-section-type="cartItems">
           {cartItems.map((item) => (
             <div key={`${item.id}-${item.variantId || JSON.stringify(item.variants || {})}`} className="cart__item">
               <div className="cart__item-image">
@@ -197,7 +197,7 @@ function CartContent() {
           ))}
         </div>
 
-        <div className="cart__summary">
+        <div className="cart__summary" data-orbit-section-id="cart-summary" data-orbit-section-type="cartSummary">
           <h2 className="cart__summary-title">ORDER SUMMARY</h2>
 
           <div className="cart__summary-row">
@@ -286,7 +286,7 @@ export default function CartPage() {
     <Suspense
       fallback={
         <div className="cart">
-          <h1 className="cart__title">MY BAG</h1>
+          <h1 className="cart__title" data-orbit-section-type="cartItems">MY BAG</h1>
           <div className="cart__empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '4rem 1rem' }}>
             <Loader2 className="animate-spin" size={40} style={{ animation: 'spin 1s linear infinite' }} />
             <p className="cart__empty-title">Loading bag...</p>

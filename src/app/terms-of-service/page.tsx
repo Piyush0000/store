@@ -28,7 +28,7 @@ export default async function TermsOfServicePage() {
   }
 
   return (
-    <div className="policy-page">
+    <div className="policy-page" data-orbit-section-id="store-page-content" data-orbit-section-type="storePageContent">
       <div className="policy-page__header">
         <h1>{title}</h1>
       </div>
