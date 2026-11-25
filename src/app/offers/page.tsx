@@ -198,7 +198,7 @@ export default function OffersPage() {
   }
 
   return (
-    <div className="offers-container">
+    <div className="offers-container" data-orbit-section-id="offers-content" data-orbit-section-type="offersContent">
       <header className="offers-header">
         <Tag className="header-tag-icon" />
         <h1>Bundle Offers & Combos</h1>
