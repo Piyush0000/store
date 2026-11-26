@@ -57,7 +57,7 @@ export default async function AboutPage() {
   }
 
   return (
-    <div className="about" data-orbit-section-id="store-page-content" data-orbit-section-type="storePageContent">
+    <div className="about">
       <section className="about__hero">
         <h1>{pageTitle}</h1>
         <p className="about__tagline">Discover the story behind our brand</p>

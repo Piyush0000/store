@@ -653,7 +653,7 @@ export default function ProductClient({
         "--product-image-fit": pageSettings.imageFit || undefined,
       } as React.CSSProperties}>
         <div className="product-page__container">
-          <div className="product-page__gallery" data-orbit-section-id="product-gallery" data-orbit-section-type="productGallery">
+          <div className="product-page__gallery">
             {galleryImages.length > 1 && (
               <div className="product-page__thumbnails">
                 {galleryImages.map((img: string, index: number) => (
@@ -727,7 +727,7 @@ export default function ProductClient({
             </div>
           </div>
 
-          <div className="product-page__info" data-orbit-section-id="product-information" data-orbit-section-type="productInformation">
+          <div className="product-page__info">
             {product.brand && (
               <span className="product-page__brand">{product.brand}</span>
             )}

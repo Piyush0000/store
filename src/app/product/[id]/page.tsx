@@ -75,7 +75,7 @@ async function RelatedProductsSection({
   if (relatedProducts.length === 0) return null;
 
   return (
-    <section className="featured-collection scroll-fade-up" data-orbit-section-id="related-products" data-orbit-section-type="relatedProducts">
+    <section className="featured-collection scroll-fade-up">
       <h2 className="section-title inline-block mb-2">YOU MAY ALSO LIKE</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-6 grid-rows-auto gap-2">
         {relatedProducts.map((p: any) => (

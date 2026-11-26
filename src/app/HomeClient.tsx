@@ -325,6 +325,38 @@ export default function HomeClient({
     else if (window.parent === window) sessionStorage.removeItem("orbitEditorPreview");
     const handleMessage = (e: MessageEvent) => {
       if (e.source !== window.parent) return;
+      if (e.data?.type === "ORBIT_SCROLL_TO_SECTION") {
+        const { sectionId, sectionType } = e.data;
+        let attempts = 0;
+        const findAndScroll = () => {
+          const sectionNodes = Array.from(
+            document.querySelectorAll<HTMLElement>("[data-orbit-section-id], [data-orbit-section-type]"),
+          );
+          const target =
+            (sectionId && sectionNodes.find((node) => node.dataset.orbitSectionId === String(sectionId))) ||
+            sectionNodes.find((node) => node.dataset.orbitSectionType === sectionType) ||
+            (sectionType === "announcementBar" ? document.querySelector<HTMLElement>(".announcement-bar") : null) ||
+            (sectionType === "headerStyle" ? document.querySelector<HTMLElement>(".header") : null) ||
+            (["footerContent", "footerStyle", "newsletter"].includes(sectionType)
+              ? document.querySelector<HTMLElement>("footer.footer")
+              : null);
+
+          if (!target) {
+            if (attempts++ < 12) window.setTimeout(findAndScroll, 100);
+            return;
+          }
+
+          const header = document.querySelector<HTMLElement>(".header");
+          const isHeaderTarget = sectionType === "headerStyle" || sectionType === "announcementBar";
+          const stickyOffset = isHeaderTarget
+            ? 0
+            : (header?.getBoundingClientRect().height || 0) + 12;
+          const top = window.scrollY + target.getBoundingClientRect().top - stickyOffset;
+          window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        };
+        findAndScroll();
+        return;
+      }
       if (e.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
         const update = e.data.data;
         if (!update || typeof update !== "object" || Object.keys(update).length === 0) {

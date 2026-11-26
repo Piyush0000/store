@@ -11,7 +11,7 @@ export default function WishlistPage() {
   const { addToCart, openVariantPicker } = useCart();
 
   return (
-    <div className="wishlist" data-orbit-section-id="wishlist-items" data-orbit-section-type="wishlistItems">
+    <div className="wishlist">
       <div className="wishlist__header">
         <h1>MY WISHLIST</h1>
         <span className="wishlist__count">
