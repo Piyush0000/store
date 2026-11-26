@@ -321,8 +321,6 @@ export default function HomeClient({
   });
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("isEditor") === "true") sessionStorage.setItem("orbitEditorPreview", "true");
-    else if (window.parent === window) sessionStorage.removeItem("orbitEditorPreview");
     const handleMessage = (e: MessageEvent) => {
       if (e.source !== window.parent) return;
       if (e.data?.type === "ORBIT_SCROLL_TO_SECTION") {
