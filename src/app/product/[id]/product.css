@@ -1702,3 +1702,37 @@ a.product-page__store-link:hover {
 }
 
 .product-page__whatsapp-action:hover { background: #f0fdf4; }
+.product-page__title { font-weight: var(--product-title-weight, 600); text-align: var(--product-title-align, left); }
+.product-page__original-price { color: var(--product-original-price-color, #999); }
+.product-page__tabs { border-bottom-color: var(--product-tab-divider, #e5e7eb); }
+.product-page__tab.active { color: var(--product-tab-active, #111827); border-bottom-color: var(--product-tab-active, #1b4d3e); }
+.product-page__description-container--bordered,
+.product-page__description-container--soft-card,
+.product-page__description-container--accordion { padding: 20px; border: 1px solid var(--product-description-border, #e5e7eb); border-radius: 12px; background: var(--product-description-bg, #fff); color: var(--product-description-text, inherit); }
+.product-page__description-container--soft-card { border-color: transparent; background: var(--product-description-bg, #f8fafc); }
+.product-page__description-container--accordion .product-page__info-card,
+.product-page__description-container--accordion .product-page__desc-card { padding: 14px; border: 1px solid var(--product-description-border, #e5e7eb); border-radius: 8px; }
+.product-page__benefits { background: var(--product-benefits-bg, transparent); border: 1px solid var(--product-benefits-border, transparent); border-radius: 12px; color: var(--product-benefits-text, inherit); }
+.product-page__benefits-grid--cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(120px,1fr)); gap: 10px; }
+.product-page__benefits-grid--cards .product-page__benefit { padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; }
+.product-page__benefits-grid--icons .product-page__benefit { flex-direction: column; text-align: center; }
+.product-page__shipping-info { background: var(--product-shipping-bg, transparent); color: var(--product-shipping-text, inherit); border-radius: 12px; padding: 18px; }
+.product-page__pricing--stacked { align-items: flex-start; flex-direction: column; gap: 6px; }
+.product-page__actions--stacked { flex-direction: column; }
+.product-page__actions--stacked > * { width: 100%; }
+.product-page__gallery--thumbs-bottom { display: flex; flex-direction: column-reverse; }
+.product-page__gallery--carousel .product-page__thumbnails { display: flex; flex-direction: row; overflow-x: auto; }
+.product-page__add-cart { border-radius: var(--product-button-radius, 999px); }
+.product-page__buy-now { border-radius: var(--product-button-radius, 999px); color: var(--product-button-text, #fff); }
+.product-page__variant-btn.active,.product-page__variant-card.active { border-color: var(--variant-accent,#1b4d3e); box-shadow: 0 0 0 1px var(--variant-accent,#1b4d3e); }
+.product-page__variants--swatches .product-page__variant-options--rects .product-page__variant-btn { min-width:42px; width:42px; height:42px; border-radius:50%; padding:4px; }
+.product-page__variants--image-cards .product-page__variant-options--rects .product-page__variant-btn { min-width:90px; min-height:100px; border-radius:10px; }
+.product-page__shipping-info--card { padding:20px; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 4px 18px rgba(15,23,42,.06); }
+.product-page__shipping-info--icons li::before { color:var(--product-shipping-icon,#1b4d3e); }
+.product-page__shipping-info--icons li { display:inline-flex; margin:6px 12px 6px 0; padding:10px 14px; border:1px solid #e5e7eb; border-radius:999px; }
+.product-related__grid { display:grid; grid-template-columns:repeat(var(--related-columns,4),minmax(0,1fr)); gap:16px; }
+.product-related__grid img { object-fit:var(--related-image-fit,cover); }
+.product-related--carousel .product-related__grid { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; }
+.product-related--carousel .product-related__grid > * { flex:0 0 min(240px,70vw); scroll-snap-align:start; }
+.product-reels__heading { margin:24px 0 14px; font-size:clamp(20px,2.2vw,30px); font-weight:700; }
+@media(max-width:767px){.product-related__grid{grid-template-columns:repeat(2,minmax(0,1fr));}.product-related--carousel .product-related__grid{display:flex;}}
