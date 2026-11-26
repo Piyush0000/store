@@ -1101,11 +1101,14 @@ export async function cancelPendingOrder(orderId: string) {
       return { success: false, message: 'Order cannot be cancelled' };
     }
 
+    // 'VOIDED' is not a valid PaymentStatus in the database enum
+    // (PENDING | PAID | FAILED | REFUNDED), so that write always failed and the
+    // abandoned attempt stayed "pending". Mark it as a failed, cancelled attempt.
     await prisma.order.update({
       where: { id: orderId },
       data: {
         status: 'CANCELLED',
-        paymentStatus: 'VOIDED',
+        paymentStatus: 'FAILED',
       },
     });
 
