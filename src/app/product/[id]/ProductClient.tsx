@@ -594,9 +594,37 @@ export default function ProductClient({
 
   return (
     <>
-      <section className="product-page">
+      {pageSettings.showRelatedProducts === false && <style>{'[data-orbit-section-id="related-products"] { display: none !important; }'}</style>}
+      <section className="product-page" data-orbit-section-type="productInformation" style={{
+        "--product-title-color": pageSettings.titleColor || undefined,
+        "--product-title-size": pageSettings.titleSize ? `${pageSettings.titleSize}px` : undefined,
+        "--product-price-color": pageSettings.priceColor || undefined,
+        "--product-button-color": pageSettings.buttonColor || undefined,
+        "--product-heading-color": pageSettings.sectionHeadingColor || undefined,
+        "--product-heading-size": pageSettings.sectionHeadingSize ? `${pageSettings.sectionHeadingSize}px` : undefined,
+        "--product-image-fit": pageSettings.imageFit || undefined,
+        "--product-title-weight": pageSettings.titleWeight || undefined,
+        "--product-title-align": pageSettings.titleAlign || undefined,
+        "--product-original-price-color": pageSettings.originalPriceColor || undefined,
+        "--product-discount-color": pageSettings.discountColor || undefined,
+        "--product-tab-active": pageSettings.tabActiveColor || undefined,
+        "--product-tab-divider": pageSettings.tabDividerColor || undefined,
+        "--product-description-bg": pageSettings.descriptionBackground || undefined,
+        "--product-description-border": pageSettings.descriptionBorderColor || undefined,
+        "--product-description-text": pageSettings.descriptionTextColor || undefined,
+        "--product-benefits-bg": pageSettings.benefitsBackground || undefined,
+        "--product-benefits-border": pageSettings.benefitsBorderColor || undefined,
+        "--product-benefits-text": pageSettings.benefitsTextColor || undefined,
+        "--product-shipping-bg": pageSettings.shippingBackground || undefined,
+        "--product-shipping-text": pageSettings.shippingTextColor || undefined,
+        "--product-shipping-icon": pageSettings.shippingIconColor || undefined,
+        "--product-button-text": pageSettings.buttonTextColor || undefined,
+        "--product-button-radius": pageSettings.buttonRadius !== undefined ? `${pageSettings.buttonRadius}px` : undefined,
+        "--product-gallery-radius": pageSettings.galleryRadius !== undefined ? `${pageSettings.galleryRadius}px` : undefined,
+        "--product-price-layout": pageSettings.priceLayout || undefined,
+      } as React.CSSProperties}>
         <div className="product-page__container">
-          <div className="product-page__gallery">
+          <div className={`product-page__gallery product-page__gallery--${pageSettings.galleryLayout || "thumbs-left"}`} data-orbit-section-id="product-gallery">
             {galleryImages.length > 1 && (
               <div className="product-page__thumbnails">
                 {galleryImages.map((img: string, index: number) => (
@@ -623,10 +651,8 @@ export default function ProductClient({
                 ))}
               </div>
             )}
-            <div className="product-page__main-image">
-              {discount > 0 && (
-                <span className="product-page__discount">{discount}% OFF</span>
-              )}
+            <div className="product-page__main-image" style={{borderRadius: pageSettings.galleryRadius !== undefined ? `${pageSettings.galleryRadius}px` : undefined}}>
+              {discount > 0 && pageSettings.showGalleryDiscount !== false && <span className="product-page__discount">{discount}% OFF</span>}
               <div
                 className={`product-page__image-skeleton ${!imageLoading ? "hidden" : ""}`}
               />
@@ -654,18 +680,19 @@ export default function ProductClient({
                   );
                 }
                 return (
-                  <img
+              <img
                     ref={imgRef}
                     key={mediaUrl}
                     src={mediaUrl}
                     alt={product.name}
+                onClick={() => pageSettings.galleryZoom && window.open(galleryImages?.[selectedImageIndex] || galleryImages?.[0], "_blank", "noopener,noreferrer")}
                     loading="eager"
                     fetchPriority="high"
                     decoding="async"
                     className={!imageLoading ? "is-loaded" : ""}
                     onLoad={() => setImageLoading(false)}
                     onError={() => setImageLoading(false)}
-                    style={{ borderRadius: "4px" }}
+                    style={{ borderRadius: `${pageSettings.galleryRadius ?? 4}px`, cursor: pageSettings.galleryZoom ? "zoom-in" : undefined }}
                   />
                 );
               })()}
@@ -701,16 +728,16 @@ export default function ProductClient({
                 {renderStars(product.averageRating || 0)}
               </div>
 
-              <div className="product-page__pricing">
+              <div className={`product-page__pricing product-page__pricing--${pageSettings.priceLayout || "inline"}`} data-orbit-section-id="product-pricing">
                 <span className="product-page__price">
                   ₹{displayPrice?.toLocaleString("en-IN")}
                 </span>
                 {originalPrice && (
                   <>
-                    <span className="product-page__original-price">
+                    <span className="product-page__original-price" style={{color:pageSettings.originalPriceColor}}>
                       ₹{originalPrice.toLocaleString("en-IN")}
                     </span>
-                    <span className="product-page__discount">
+                    <span className="product-page__discount" style={{backgroundColor:pageSettings.discountColor}}>
                       {discount}% OFF
                     </span>
                   </>
@@ -739,7 +766,7 @@ export default function ProductClient({
             )}
 
             {product.variants?.length > 0 && (
-              <div className="product-page__variants">
+              <div className={`product-page__variants product-page__variants--${pageSettings.variantLayout || "buttons"}`} data-orbit-section-id="product-variants" style={{"--variant-accent":pageSettings.variantAccent || "#1b4d3e"} as React.CSSProperties}>
                 {customOptionKeys.length > 0 ? (
                   customOptionKeys.map((key: string) => (
                     <div key={key} className="product-page__variant-group">
@@ -805,7 +832,7 @@ export default function ProductClient({
                     </VariantCardScroller>
                   </div>
                 )}
-                {selectedVariant && (
+                {selectedVariant && pageSettings.showVariantStock !== false && (
                   <p className="product-page__variant-stock">
                     {outOfStock ? "Out of stock" : `${stockLeft} in stock`}
                   </p>
@@ -834,9 +861,10 @@ export default function ProductClient({
                 </div>
               </div>
 
-              <div className="product-page__actions">
+              <div className={`product-page__actions product-page__actions--${pageSettings.buttonLayout || "side-by-side"}`} data-orbit-section-id="product-actions">
                 <button
                   className="product-page__add-cart"
+                  style={{backgroundColor:pageSettings.addCartColor,color:pageSettings.buttonTextColor,borderRadius:pageSettings.buttonRadius!==undefined?`${pageSettings.buttonRadius}px`:undefined}}
                   onClick={handleAddToCart}
                   disabled={purchaseBlocked}
                 >
@@ -845,6 +873,7 @@ export default function ProductClient({
                 </button>
                 <button
                   className="product-page__buy-now"
+                  style={{color:pageSettings.buttonTextColor,borderRadius:pageSettings.buttonRadius!==undefined?`${pageSettings.buttonRadius}px`:undefined}}
                   onClick={handleBuyNow}
                   disabled={purchaseBlocked}
                 >
@@ -886,9 +915,9 @@ export default function ProductClient({
                 <SpecialOffersCard coupons={coupons} />
               )}
 
-            <div className="product-page__benefits">
-              {pageBadges.length > 0 ? (
-                <div className="product-page__benefits-grid">
+            <div className="product-page__benefits" data-orbit-section-id="product-benefits">
+              {pageSettings.showBenefits !== false && pageBadges.length > 0 ? (
+                <div className={`product-page__benefits-grid product-page__benefits-grid--${pageSettings.benefitsLayout||"row"}`}>
                   {pageBadges.map((badge: { icon: string; text: string; color: string }) => (
                     <div className="product-page__benefit" key={`${badge.text}-${badge.icon}-${badge.color}`}>
                       {badge.icon ? (
@@ -952,8 +981,8 @@ export default function ProductClient({
 
         {/* Tabs & Content Layer (Scroll Reveal) */}
         <div className="scroll-fade-up">
-          <div className="product-page__tabs">
-            <button
+          <div className={`product-page__tabs product-page__tabs--${pageSettings.descriptionLayout||"plain"}`} data-orbit-section-id="product-description" data-orbit-section-type="productReviews">
+            {pageSettings.showDescription !== false && <button
               className={`product-page__tab ${activeTab === "description" ? "active" : ""}`}
               onClick={() => setActiveTab("description")}
             >
@@ -974,8 +1003,8 @@ export default function ProductClient({
           </div>
 
           <div className="product-page__tab-content">
-          {activeTab === "description" && (
-            <div className="product-page__description-container">
+          {activeTab === "description" && pageSettings.showDescription !== false && (
+            <div className={`product-page__description-container product-page__description-container--${pageSettings.descriptionLayout||"plain"}`}>
               {/* 1. Product Information (Table) */}
               {specifications.length > 0 && (
                 <div className="product-page__info-card">
@@ -1027,9 +1056,9 @@ export default function ProductClient({
             />
           )}
 
-          {activeTab === "shipping" && (
-            <div className="product-page__shipping-info">
-              <h3>Shipping Information</h3>
+          {activeTab === "shipping" && pageSettings.showShipping !== false && (
+              <div className={`product-page__shipping-info product-page__shipping-info--${pageSettings.shippingLayout||"list"}`} data-orbit-section-id="product-shipping" style={{backgroundColor:pageSettings.shippingBackground,color:pageSettings.shippingTextColor} as React.CSSProperties}>
+              <h3>{pageSettings.shippingHeading || "Shipping Information"}</h3>
               <ul>
                 <li>Free shipping on orders above ₹999</li>
                 <li>Standard delivery: 5-7 business days</li>
@@ -1071,28 +1100,17 @@ export default function ProductClient({
               className="w-full scroll-fade-up"
               style={{ marginTop: "48px", marginBottom: "32px" }}
             >
+              <h2 className="product-reels__heading" style={{color:pageSettings.reelsHeadingColor}}>{pageSettings.reelsHeading || "See what is happening"}</h2>
               <ReelsSection
                 reels={reelsSection.reels}
                 displayType={
-                  showFloatingReel
-                    ? "pop"
-                    : reelsSection.displayType || "carousel"
+                  (({carousel:"carousel",grid:"grid",stories:"stories",featured:"pop"} as Record<string,"carousel"|"grid"|"stories"|"pop">)[pageSettings.reelsLayout] || (showFloatingReel ? "pop" : reelsSection.displayType || "carousel")) as "carousel"|"grid"|"stories"|"pop"|"sales-page"|"ugc"
                 }
               />
             </div>
           )}
       </section>
 
-      {relatedProducts.length > 0 && (
-        <section className="featured-collection">
-          <h2 className="section-title inline-block mb-2">YOU MAY ALSO LIKE</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4  lg:grid-cols-6 grid-rows-auto gap-2">
-            {relatedProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
     </>
   );
 }

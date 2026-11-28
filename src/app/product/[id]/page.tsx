@@ -52,16 +52,20 @@ async function RelatedProductsSection({
   productId,
   targetCategory,
   fallbackCategory,
+  settings,
 }: {
   subdomain: string;
   storeId: string;
   productId: string;
   targetCategory: string | undefined;
   fallbackCategory: string | undefined;
+  settings: Record<string, any>;
 }) {
+  if (settings.showRelatedProducts === false) return null;
   let relatedProducts: any[] = [];
   try {
-    const page = await fetchCataloguePage(subdomain, storeId, { category: targetCategory || undefined, limit: 5 });
+    const source = settings.relatedSource || "same-category";
+    const page = await fetchCataloguePage(subdomain, storeId, { category: source === "same-category" ? targetCategory || undefined : undefined, stream: source === "best-sellers" ? "best-seller" : source === "featured" ? "featured" : undefined, limit: 12 });
     relatedProducts = page.products.filter((p: any) => p.id !== productId).slice(0, 4);
 
     if (relatedProducts.length === 0 && targetCategory !== fallbackCategory) {
@@ -75,9 +79,9 @@ async function RelatedProductsSection({
   if (relatedProducts.length === 0) return null;
 
   return (
-    <section className="featured-collection scroll-fade-up">
-      <h2 className="section-title inline-block mb-2">YOU MAY ALSO LIKE</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-6 grid-rows-auto gap-2">
+    <section className={`featured-collection scroll-fade-up product-related--${settings.relatedLayout || "grid"}`} data-orbit-section-id="related-products">
+      <h2 className="section-title inline-block mb-2">{settings.relatedHeading || "YOU MAY ALSO LIKE"}</h2>
+      <div className="product-related__grid" style={{"--related-columns":settings.relatedColumns || 4,"--related-image-fit":settings.relatedImageFit || "cover"} as React.CSSProperties}>
         {relatedProducts.map((p: any) => (
           <ProductCard key={p.id} product={p} />
         ))}
@@ -243,6 +247,7 @@ export default async function ProductPage({ params }: PageProps) {
           productId={product.id}
           targetCategory={targetCategory}
           fallbackCategory={product.category}
+          settings={productPageSettings}
         />
       </Suspense>
     </>
