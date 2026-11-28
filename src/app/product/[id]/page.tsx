@@ -144,6 +144,7 @@ export default async function ProductPage({ params }: PageProps) {
   let storeId = "";
   let codEnabled = false;
   let globalBadges: { icon?: string; text?: string; color?: string }[] = [];
+  let productPageSettings: Record<string, any> = {};
   try {
     // Cache for 60 seconds to avoid hammering the API
     subdomain = await getServerSubdomain();
@@ -157,6 +158,11 @@ export default async function ProductPage({ params }: PageProps) {
     testimonialSection =
       (data?.customization?.testimonialsSection as TestimonialSection) || null;
     reelsSection = data?.customization?.reelsSection || null;
+    const pageCustomization = data?.customization as any;
+    productPageSettings = {
+      ...(pageCustomization?.homePageConfig?.productPageSettings || {}),
+      ...(pageCustomization?.homePageConfig?.productPageOverrides?.[product?.id] || {}),
+    };
     const rawGlobalBadge = data?.customization?.homePageConfig?.productPageBadge;
     const rawGlobalBadges = Array.isArray(rawGlobalBadge)
       ? rawGlobalBadge
@@ -238,6 +244,7 @@ export default async function ProductPage({ params }: PageProps) {
         subdomain={subdomain}
         codEnabled={codEnabled}
         globalBadges={globalBadges}
+        productPageSettings={productPageSettings}
       />
       {/* Stream related products after main product paints — "loads in layers" effect */}
       <Suspense fallback={<RelatedProductsSkeleton />}>
