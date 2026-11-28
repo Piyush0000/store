@@ -119,7 +119,6 @@ const decodeAndFormatHtml = (content: string) => {
 
 interface ProductClientProps {
   product: any;
-  productPageSettings?: Record<string, any>;
   relatedProducts: any[];
   testimonials: TestimonialSection | null;
   reelsSection?: {
@@ -174,47 +173,12 @@ function SaleCountdown() {
 
 export default function ProductClient({
   product,
-  productPageSettings = {},
   relatedProducts,
   testimonials,
   reelsSection,
   subdomain,
   globalBadges,
 }: ProductClientProps) {
-  const [pageSettings, setPageSettings] = useState<Record<string, any>>(productPageSettings);
-  useEffect(() => {
-    const handleEditorMessage = (event: MessageEvent) => {
-      if (event.data?.type === "ORBIT_CUSTOMIZATION_UPDATE") {
-        const data = event.data.data || {};
-        setPageSettings({ ...data.homePageConfig?.productPageSettings, ...data.homePageConfig?.productPageOverrides?.[product.id] });
-      }
-      if (event.data?.type === "ORBIT_SCROLL_TO_SECTION") {
-        if (event.data.sectionId === "product-description") setActiveTab("description");
-        if (event.data.sectionId === "product-reviews") setActiveTab("reviews");
-        if (event.data.sectionId === "product-shipping") setActiveTab("shipping");
-        window.setTimeout(() => {
-          const target = document.querySelector(`[data-orbit-section-id="${event.data.sectionId}"]`);
-          target?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 50);
-      }
-    };
-    window.addEventListener("message", handleEditorMessage);
-    return () => window.removeEventListener("message", handleEditorMessage);
-  }, [product.id]);
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("isEditor") === "true") sessionStorage.setItem("orbitEditorPreview", "true");
-    if (sessionStorage.getItem("orbitEditorPreview") !== "true") return;
-    window.parent.postMessage({ type: "ORBIT_EDITOR_PRODUCT_PAGE", productId: product.id }, "*");
-    const selectSection = (event: MouseEvent) => {
-      const section = (event.target as HTMLElement).closest<HTMLElement>("[data-orbit-section-id]");
-      if (!section) return;
-      event.preventDefault();
-      event.stopPropagation();
-      window.parent.postMessage({ type: "ORBIT_SECTION_CLICK", sectionId: section.dataset.orbitSectionId }, "*");
-    };
-    document.addEventListener("click", selectSection, true);
-    return () => document.removeEventListener("click", selectSection, true);
-  }, []);
   // Safely normalize customFields (handles JSON string from Prisma / API / DB)
   const customFields: Record<string, any> = (() => {
     const raw = product?.customFields;
@@ -291,11 +255,6 @@ export default function ProductClient({
   const [pickedOptions, setPickedOptions] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
-  useEffect(() => {
-    if (activeTab === "description" && pageSettings.showDescription === false && (pageSettings.showReviews !== false || pageSettings.showShipping !== false)) setActiveTab(pageSettings.showReviews !== false ? "reviews" : "shipping");
-    if (activeTab === "reviews" && pageSettings.showReviews === false && (pageSettings.showDescription !== false || pageSettings.showShipping !== false)) setActiveTab(pageSettings.showDescription !== false ? "description" : "shipping");
-    if (activeTab === "shipping" && pageSettings.showShipping === false && (pageSettings.showDescription !== false || pageSettings.showReviews !== false)) setActiveTab(pageSettings.showDescription !== false ? "description" : "reviews");
-  }, [activeTab, pageSettings.showDescription, pageSettings.showReviews, pageSettings.showShipping]);
   const [imageLoading, setImageLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -362,21 +321,14 @@ export default function ProductClient({
 
   const galleryImages: string[] = useMemo(() => {
     const defaults = extractImageUrls(product.images);
-    const order = Array.isArray(pageSettings.galleryMediaOrder) ? pageSettings.galleryMediaOrder : [];
-    const allDefaults = Array.from(new Set([...defaults, ...order.filter((url: unknown) => typeof url === "string")])) as string[];
-    const orderedDefaults = [...allDefaults].sort((a, b) => {
-      const aIndex = order.indexOf(a);
-      const bIndex = order.indexOf(b);
-      return (aIndex < 0 ? allDefaults.length : aIndex) - (bIndex < 0 ? allDefaults.length : bIndex);
-    });
     const fromSelected = selectedVariant ? getVariantImages(selectedVariant) : [];
     if (fromSelected.length) return fromSelected;
     const colorKey = customOptionKeys.find((key) => isImageOptionType(key));
     const colorValue = colorKey ? pickedOptions[colorKey] : "";
     const colorVariant = colorKey && colorValue ? getVariantForOption(colorKey, colorValue) : null;
     const fromColor = colorVariant ? getVariantImages(colorVariant) : [];
-    return fromColor.length ? fromColor : orderedDefaults;
-  }, [selectedVariant, product.images, product.variants, customOptionKeys, pickedOptions, pageSettings.galleryMediaOrder]);
+    return fromColor.length ? fromColor : defaults;
+  }, [selectedVariant, product.images, product.variants, customOptionKeys, pickedOptions]);
 
   useEffect(() => {
     const img = imgRef.current;
@@ -487,7 +439,7 @@ export default function ProductClient({
     window.addEventListener("message", onPreview);
     return () => window.removeEventListener("message", onPreview);
   }, []);
-  const pageBadges = (Array.isArray(pageSettings.trustBadges) ? pageSettings.trustBadges : previewBadges ?? (Array.isArray(globalBadges) ? globalBadges : []))
+  const pageBadges = (previewBadges ?? (Array.isArray(globalBadges) ? globalBadges : []))
     .map((badge) => ({
       icon: resolveMediaUrl(typeof badge?.icon === "string" ? badge.icon : ""),
       text: String(badge?.text || "").trim(),
@@ -752,7 +704,7 @@ export default function ProductClient({
               <span className="product-page__brand">{product.brand}</span>
             )}
 
-              {pageSettings.showBadges !== false && (isBestseller || isFastSelling) && (
+              {(isBestseller || isFastSelling) && (
                 <div className="product-page__badge-capsules">
                   {isBestseller && (
                     <span className="badge-capsule badge-capsule--bestseller">
@@ -769,18 +721,18 @@ export default function ProductClient({
                 </div>
               )}
 
-              <h1 className="product-page__title">{pageSettings.titleOverride || product.name}</h1>
+              <h1 className="product-page__title">{product.name}</h1>
 
-              {pageSettings.showRating !== false && <div className="product-page__rating">
+              <div className="product-page__rating">
                 <span>Ratings : </span>
                 {renderStars(product.averageRating || 0)}
-              </div>}
+              </div>
 
               <div className={`product-page__pricing product-page__pricing--${pageSettings.priceLayout || "inline"}`} data-orbit-section-id="product-pricing">
                 <span className="product-page__price">
                   ₹{displayPrice?.toLocaleString("en-IN")}
                 </span>
-                {pageSettings.showComparePrice !== false && originalPrice && (
+                {originalPrice && (
                   <>
                     <span className="product-page__original-price" style={{color:pageSettings.originalPriceColor}}>
                       ₹{originalPrice.toLocaleString("en-IN")}
@@ -792,16 +744,16 @@ export default function ProductClient({
                 )}
               </div>
 
-              {pageSettings.showSaleTimer !== false && <div className="product-page__sale-timer">
+              <div className="product-page__sale-timer">
               <span className="sale-live-badge">Sale Is Live!</span>
               <span className="sale-countdown">
                 <Clock size={16} className="sale-clock-icon" />
                 <SaleCountdown />
               </span>
-            </div>}
+            </div>
             {lowStock ? <p className="product-page__low-stock">Low stock</p> : null}
 
-            {pageSettings.showRecentSales !== false && recentSalesCount && Number(recentSalesCount) > 0 && (
+            {recentSalesCount && Number(recentSalesCount) > 0 && (
               <div className="product-page__recent-sales-strip">
                 <Users size={16} className="recent-sales-icon" />
                 <span className="recent-sales-text">
@@ -888,7 +840,7 @@ export default function ProductClient({
               </div>
             )}
 
-            {pageSettings.showQuantity !== false && <div className="product-page__quantity" data-orbit-section-id="product-actions">
+            <div className="product-page__quantity">
                 <label>Quantity:</label>
                 <div className="product-page__quantity-controls">
                   <button
@@ -907,7 +859,7 @@ export default function ProductClient({
                     +
                   </button>
                 </div>
-              </div>}
+              </div>
 
               <div className={`product-page__actions product-page__actions--${pageSettings.buttonLayout || "side-by-side"}`} data-orbit-section-id="product-actions">
                 <button
@@ -917,7 +869,7 @@ export default function ProductClient({
                   disabled={purchaseBlocked}
                 >
                   <ShoppingBag size={16} />
-                  {addedToCart ? "Added!" : pageSettings.addToCartLabel || "Add to Cart"}
+                  {addedToCart ? "Added!" : "Add to Cart"}
                 </button>
                 <button
                   className="product-page__buy-now"
@@ -925,7 +877,7 @@ export default function ProductClient({
                   onClick={handleBuyNow}
                   disabled={purchaseBlocked}
                 >
-                  <span>{pageSettings.buyNowLabel || "Buy Now"}</span>
+                  <span>Buy Now</span>
                   <img
                     src="/buynow.png"
                     alt="Buy Now"
@@ -939,7 +891,7 @@ export default function ProductClient({
                 <p className="product-page__out-of-stock">This is out of stock</p>
               ) : null}
 
-              {pageSettings.showWishlist !== false && <button
+              <button
                 className={`product-page__wishlist ${liked ? "product-page__wishlist--active" : ""}`}
                 onClick={() =>
                   toggleWishlist({
@@ -957,11 +909,7 @@ export default function ProductClient({
                   stroke={liked ? "var(--gold-light, #c9a84c)" : "currentColor"}
                 />
                 {liked ? "Remove from Wishlist" : "Add to Wishlist"}
-              </button>}
-
-              {pageSettings.showWhatsApp === true && String(pageSettings.whatsAppNumber || "").replace(/\D/g, "") && (
-                <a className="product-page__whatsapp-action" href={`https://wa.me/${String(pageSettings.whatsAppNumber).replace(/\D/g, "")}?text=${encodeURIComponent(`I have a question about ${product.name}`)}`} target="_blank" rel="noopener noreferrer">{pageSettings.whatsAppLabel || "Ask on WhatsApp"}</a>
-              )}
+              </button>
 
               {coupons && coupons.length > 0 && (
                 <SpecialOffersCard coupons={coupons} />
@@ -985,9 +933,9 @@ export default function ProductClient({
                 </div>
               ) : null}
               <div className="product-page__delivery-banner">
-                {pageSettings.deliveryMessage || "Get it delivered in 3-6 days"}
+                Get it delivered in 3-6 days
               </div>
-              {pageSettings.showStoreLinks !== false && storeLinks.length > 0 ? (
+              {storeLinks.length > 0 ? (
                 <div className="product-page__store-links">
                   {storeLinks.map((link: { icon: string; url: string; label: string }, idx: number) => {
                     const content = (
@@ -1039,19 +987,19 @@ export default function ProductClient({
               onClick={() => setActiveTab("description")}
             >
               Description
-            </button>}
-            {pageSettings.showReviews !== false && <button
+            </button>
+            <button
               className={`product-page__tab ${activeTab === "reviews" ? "active" : ""}`}
               onClick={() => setActiveTab("reviews")}
             >
               Reviews ({product.reviewCount || product.reviews?.length || 0})
-            </button>}
-            {pageSettings.showShipping !== false && <button
+            </button>
+            <button
               className={`product-page__tab ${activeTab === "shipping" ? "active" : ""}`}
               onClick={() => setActiveTab("shipping")}
             >
               Shipping
-            </button>}
+            </button>
           </div>
 
           <div className="product-page__tab-content">
@@ -1083,11 +1031,11 @@ export default function ProductClient({
                 <h3 className="product-page__section-title">
                   Product Description
                 </h3>
-                {(pageSettings.descriptionOverride || product.description) ? (
+                {product.description ? (
                   <div
                     className="product-page__rich-description"
                     dangerouslySetInnerHTML={{
-                      __html: decodeAndFormatHtml(pageSettings.descriptionOverride || product.description),
+                      __html: decodeAndFormatHtml(product.description),
                     }}
                   />
                 ) : (
@@ -1099,25 +1047,24 @@ export default function ProductClient({
             </div>
           )}
 
-          {activeTab === "reviews" && pageSettings.showReviews !== false && (
-            <div data-orbit-section-id="product-reviews">
+          {activeTab === "reviews" && (
             <ProductReviews
               productId={product.id}
               subdomain={subdomain}
               initialReviews={product.reviews || []}
               renderStars={renderStars}
             />
-            </div>
           )}
 
           {activeTab === "shipping" && pageSettings.showShipping !== false && (
               <div className={`product-page__shipping-info product-page__shipping-info--${pageSettings.shippingLayout||"list"}`} data-orbit-section-id="product-shipping" style={{backgroundColor:pageSettings.shippingBackground,color:pageSettings.shippingTextColor} as React.CSSProperties}>
               <h3>{pageSettings.shippingHeading || "Shipping Information"}</h3>
               <ul>
-                {(typeof pageSettings.shippingNotes === "string" && pageSettings.shippingNotes.trim()
-                  ? pageSettings.shippingNotes.split("\n").map((line: string) => line.trim()).filter(Boolean)
-                  : ["Free shipping on orders above ₹999", "Standard delivery: 5-7 business days", "Express delivery: 2-3 business days", "Orders are processed within 24 hours", "Track your order in real-time"]
-                ).map((line: string, index: number) => <li key={index}>{line}</li>)}
+                <li>Free shipping on orders above ₹999</li>
+                <li>Standard delivery: 5-7 business days</li>
+                <li>Express delivery: 2-3 business days</li>
+                <li>Orders are processed within 24 hours</li>
+                <li>Track your order in real-time</li>
               </ul>
             </div>
           )}
@@ -1144,13 +1091,12 @@ export default function ProductClient({
           )}
 
         {/* Dedicated Product Video Reels Section */}
-        {pageSettings.showReels !== false && showReelsSection &&
+        {showReelsSection &&
           reelsSection &&
           reelsSection.enabled !== false &&
           reelsSection.reels &&
           reelsSection.reels.length > 0 && (
             <div
-              data-orbit-section-id="product-reels"
               className="w-full scroll-fade-up"
               style={{ marginTop: "48px", marginBottom: "32px" }}
             >
